@@ -1,6 +1,5 @@
 package org.oscii;
 
-import org.oscii.panlex.PanLexDB;
 import org.oscii.panlex.PanLexDBFromJSON;
 
 public class Main {
@@ -9,7 +8,9 @@ public class Main {
         // TODO Command line argument parsing
         String panLexDir = args[0];
 
-        PanLexDB panLex = new PanLexDBFromJSON(panLexDir);
+        PanLexDBFromJSON panLex = new PanLexDBFromJSON();
+        System.out.println("Reading PanLex.");
+        panLex.read(panLexDir);
 
         System.out.println("Done.");
     }

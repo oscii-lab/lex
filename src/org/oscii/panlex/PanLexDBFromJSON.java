@@ -10,28 +10,30 @@ import java.util.regex.Pattern;
 
 public class PanLexDBFromJSON implements PanLexDB {
 
-    private final File jsonDir;
     private final Set<String> languages; // ISO 639-3 language codes (3-letter)
-    private Pattern expressionPattern;
+    private Pattern expressionPattern; // Filtering pattern for expressions
     private final Map<Integer, LanguageVariety> languageVarieties; // Indexed by language variety ID
     private final Map<Integer, Expression> expressions; // Indexed by expression ID
     private final Map<Integer, List<Denotation>> denotations; // Indexed by meaning ID
-    private final Map<PanLexKey, List<List<String>>> translations;
+    private final Map<PanLexKey, List<List<String>>> translations; // Translations grouped by meaning
 
-    // Read PanLex data from JSON export.
-    public PanLexDBFromJSON(String jsonDir) {
-        this.jsonDir = new File(jsonDir);
+    public PanLexDBFromJSON() {
         languages = new HashSet<String>();
         languageVarieties = new HashMap<Integer, LanguageVariety>();
         expressions = new HashMap<Integer, Expression>();
         denotations = new HashMap<Integer, List<Denotation>>();
         translations = new HashMap<PanLexKey, List<List<String>>>();
-
         populateFilters(); // TODO(denero) Filters should be constructed programmatically
-        parse("lv.json", new LanguageVariety(), this::storeLanguageVariety);
-        parse("ex.json", new Expression(), this::storeExpression);
-        parse("dn.json", new Denotation(), this::storeDenotation);
+    }
+
+    // Read PanLex data from JSON export.
+    public void read(String jsonDir) {
+        File d = new File(jsonDir);
+        parse(new File(d, "lv.json"), new LanguageVariety(), this::storeLanguageVariety);
+        parse(new File(d, "ex.json"), new Expression(), this::storeExpression);
+        parse(new File(d, "dn.json"), new Denotation(), this::storeDenotation);
         indexTranslations();
+        languageVarieties.clear();
         expressions.clear();
         denotations.clear();
         // TODO(denero) load definitions
@@ -45,9 +47,8 @@ public class PanLexDBFromJSON implements PanLexDB {
     }
 
     // Parses a JSON file of T records and call process on each.
-    private <T> void parse(String filename, T record, Predicate<T> process) {
+    private <T> void parse(File path, T record, Predicate<T> process) {
         Gson gson = new Gson();
-        final File path = new File(jsonDir, filename);
         try {
             InputStream in = new FileInputStream(path);
             JsonReader reader = new JsonReader(new InputStreamReader(in, "UTF-8"));
@@ -119,7 +120,6 @@ public class PanLexDBFromJSON implements PanLexDB {
                 }
             }
         }
-
     }
 
     private void addTranslations(Map<String, List<String>> termsByLanguage) {
