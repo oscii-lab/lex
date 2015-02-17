@@ -15,14 +15,15 @@ public class PanLexDBFromJSON implements PanLexDB {
     private final Map<Integer, LanguageVariety> languageVarieties; // Indexed by language variety ID
     private final Map<Integer, Expression> expressions; // Indexed by expression ID
     private final Map<Integer, List<Denotation>> denotations; // Indexed by meaning ID
-    private final Map<PanLexKey, List<List<String>>> translations; // Translations grouped by meaning
+    private final Map<PanLexKey, Set<Set<String>>> translations; // Translations grouped by meaning
+    private int maxRecordsPerType;
 
     public PanLexDBFromJSON() {
         languages = new HashSet<String>();
         languageVarieties = new HashMap<Integer, LanguageVariety>();
         expressions = new HashMap<Integer, Expression>();
         denotations = new HashMap<Integer, List<Denotation>>();
-        translations = new HashMap<PanLexKey, List<List<String>>>();
+        translations = new HashMap<PanLexKey, Set<Set<String>>>();
         populateFilters(); // TODO(denero) Filters should be constructed programmatically
     }
 
@@ -53,9 +54,10 @@ public class PanLexDBFromJSON implements PanLexDB {
             InputStream in = new FileInputStream(path);
             JsonReader reader = new JsonReader(new InputStreamReader(in, "UTF-8"));
             reader.beginArray();
-            while (reader.hasNext()) {
+            int accepted = 0; // TODO(denero) Counting accepts is a hack; find a better rate limiting mechanism
+            while (reader.hasNext() && accepted < maxRecordsPerType) {
                 record = gson.fromJson(reader, record.getClass());
-                process.test(record);
+                if (process.test(record)) accepted++;
             }
             reader.close();
         } catch (FileNotFoundException e) {
@@ -104,6 +106,23 @@ public class PanLexDBFromJSON implements PanLexDB {
         }
     }
 
+    private static <K, V> boolean addToValueSet(Map<K, Set<V>> m, K key, V value) {
+        if (m.containsKey(key)) {
+            Set<V> s = m.get(key);
+            if (!s.contains(value)) {
+                s.add(value);
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            Set<V> s = new HashSet<V>();
+            s.add(value);
+            m.put(key, s);
+            return true;
+        }
+    }
+
     // Add all expressions that share a meaning but not a language to translations.
     private void indexTranslations() {
         for (List<Denotation> dns : denotations.values()) {
@@ -122,19 +141,26 @@ public class PanLexDBFromJSON implements PanLexDB {
         }
     }
 
+    // Add translations for all pairs of languages.
     private void addTranslations(Map<String, List<String>> termsByLanguage) {
         for (String sourceLanguage : termsByLanguage.keySet()) {
             for (String targetLanguage : termsByLanguage.keySet()) {
-                addTranslation(sourceLanguage, targetLanguage, termsByLanguage.get(sourceLanguage), termsByLanguage.get(targetLanguage));
+                if (sourceLanguage != targetLanguage) {
+                    addTranslation(sourceLanguage, targetLanguage,
+                            termsByLanguage.get(sourceLanguage),
+                            termsByLanguage.get(targetLanguage));
+                }
             }
         }
     }
 
     private void addTranslation(String sourceLanguage, String targetLanguage,
                                 List<String> sourceExpressions, List<String> targetExpressions) {
-        for (String source : sourceExpressions) {
+        HashSet<String> sources = new HashSet<String>(sourceExpressions);
+        HashSet<String> targets = new HashSet<String>(targetExpressions);
+        for (String source : sources) {
             PanLexKey key = new PanLexKey(source, sourceLanguage, targetLanguage);
-            addToValues(translations, key, targetExpressions);
+            addToValueSet(translations, key, targets);
         }
     }
 
@@ -147,6 +173,10 @@ public class PanLexDBFromJSON implements PanLexDB {
         } else {
             return null;
         }
+    }
+
+    public void setMaxRecordsPerType(int maxRecordsPerType) {
+        this.maxRecordsPerType = maxRecordsPerType;
     }
 
     // JSON serialization classes
