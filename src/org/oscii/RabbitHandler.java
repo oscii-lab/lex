@@ -1,8 +1,11 @@
 package org.oscii;
 
 import com.google.gson.Gson;
-import com.rabbitmq.client.*;
 import com.rabbitmq.client.AMQP.BasicProperties;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.QueueingConsumer;
 import org.oscii.panlex.PanLexDB;
 import org.oscii.panlex.PanLexRecord;
 
@@ -27,18 +30,17 @@ public class RabbitHandler {
         factory.setHost(host);
         Connection connection = factory.newConnection();
         Channel channel = connection.createChannel();
+        channel.basicQos(1);
 
         channel.queueDeclare(queueName, false, false, false, null);
-        channel.basicQos(1);
         QueueingConsumer consumer = new QueueingConsumer(channel);
-        channel.basicConsume(queueName, false, consumer);
-        System.out.println(" [x] Awaiting requests");
+        channel.basicConsume(queueName, true, consumer);
+        System.out.println(" [x] Awaiting requests on " + queueName);
         while (true) {
             QueueingConsumer.Delivery delivery = consumer.nextDelivery();
-            System.out.println(" [x] Consumed!");
 
-            AMQP.BasicProperties props = delivery.getProperties();
-            BasicProperties replyProps = new AMQP.BasicProperties.Builder()
+            BasicProperties props = delivery.getProperties();
+            BasicProperties replyProps = new BasicProperties.Builder()
                     .correlationId(props.getCorrelationId())
                     .build();
 
@@ -46,7 +48,8 @@ public class RabbitHandler {
             System.out.println(" [.] message received: " + message);
             
             String response = respond(message);
-            channel.basicPublish( "", props.getReplyTo(), replyProps, response.getBytes("UTF-8"));
+            System.out.println(" [.] message response: " + response);
+            channel.basicPublish("", props.getReplyTo(), replyProps, response.getBytes("UTF-8"));
             channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
         }
     }
@@ -102,5 +105,4 @@ public class RabbitHandler {
             this.frequency = frequency;
         }
     }
-
 }

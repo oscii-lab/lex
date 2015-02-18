@@ -161,6 +161,7 @@ public class PanLexDBFromJSON implements PanLexDB {
         for (String source : sources) {
             PanLexKey key = new PanLexKey(source, sourceLanguage, targetLanguage);
             addToValueSet(translations, key, targets);
+            System.out.println(Arrays.asList(sourceLanguage, targetLanguage, source, targets.iterator().next()));
         }
     }
 
@@ -215,6 +216,28 @@ public class PanLexDBFromJSON implements PanLexDB {
             this.query = query.toLowerCase();
             this.sourceLanguage = sourceLanguage.toLowerCase();
             this.targetLanguage = targetLanguage.toLowerCase();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            PanLexKey panLexKey = (PanLexKey) o;
+
+            if (!query.equals(panLexKey.query)) return false;
+            if (!sourceLanguage.equals(panLexKey.sourceLanguage)) return false;
+            if (!targetLanguage.equals(panLexKey.targetLanguage)) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = query.hashCode();
+            result = 31 * result + sourceLanguage.hashCode();
+            result = 31 * result + targetLanguage.hashCode();
+            return result;
         }
     }
 }
