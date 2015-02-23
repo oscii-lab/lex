@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module org.jetbrains.idea.maven.project.MavenProjectsManager.isMavenModule="true" type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="false">
+    <output url="file://$USER_HOME$/w/lex/target/classes" />
+    <output-test url="file://$USER_HOME$/w/lex/target/test-classes" />
+    <content url="file://$USER_HOME$/w/lex">
+      <sourceFolder url="file://$USER_HOME$/w/lex/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$USER_HOME$/w/lex/src/main/resources" type="java-resource" />
+      <sourceFolder url="file://$USER_HOME$/w/lex/src/test/java" isTestSource="true" />
+      <excludeFolder url="file://$USER_HOME$/w/lex/target" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>
