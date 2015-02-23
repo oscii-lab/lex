@@ -12,17 +12,17 @@ public class PanLexDBFromJSON implements PanLexDB {
 
     private final Set<String> languages; // ISO 639-3 language codes (3-letter)
     private Pattern expressionPattern; // Filtering pattern for expressions
-    private final Map<Integer, LanguageVariety> languageVarieties; // Indexed by language variety ID
-    private final Map<Integer, Expression> expressions; // Indexed by expression ID
-    private final Map<Integer, List<Denotation>> denotations; // Indexed by meaning ID
+    private final Map<Integer, Models.LanguageVariety> languageVarieties; // Indexed by language variety ID
+    private final Map<Integer, Models.Expression> expressions; // Indexed by expression ID
+    private final Map<Integer, List<Models.Denotation>> denotations; // Indexed by meaning ID
     private final Map<PanLexKey, Set<Set<String>>> translations; // Translations grouped by meaning
     private int maxRecordsPerType;
 
     public PanLexDBFromJSON() {
         languages = new HashSet<String>();
-        languageVarieties = new HashMap<Integer, LanguageVariety>();
-        expressions = new HashMap<Integer, Expression>();
-        denotations = new HashMap<Integer, List<Denotation>>();
+        languageVarieties = new HashMap<Integer, Models.LanguageVariety>();
+        expressions = new HashMap<Integer, Models.Expression>();
+        denotations = new HashMap<Integer, List<Models.Denotation>>();
         translations = new HashMap<PanLexKey, Set<Set<String>>>();
         populateFilters(); // TODO(denero) Filters should be constructed programmatically
     }
@@ -30,9 +30,9 @@ public class PanLexDBFromJSON implements PanLexDB {
     // Read PanLex data from JSON export.
     public void read(String jsonDir) {
         File d = new File(jsonDir);
-        parse(new File(d, "lv.json"), new LanguageVariety(), this::storeLanguageVariety);
-        parse(new File(d, "ex.json"), new Expression(), this::storeExpression);
-        parse(new File(d, "dn.json"), new Denotation(), this::storeDenotation);
+        parse(new File(d, "lv.json"), new Models.LanguageVariety(), this::storeLanguageVariety);
+        parse(new File(d, "ex.json"), new Models.Expression(), this::storeExpression);
+        parse(new File(d, "dn.json"), new Models.Denotation(), this::storeDenotation);
         indexTranslations();
         languageVarieties.clear();
         expressions.clear();
@@ -70,7 +70,7 @@ public class PanLexDBFromJSON implements PanLexDB {
     }
 
     // Store LanguageVariety records, filtered by language.
-    private boolean storeLanguageVariety(LanguageVariety lv) {
+    private boolean storeLanguageVariety(Models.LanguageVariety lv) {
         if (languages.contains(lv.lc)) {
             languageVarieties.put(lv.lv, lv);
             return true;
@@ -79,7 +79,7 @@ public class PanLexDBFromJSON implements PanLexDB {
     }
 
     // Store Expression records, filtered by language variety.
-    private boolean storeExpression(Expression ex) {
+    private boolean storeExpression(Models.Expression ex) {
         if (languageVarieties.containsKey(ex.lv) &&
                 expressionPattern.matcher(ex.tt).matches()) {
             expressions.put(ex.ex, ex);
@@ -88,7 +88,7 @@ public class PanLexDBFromJSON implements PanLexDB {
         return false;
     }
 
-    private boolean storeDenotation(Denotation dn) {
+    private boolean storeDenotation(Models.Denotation dn) {
         if (expressions.containsKey(dn.ex)) {
             addToValues(denotations, dn.mn, dn);
             return true;
@@ -125,12 +125,12 @@ public class PanLexDBFromJSON implements PanLexDB {
 
     // Add all expressions that share a meaning but not a language to translations.
     private void indexTranslations() {
-        for (List<Denotation> dns : denotations.values()) {
+        for (List<Models.Denotation> dns : denotations.values()) {
             if (dns.size() > 1) {
                 // Index by language
                 Map<String, List<String>> termsByLanguage = new HashMap<String, List<String>>();
-                for (Denotation dn : dns) {
-                    Expression ex = expressions.get(dn.ex);
+                for (Models.Denotation dn : dns) {
+                    Models.Expression ex = expressions.get(dn.ex);
                     String language = languageVarieties.get(ex.lv).lc;
                     addToValues(termsByLanguage, language, ex.tt);
                 }
@@ -178,33 +178,6 @@ public class PanLexDBFromJSON implements PanLexDB {
 
     public void setMaxRecordsPerType(int maxRecordsPerType) {
         this.maxRecordsPerType = maxRecordsPerType;
-    }
-
-    // JSON serialization classes
-
-    // E.g., {"sy":1,"lc":"aar","vc":0,"am":1,"lv":1,"ex":1453510}
-    class LanguageVariety {
-        String lc; // ISO 639-3 (3-letter) language code
-        int lv; // Language variety key
-        int ex; // Expression whose text is the language name
-        int sy;
-        int vc;
-        int am;
-    }
-
-    // E.g., {"td":"𠁥","tt":"𠁥","lv":1836,"ex":19202960}
-    class Expression {
-        int lv; // Language variety
-        int ex; // Key
-        String tt; // Text
-        String td; // Degraded text
-    }
-
-    // E.g., {"mn":1,"ex":14,"dn":4}
-    class Denotation {
-        int dn;
-        int mn;
-        int ex;
     }
 
     class PanLexKey {
