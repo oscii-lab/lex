@@ -1,8 +1,31 @@
+// TODO(denero) These definitions are currently unused.
+
 package org.oscii;
 
+// A written form in a language.
 message Expression {
     optional string text = 1;
-    optional string language = 2; // ISO-639-1 code (2-letter), e.g., "zh"
+    optional string degraded_text = 2; // Lowercased, etc.
+    optional string language = 3; // ISO-639-1 code (2-letter), e.g., "zh"
     // Tag inventory: http://www.iana.org/assignments/language-subtag-registry/language-subtag-registry
-    optional string language_tag = 3; // RFC5654 language tag, e.g., "zh-cmn-Hans-CN"
+    optional string language_tag = 4; // RFC5654 language tag, e.g., "zh-cmn-Hans-CN"
+}
+
+// A collection of information related to a meaning of an expression
+message Meaning {
+    optional Expression expression = 1;
+    repeated Definition definition = 2;
+    repeated Translation translation = 3;
+}
+
+// A definition of an expression
+message Definition {
+    optional string text = 1;
+    optional string language_tag = 2;
+}
+
+// A translation of an expression
+message Translation {
+    optional Expression expression = 1;
+    optional double frequency = 2;
 }

@@ -1,12 +1,13 @@
 package org.oscii.client;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.Connection;
+
 import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+
 /**
- * Created by denero on 2/17/15.
+ * Stub client to make a rabbitmq request.
  */
-public class Client {
+public class RabbitClient {
 
     public static void main(String[] args)
             throws java.io.IOException,
@@ -17,7 +18,7 @@ public class Client {
         Channel channel = connection.createChannel();
 
         channel.queueDeclare("lexicon", false, false, false, null);
-        String message = "{ query: \"adult\", source: \"eng\", target: \"spa\", keys: [\"definition\", \"translation\"], context: \"I am an adult.\" }";
+        String message = "{ query: \"adult\", source: \"en\", target: \"es\", keys: [\"definition\", \"translation\"], context: \"I am an adult.\" }";
         channel.basicPublish("", "lexicon", null, message.getBytes());
         System.out.println(" [x] Sent '" + message + "'");
 

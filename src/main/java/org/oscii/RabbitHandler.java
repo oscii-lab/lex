@@ -6,21 +6,20 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
-import org.oscii.panlex.PanLexDB;
-import org.oscii.panlex.PanLexRecord;
+import org.oscii.lex.Translation;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class RabbitHandler {
     private final String host;
-    private final PanLexDB panLex;
+    private final Lexicon lexicon;
     private final String queueName;
 
-    public RabbitHandler(String host, String queueName, PanLexDB panLex) {
+    public RabbitHandler(String host, String queueName, Lexicon lexicon) {
         this.host = host;
         this.queueName = queueName;
-        this.panLex = panLex;
+        this.lexicon = lexicon;
     }
 
     public void ConnectAndListen()
@@ -44,9 +43,9 @@ public class RabbitHandler {
                     .correlationId(props.getCorrelationId())
                     .build();
 
-            String message = new String(delivery.getBody(),"UTF-8");
+            String message = new String(delivery.getBody(), "UTF-8");
             System.out.println(" [.] message received: " + message);
-            
+
             String response = respond(message);
             System.out.println(" [.] message response: " + response);
             channel.basicPublish("", props.getReplyTo(), replyProps, response.getBytes("UTF-8"));
@@ -54,22 +53,19 @@ public class RabbitHandler {
         }
     }
 
-    static final String EMPTY = "";
-
     // Parse message, perform a lookup, and construct a response.
     // TODO(denero) Error handling
     private String respond(String message) {
         Gson gson = new Gson();
         Request request = gson.fromJson(message, Request.class);
-        PanLexRecord record = panLex.lookup(request.query, request.source, request.target);
-        if (record == null) {
-            return EMPTY;
-        }
+        List<Translation> translations =
+                lexicon.translate(request.query, request.source, request.target);
+
         Response response = new Response();
-        for (String translation : record.getTranslationList()) {
-            // TODO(denero) POS and frequency
-            response.translations.add(new Translation(record.getTerm(), "", translation, 0.0));
-        }
+        translations.forEach(t ->
+                // TODO(denero) Add formatted source, POS, frequency
+                response.translations.add(new ResponseTranslation(
+                        request.query, "", t.translation.text, t.frequency)));
         return gson.toJson(response);
     }
 
@@ -82,26 +78,19 @@ public class RabbitHandler {
     }
 
     class Response {
-        List<Definition> definitions;
-        List<Translation> translations = new ArrayList<Translation>();
+        List<ResponseTranslation> translations = new ArrayList<>();
     }
 
-    class Definition {
-        String term;
+    private class ResponseTranslation {
+        String source;
         String pos;
-        String definition;
-    }
-
-    class Translation {
-        String term;
-        String pos;
-        String translation;
+        String target;
         double frequency;
 
-        public Translation(String term, String pos, String translation, double frequency) {
-            this.term = term;
+        public ResponseTranslation(String source, String pos, String target, double frequency) {
+            this.source = source;
             this.pos = pos;
-            this.translation = translation;
+            this.target = target;
             this.frequency = frequency;
         }
     }

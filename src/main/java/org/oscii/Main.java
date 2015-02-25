@@ -1,6 +1,9 @@
 package org.oscii;
 
-import org.oscii.panlex.PanLexDBFromJSON;
+import org.oscii.panlex.PanLexJSONParser;
+
+import java.util.Arrays;
+import java.util.regex.Pattern;
 
 public class Main {
 
@@ -10,13 +13,15 @@ public class Main {
         // TODO Command line argument parsing
         String panLexDir = args[0];
 
-        System.out.println("Reading PanLex");
-        PanLexDBFromJSON panLex = new PanLexDBFromJSON();
-        panLex.setMaxRecordsPerType(10000); // TODO(denero) Remove this limit
-        panLex.read(panLexDir);
+        PanLexJSONParser panLex = new PanLexJSONParser(panLexDir);
+        panLex.addLanguages(Arrays.asList("en", "es"));
+        panLex.read(Pattern.compile("a.*"));
+
+        Lexicon lexicon = new Lexicon();
+        panLex.yieldTranslations(lexicon::add);
 
         System.out.println("Starting request handler");
-        RabbitHandler handler = new RabbitHandler("localhost", "lexicon", panLex);
+        RabbitHandler handler = new RabbitHandler("localhost", "lexicon", lexicon);
         handler.ConnectAndListen();
 
         System.out.println("Done");
