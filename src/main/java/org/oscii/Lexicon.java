@@ -48,4 +48,14 @@ public class Lexicon {
                 .values().stream().map(ts -> ts.iterator().next())
                 .collect(Collectors.toList());
     }
+
+    // A mock lexicon that always translates "adult" to "adulto".
+    public static class Mock extends Lexicon {
+        @Override
+        public List<Meaning> lookup(String query, String language) {
+            Expression adult = new Expression("adulto", "en");
+            Expression adulto = new Expression("adulto", "es");
+            return Arrays.asList(new Meaning(adult, Arrays.asList(adulto)));
+        }
+    }
 }

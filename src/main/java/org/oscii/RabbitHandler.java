@@ -29,12 +29,17 @@ public class RabbitHandler {
         factory.setHost(host);
         Connection connection = factory.newConnection();
         Channel channel = connection.createChannel();
-        channel.basicQos(1);
 
         channel.queueDeclare(queueName, false, false, false, null);
+
+        channel.basicQos(1);
+
         QueueingConsumer consumer = new QueueingConsumer(channel);
-        channel.basicConsume(queueName, true, consumer);
+        boolean autoAck = false;
+        channel.basicConsume(queueName, autoAck, consumer);
+
         System.out.println(" [x] Awaiting requests on " + queueName);
+
         while (true) {
             QueueingConsumer.Delivery delivery = consumer.nextDelivery();
 
@@ -48,6 +53,7 @@ public class RabbitHandler {
 
             String response = respond(message);
             System.out.println(" [.] message response: " + response);
+
             channel.basicPublish("", props.getReplyTo(), replyProps, response.getBytes("UTF-8"));
             channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
         }
