@@ -28,6 +28,7 @@ public class Main {
             PanLexJSONParser panLex = new PanLexJSONParser(path);
             // TODO(denero) Add "languages" command-line option
             panLex.addLanguages(Arrays.asList("en", "es", "fr", "de"));
+            panLex.read(null);
             panLex.yieldTranslations(lexicon::add);
         } else if (line.hasOption("r")) {
             lexicon.read(new File(line.getOptionValue("r")));
