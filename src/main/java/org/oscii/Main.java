@@ -15,18 +15,25 @@ public class Main {
             java.lang.InterruptedException,
             ParseException {
         Options options = new Options();
+
+        // Vanilla I/O
         options.addOption("r", "read", true, "read JSON file");
         options.addOption("w", "write", true, "write JSON file");
+
+        // Rabbitmq
         options.addOption("s", "serve", false, "listen on local rabbitmq");
         options.addOption("h", "host", true, "rabbitmq host");
         options.addOption("q", "queue", true, "rabbitmq queue");
         options.addOption("u", "username", true, "rabbitmq username");
         options.addOption("a", "password", true, "rabbitmq password");
+
+        // Parsing PanLex
         options.addOption("p", "panlex", true, "parse PanLex JSON");
         options.addOption("pattern", true, "expression pattern");
         options.addOption("l", "languages", true, "expression pattern");
+
         CommandLineParser parser = new BasicParser();
-        CommandLine line = parser.parse( options, args );
+        CommandLine line = parser.parse(options, args);
 
         Lexicon lexicon = new Lexicon();
 

@@ -36,7 +36,7 @@ public class Lexicon {
                 // Aggregate and filter by target language
                 .flatMap(m -> m.translations.stream()
                         .filter(t -> t.translation.language.equals(target)))
-                // Remove textual duplicates, choosing the first of each group
+                        // Remove textual duplicates, choosing the first of each group
                 .collect(Collectors.groupingBy((Translation t) -> t.translation.text))
                 .values().stream().map(ts -> ts.iterator().next())
                 .collect(Collectors.toList());
