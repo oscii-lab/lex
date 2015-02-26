@@ -21,7 +21,7 @@ public class Main {
 
         if (readPanLex) {
             PanLexJSONParser panLex = new PanLexJSONParser(path);
-            panLex.addLanguages(Arrays.asList("en", "es"));
+            panLex.addLanguages(Arrays.asList("en", "es", "fr", "de"));
             panLex.read(Pattern.compile("a.*"));
             panLex.yieldTranslations(lexicon::add);
             if (writePanLex) {

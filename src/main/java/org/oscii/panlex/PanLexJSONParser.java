@@ -102,7 +102,7 @@ public class PanLexJSONParser {
             JsonReader reader = new JsonReader(new InputStreamReader(in, "UTF-8"));
             reader.beginArray();
             // TODO(denero) remove number limits
-            while (reader.hasNext() && accepted < 100000) {
+            while (reader.hasNext()) {
                 record = gson.fromJson(reader, type);
                 if (process.test(record)) {
                     accepted++;
