@@ -12,12 +12,13 @@ repositories {
 
 sourceSets {
     main {
-        java.srcDirs = ['src/']
+        java.srcDirs = ['src/main/java']
     }
 }
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
+    compile group: 'commons-cli', name: 'commons-cli', version: '1.2'
     compile group: 'com.google.code.gson', name: 'gson', version: '2.3.1'
     compile group: 'com.rabbitmq', name: 'amqp-client', version: '3.4.4'
     compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.1'
