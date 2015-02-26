@@ -13,12 +13,16 @@ import java.util.List;
 
 public class RabbitHandler {
     private final String host;
-    private final Lexicon lexicon;
     private final String queueName;
+    private final String username;
+    private final String password;
+    private final Lexicon lexicon;
 
-    public RabbitHandler(String host, String queueName, Lexicon lexicon) {
+    public RabbitHandler(String host, String queueName, String username, String password, Lexicon lexicon) {
         this.host = host;
         this.queueName = queueName;
+        this.username = username;
+        this.password = password;
         this.lexicon = lexicon;
     }
 
@@ -27,6 +31,8 @@ public class RabbitHandler {
             java.lang.InterruptedException {
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(host);
+        factory.setUsername(username);
+        factory.setPassword(password);
         Connection connection = factory.newConnection();
         Channel channel = connection.createChannel();
 

@@ -18,6 +18,10 @@ public class Main {
         options.addOption("w", "write", true, "write JSON file");
         options.addOption("p", "panlex", true, "parse PanLex JSON");
         options.addOption("s", "serve", false, "listen on local rabbitmq");
+        options.addOption("h", "host", true, "rabbitmq host");
+        options.addOption("q", "queue", true, "rabbitmq queue");
+        options.addOption("u", "username", true, "rabbitmq username");
+        options.addOption("a", "password", true, "rabbitmq password");
         CommandLineParser parser = new BasicParser();
         CommandLine line = parser.parse( options, args );
 
@@ -39,7 +43,11 @@ public class Main {
         }
 
         if (line.hasOption("s")) {
-            RabbitHandler handler = new RabbitHandler("localhost", "lexicon", lexicon);
+            String host = line.getOptionValue("h", "localhost");
+            String queue = line.getOptionValue("q", "lexicon");
+            String username = line.getOptionValue("u", "");
+            String password = line.getOptionValue("a", "");
+            RabbitHandler handler = new RabbitHandler(host, queue, username, password, lexicon);
             handler.ConnectAndListen();
         }
     }
