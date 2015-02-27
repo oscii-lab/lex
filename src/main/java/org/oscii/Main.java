@@ -41,7 +41,7 @@ public class Main {
             String path = line.getOptionValue("p");
             PanLexJSONParser panLex = new PanLexJSONParser(path);
 
-            List<String> languages = Arrays.asList("en", "es", "fr", "de");
+            List<String> languages = Arrays.asList("en", "es");
             if (line.hasOption("l")) {
                 languages = Arrays.asList(line.getOptionValue("l").split(" "));
             }

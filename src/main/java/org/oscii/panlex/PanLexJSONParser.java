@@ -95,7 +95,7 @@ public class PanLexJSONParser {
             InputStream in = new FileInputStream(path);
             JsonReader reader = new JsonReader(new InputStreamReader(in, "UTF-8"));
             reader.beginArray();
-            while (reader.hasNext()) {
+            while (reader.hasNext() && accepted < 10000) {
                 record = gson.fromJson(reader, type);
                 if (process.test(record)) {
                     accepted++;
@@ -214,6 +214,4 @@ public class PanLexJSONParser {
         }
         return false;
     }
-
-
 }
