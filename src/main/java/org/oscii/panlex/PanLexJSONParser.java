@@ -78,6 +78,7 @@ public class PanLexJSONParser {
         parse(new File(dir, "ex.json"), new Models.Expression(), storeExpression(filter));
         parse(new File(dir, "mn.json"), new Models.Meaning(), this::storeMeaning);
         parse(new File(dir, "dn.json"), new Models.Denotation(), this::storeDenotation);
+        // TODO(denero) Re-enable definitions and serve them.
         // parse(new File(dir, "df.json"), new Models.Definition(), this::storeDefinition);
     }
 
