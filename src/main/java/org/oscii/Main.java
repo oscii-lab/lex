@@ -1,11 +1,17 @@
 package org.oscii;
 
+import com.google.gson.Gson;
+import com.google.gson.stream.JsonWriter;
 import org.apache.commons.cli.*;
+import org.oscii.lex.Meaning;
 import org.oscii.panlex.PanLexJSONParser;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 public class Main {
@@ -53,13 +59,15 @@ public class Main {
             }
             panLex.read(pattern);
 
-            panLex.yieldTranslations(lexicon::add);
-        } else if (line.hasOption("r")) {
-            lexicon.read(new File(line.getOptionValue("r")));
+            if (line.hasOption("w")) {
+                writeMeanings(line.getOptionValue("w"), panLex);
+            } else {
+                panLex.yieldTranslations(lexicon::add);
+            }
         }
 
-        if (line.hasOption("w")) {
-            lexicon.write(new File(line.getOptionValue("w")));
+        if (line.hasOption("r")) {
+            lexicon.read(new File(line.getOptionValue("r")));
         }
 
         if (line.hasOption("s")) {
@@ -70,5 +78,15 @@ public class Main {
             RabbitHandler handler = new RabbitHandler(host, queue, username, password, lexicon);
             handler.ConnectAndListen();
         }
+    }
+
+    private static void writeMeanings(String path, PanLexJSONParser panLex)
+            throws IOException {
+        JsonWriter writer = new JsonWriter(new FileWriter(path));
+        Gson gson = new Gson();
+        writer.beginArray();
+        panLex.yieldTranslations(m -> gson.toJson(m, Meaning.class, writer));
+        writer.endArray();
+        writer.close();
     }
 }
