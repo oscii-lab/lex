@@ -11,7 +11,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 public class Main {
@@ -20,27 +19,7 @@ public class Main {
             throws java.io.IOException,
             java.lang.InterruptedException,
             ParseException {
-        Options options = new Options();
-
-        // Vanilla I/O
-        options.addOption("r", "read", true, "read JSON file");
-        options.addOption("w", "write", true, "write JSON file");
-
-        // Rabbitmq
-        options.addOption("s", "serve", false, "listen on local rabbitmq");
-        options.addOption("h", "host", true, "rabbitmq host");
-        options.addOption("q", "queue", true, "rabbitmq queue");
-        options.addOption("u", "username", true, "rabbitmq username");
-        options.addOption("a", "password", true, "rabbitmq password");
-
-        // Parsing PanLex
-        options.addOption("p", "panlex", true, "parse PanLex JSON");
-        options.addOption("pattern", true, "expression pattern");
-        options.addOption("l", "languages", true, "expression pattern");
-
-        CommandLineParser parser = new BasicParser();
-        CommandLine line = parser.parse(options, args);
-
+        CommandLine line = ParseArgs(args);
         Lexicon lexicon = new Lexicon();
 
         if (line.hasOption("p")) {
@@ -49,7 +28,7 @@ public class Main {
 
             List<String> languages = Arrays.asList("en", "es");
             if (line.hasOption("l")) {
-                languages = Arrays.asList(line.getOptionValue("l").split(" "));
+                languages = Arrays.asList(line.getOptionValue("l").split(","));
             }
             panLex.addLanguages(languages);
 
@@ -78,6 +57,36 @@ public class Main {
             RabbitHandler handler = new RabbitHandler(host, queue, username, password, lexicon);
             handler.ConnectAndListen();
         }
+    }
+
+    private static CommandLine ParseArgs(String[] args) throws ParseException {
+        Options options = new Options();
+        options.addOption("h", "help", false, "print this message");
+
+        // Vanilla I/O
+        options.addOption("r", "read", true, "read JSON file");
+        options.addOption("w", "write", true, "write JSON file");
+
+        // Rabbitmq
+        options.addOption("s", "serve", false, "listen on local rabbitmq");
+        options.addOption("t", "host", true, "rabbitmq host");
+        options.addOption("q", "queue", true, "rabbitmq queue");
+        options.addOption("u", "username", true, "rabbitmq username");
+        options.addOption("v", "password", true, "rabbitmq password");
+
+        // Parsing PanLex
+        options.addOption("p", "panlex", true, "parse PanLex JSON");
+        options.addOption("x", "pattern", true, "expression pattern");
+        options.addOption("l", "languages", true, "comma-separated languages");
+
+        CommandLineParser parser = new BasicParser();
+        CommandLine line = parser.parse(options, args);
+
+        if (line.hasOption("h")) {
+            HelpFormatter formatter = new HelpFormatter();
+            formatter.printHelp("lex", options);
+        }
+        return line;
     }
 
     private static void writeMeanings(String path, PanLexJSONParser panLex)

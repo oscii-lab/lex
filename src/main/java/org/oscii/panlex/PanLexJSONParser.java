@@ -184,6 +184,7 @@ public class PanLexJSONParser {
         return (Models.Expression ex) -> {
             if (varieties.containsKey(ex.lv) &&
                     (filter == null || filter.matcher(ex.tt).matches())) {
+                ex.td = null;
                 expressions.put(ex.ex, ex);
                 return true;
             }
