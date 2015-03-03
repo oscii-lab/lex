@@ -5,5 +5,10 @@ package org.oscii.lex;
  */
 public class Definition {
     String text;
-    String language_tag;
+    String languageTag;
+
+    public Definition(String text, String languageTag) {
+        this.text = text;
+        this.languageTag = languageTag;
+    }
 }

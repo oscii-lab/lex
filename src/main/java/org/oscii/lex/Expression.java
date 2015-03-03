@@ -17,13 +17,13 @@ public class Expression {
     }
 
     // Tag inventory: http://www.iana.org/assignments/language-subtag-registry/language-subtag-registry
-    String language_tag; // RFC5654 language tag, e.g., "zh-cmn-Hans-CN"
+    public String languageTag; // RFC5654 language tag, e.g., "zh-cmn-Hans-CN"
 
-    public Expression(String text, String language_tag) {
+    public Expression(String text, String languageTag) {
         this.text = text;
-        this.language_tag = language_tag;
+        this.languageTag = languageTag;
         // TODO(denero) Split language tag to get language
-        this.language = language_tag;
+        this.language = languageTag;
         // TODO(denero) Generate degraded text
     }
 

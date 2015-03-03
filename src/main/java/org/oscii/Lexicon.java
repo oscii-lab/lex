@@ -75,7 +75,9 @@ public class Lexicon {
         public List<Meaning> lookup(String query, String language) {
             Expression adult = new Expression("adulto", "en");
             Expression adulto = new Expression("adulto", "es");
-            return Arrays.asList(new Meaning(adult, Arrays.asList(adulto)));
+            Meaning meaning = new Meaning(adult);
+            meaning.translations.add(new Translation(adulto, 0));
+            return Arrays.asList(meaning);
         }
     }
 }

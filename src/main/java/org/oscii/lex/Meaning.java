@@ -1,15 +1,18 @@
 package org.oscii.lex;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Created by denero on 2/24/15.
- */ // A collection of information related to a meaning of an expression
+ * A collection of information related to a meaning of an expression
+ */
 public class Meaning {
     public final Expression expression;
-    final List<Definition> definitions;
-    public final List<Translation> translations;
+    public final List<String> pos = new ArrayList<>();
+    public final List<Definition> definitions = new ArrayList<>();
+    public final List<Translation> translations = new ArrayList<>();
+    public final List<Expression> synonyms = new ArrayList<>();
 
     @Override
     public String toString() {
@@ -20,12 +23,7 @@ public class Meaning {
                 '}';
     }
 
-    public Meaning(Expression expression, List<Expression> translations) {
+    public Meaning(Expression expression) {
         this.expression = expression;
-        this.definitions = null;
-        this.translations = translations.stream()
-                .map(e -> new Translation(e, 0))
-                .collect(Collectors.toList());
     }
-
 }

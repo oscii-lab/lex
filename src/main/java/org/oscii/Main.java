@@ -41,7 +41,7 @@ public class Main {
             if (line.hasOption("w")) {
                 writeMeanings(line.getOptionValue("w"), panLex);
             } else {
-                panLex.yieldTranslations(lexicon::add);
+                panLex.forEachMeaning(lexicon::add);
             }
         }
 
@@ -94,7 +94,7 @@ public class Main {
         JsonWriter writer = new JsonWriter(new FileWriter(path));
         Gson gson = new Gson();
         writer.beginArray();
-        panLex.yieldTranslations(m -> gson.toJson(m, Meaning.class, writer));
+        panLex.forEachMeaning(m -> gson.toJson(m, Meaning.class, writer));
         writer.endArray();
         writer.close();
     }

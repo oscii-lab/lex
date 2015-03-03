@@ -5,7 +5,7 @@ package org.oscii.panlex;
  */
 public interface Models {
     // E.g., {"sy":1,"lc":"aar","vc":0,"am":1,"lv":1,"ex":1453510}
-    static class LanguageVariety {
+    static class Lv {
         int lv; // ID
         String lc; // ISO 639 (3-letter) language code
         int ex; // Expression whose text is the language name
@@ -15,7 +15,7 @@ public interface Models {
     }
 
     // E.g., {"td":"𠁥","tt":"𠁥","lv":1836,"ex":19202960}
-    static class Expression {
+    static class Ex {
         int ex; // ID
         int lv; // Language variety
         String tt; // Text
@@ -23,20 +23,20 @@ public interface Models {
     }
 
     // E.g., {"mn":1,"ap":1}
-    static class Meaning {
+    static class Mn {
         int mn; // ID
         int ap; // Source
     }
 
     // E.g., {"mn":1,"ex":14,"dn":4}
-    static class Denotation {
+    static class Dn {
         int dn; // ID
         int mn; // Meaning
         int ex; // Expression
     }
 
     // E.g., {"df":2657373,"tt":"come(s) from","mn":6,"lv":187,"td":"comesfrom"}
-    static class Definition {
+    static class Df {
         int df; // ID
         int mn; // Meaning
         int lv; // Language variety of the text
@@ -52,5 +52,18 @@ public interface Models {
         String ti; // Title
         int uq; // Quality (editor's judgement)
         String li; // License type
+    }
+
+    // E.g., {"dn":51926083,"ex":3846608,"wc":4384599}
+    static class Wc {
+        int wc;
+        int dn;
+        int ex;
+    }
+
+    // E.g., {"tt":"noun","ex":3846607}
+    static class Wcex {
+        int ex;
+        String tt;
     }
 }
