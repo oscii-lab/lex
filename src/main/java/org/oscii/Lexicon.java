@@ -3,6 +3,8 @@ package org.oscii;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.oscii.lex.Expression;
 import org.oscii.lex.Meaning;
 import org.oscii.lex.Translation;
@@ -16,6 +18,8 @@ import java.util.stream.Collectors;
  */
 public class Lexicon {
     Map<Expression, List<Meaning>> lexicon = new HashMap<>();
+
+    private final static Logger log = LogManager.getLogger(Lexicon.class);
 
     public void add(Meaning meaning) {
         if (!lexicon.containsKey(meaning.expression)) {
@@ -44,6 +48,7 @@ public class Lexicon {
 
     // Write all meanings to a file.
     public void write(File file) throws IOException {
+        log.info("Writing %s", file);
         JsonWriter writer = new JsonWriter(new FileWriter(file));
         Gson gson = new Gson();
 
@@ -59,6 +64,7 @@ public class Lexicon {
 
     // Read all meanings from a file.
     public void read(File file) throws IOException {
+        log.info("Reading %s", file);
         Gson gson = new Gson();
         InputStream in = new FileInputStream(file);
         JsonReader reader = new JsonReader(new InputStreamReader(in, "UTF-8"));

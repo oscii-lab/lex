@@ -92,9 +92,12 @@ public class Main {
     private static void writeMeanings(String path, PanLexJSONParser panLex)
             throws IOException {
         JsonWriter writer = new JsonWriter(new FileWriter(path));
+        writer.setIndent("    ");
         Gson gson = new Gson();
         writer.beginArray();
-        panLex.forEachMeaning(m -> gson.toJson(m, Meaning.class, writer));
+        panLex.forEachMeaning(m -> {
+            gson.toJson(m, Meaning.class, writer);
+        });
         writer.endArray();
         writer.close();
     }
