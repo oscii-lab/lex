@@ -23,6 +23,7 @@ dependencies {
     compile group: 'com.rabbitmq', name: 'amqp-client', version: '3.4.4'
     compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.1'
     compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.1'
+    compile group: 'com.codepoetics', name: 'protonpack', version: '1.2'
 }
 
 // Run .e.g., with:
