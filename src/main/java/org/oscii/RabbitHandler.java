@@ -6,6 +6,8 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.oscii.lex.Translation;
 
 import java.util.ArrayList;
@@ -17,6 +19,8 @@ public class RabbitHandler {
     private final String username;
     private final String password;
     private final Lexicon lexicon;
+
+    private final static Logger log = LogManager.getLogger(RabbitHandler.class);
 
     public RabbitHandler(String host, String queueName, String username, String password, Lexicon lexicon) {
         this.host = host;
@@ -44,7 +48,7 @@ public class RabbitHandler {
         boolean autoAck = false;
         channel.basicConsume(queueName, autoAck, consumer);
 
-        System.out.println(" [x] Awaiting requests on " + queueName);
+        log.info("Awaiting requests on %s", queueName);
 
         while (true) {
             QueueingConsumer.Delivery delivery = consumer.nextDelivery();
@@ -55,10 +59,10 @@ public class RabbitHandler {
                     .build();
 
             String message = new String(delivery.getBody(), "UTF-8");
-            System.out.println(" [.] message received: " + message);
+            log.info("Message received: %s",  message);
 
             String response = respond(message);
-            System.out.println(" [.] message response: " + response);
+            log.info("Message response: %s", response);
 
             channel.basicPublish("", props.getReplyTo(), replyProps, response.getBytes("UTF-8"));
             channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
