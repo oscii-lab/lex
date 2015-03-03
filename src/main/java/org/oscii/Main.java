@@ -50,10 +50,10 @@ public class Main {
         }
 
         if (line.hasOption("s")) {
-            String host = line.getOptionValue("h", "localhost");
+            String host = line.getOptionValue("t", "localhost");
             String queue = line.getOptionValue("q", "lexicon");
             String username = line.getOptionValue("u", "");
-            String password = line.getOptionValue("a", "");
+            String password = line.getOptionValue("v", "");
             RabbitHandler handler = new RabbitHandler(host, queue, username, password, lexicon);
             handler.ConnectAndListen();
         }
