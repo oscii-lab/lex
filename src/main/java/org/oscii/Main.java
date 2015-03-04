@@ -103,7 +103,7 @@ public class Main {
     private static void writeMeanings(String path, PanLexJSONParser panLex)
             throws IOException {
         JsonWriter writer = new JsonWriter(new FileWriter(path));
-        writer.setIndent("    ");
+        writer.setIndent("  ");
         Gson gson = new Gson();
         writer.beginArray();
         panLex.forEachMeaning(m -> {

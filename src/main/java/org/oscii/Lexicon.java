@@ -49,7 +49,7 @@ public class Lexicon {
 
     // Write all meanings to a file.
     public void write(File file) throws IOException {
-        log.info("Writing %s", file);
+        log.info("Writing " + file);
         JsonWriter writer = new JsonWriter(new FileWriter(file));
         Gson gson = new Gson();
 
@@ -65,7 +65,7 @@ public class Lexicon {
 
     // Read all meanings from a file.
     public void read(File file) throws IOException {
-        log.info("Reading %s", file);
+        log.info("Reading " + file);
         Gson gson = new Gson();
         InputStream in = new FileInputStream(file);
         JsonReader reader = new JsonReader(new InputStreamReader(in, "UTF-8"));
