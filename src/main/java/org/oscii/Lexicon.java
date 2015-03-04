@@ -5,6 +5,7 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.oscii.concordance.AlignedCorpus;
 import org.oscii.lex.Expression;
 import org.oscii.lex.Meaning;
 import org.oscii.lex.Translation;
@@ -73,6 +74,13 @@ public class Lexicon {
             add(gson.fromJson(reader, Meaning.class));
         }
         reader.close();
+    }
+
+    /*
+     * Add translation frequency information from a corpus.
+     */
+    public void addFrequencies(AlignedCorpus corpus) {
+        // TODO
     }
 
     // A lexicon that always translates "adult" to "adulto", ignoring args

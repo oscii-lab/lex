@@ -3,6 +3,7 @@ package org.oscii;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonWriter;
 import org.apache.commons.cli.*;
+import org.oscii.concordance.AlignedCorpus;
 import org.oscii.lex.Meaning;
 import org.oscii.panlex.PanLexJSONParser;
 
@@ -49,6 +50,13 @@ public class Main {
             lexicon.read(new File(line.getOptionValue("r")));
         }
 
+        if (line.hasOption("c")) {
+            String corpusPath = line.getOptionValue("c");
+            AlignedCorpus corpus = new AlignedCorpus(corpusPath, "en", "es");
+            corpus.read();
+            lexicon.addFrequencies(corpus);
+        }
+
         if (line.hasOption("s")) {
             String host = line.getOptionValue("t", "localhost");
             String queue = line.getOptionValue("q", "lexicon");
@@ -78,6 +86,9 @@ public class Main {
         options.addOption("p", "panlex", true, "parse PanLex JSON");
         options.addOption("x", "pattern", true, "expression pattern");
         options.addOption("l", "languages", true, "comma-separated languages");
+
+        // Concordance
+        options.addOption("c", "corpus", true, "path to corpus (no suffixes)");
 
         CommandLineParser parser = new BasicParser();
         CommandLine line = parser.parse(options, args);
