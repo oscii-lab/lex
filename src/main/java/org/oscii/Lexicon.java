@@ -21,6 +21,27 @@ public class Lexicon {
     Map<Expression, List<Meaning>> lexicon = new HashMap<>();
 
     private final static Logger log = LogManager.getLogger(Lexicon.class);
+    private static Comparator<? super Translation> byFrequency = new Comparator<Translation>() {
+        @Override
+        public int compare(Translation o1, Translation o2) {
+            return Double.compare(o2.frequency, o1.frequency);
+        }
+    };
+    private static Comparator<? super Meaning> byMaxTranslationFrequency = new Comparator<Meaning>() {
+        @Override
+        public int compare(Meaning o1, Meaning o2) {
+            if (o2.translations.size() == 0) {
+                return -1;
+            } else if (o1.translations.size() == 0) {
+                return 1;
+            } else {
+                return Double.compare(
+                        o2.translations.get(0).frequency,
+                        o1.translations.get(0).frequency);
+            }
+        }
+    };
+
 
     public void add(Meaning meaning) {
         if (!lexicon.containsKey(meaning.expression)) {
@@ -80,7 +101,17 @@ public class Lexicon {
      * Add translation frequency information from a corpus.
      */
     public void addFrequencies(AlignedCorpus corpus) {
-        // TODO
+        lexicon.values().forEach(ms -> {
+            ms.forEach(m -> {
+                m.translations.forEach(translation -> {
+                    Expression source = m.expression;
+                    Expression target = translation.translation;
+                    translation.frequency = corpus.getFrequency(source, target);
+                });
+                m.translations.sort(byFrequency);
+            });
+            ms.sort(byMaxTranslationFrequency);
+        });
     }
 
     // A lexicon that always translates "adult" to "adulto", ignoring args

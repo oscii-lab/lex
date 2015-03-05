@@ -15,7 +15,8 @@ public class Translation {
     @Override
     public String toString() {
         return "Translation{" +
-                "expression=" + translation +
+                "translation=" + translation +
+                ", frequency=" + frequency +
                 '}';
     }
 }

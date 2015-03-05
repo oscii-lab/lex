@@ -3,6 +3,7 @@ package org.oscii.concordance;
 import com.codepoetics.protonpack.StreamUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.oscii.lex.Expression;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,11 +26,13 @@ public class AlignedCorpus {
     private String sourceSuffix;
     private String targetSuffix;
 
-    List<AlignedSentence> sentences = new ArrayList<>();
-    Map<String, List<Location>> sourceIndex = new HashMap<>();
-    Map<String, List<Location>> targetIndex = new HashMap<>();
-    Map<String, Map<String, Long>> targetsBySource = new HashMap<>();
-    Map<String, Map<String, Long>> sourcesByTarget = new HashMap<>();
+    List<AlignedSentence> sentences;
+    Map<String, List<Location>> sourceIndex;
+    Map<String, List<Location>> targetIndex;
+    Map<String, Map<String, Long>> targetsBySource;
+    Map<String, Long> sumBySource;
+    Map<String, Map<String, Long>> sourcesByTarget;
+    Map<String, Long> sumByTarget;
 
     private final static Logger log = LogManager.getLogger(AlignedCorpus.class);
 
@@ -63,22 +66,13 @@ public class AlignedCorpus {
         log.info("Counting alignments");
         targetsBySource = countLinks(sourceIndex, AlignedCorpus::alignedTarget);
         sourcesByTarget = countLinks(targetIndex, AlignedCorpus::alignedSource);
+        log.info("Normalizing");
+        sumBySource = sumCounts(targetsBySource);
+        sumByTarget = sumCounts(sourcesByTarget);
     }
 
-    /*
-     * Count one-to-one alignments.
-     */
-    private static Map<String, Map<String, Long>> countLinks(
-            Map<String, List<Location>> index,
-            BiFunction<AlignedSentence, Integer, String> aligned) {
-        return index.entrySet().stream().collect(Collectors.toMap(
-                e -> e.getKey(),
-                e -> e.getValue().stream().map((Location loc) ->
-                        aligned.apply(loc.sentence, loc.tokenIndex))
-                        .filter(s -> s != null)
-                        .collect(Collectors.groupingBy(Function.identity(),
-                                Collectors.counting()))));
-    }
+
+
 
     /*
      * Index tokens of sentences by their type.
@@ -90,6 +84,35 @@ public class AlignedCorpus {
                         .mapToObj((int j) -> new Location(s, j)))
                 .collect(Collectors.groupingBy(loc ->
                         tokens.apply(loc.sentence).get(loc.tokenIndex)));
+    }
+
+    /*
+     * Count one-to-one alignments.
+     *
+     * aligned: a function from positions to aligned words.
+     */
+    private static Map<String, Map<String, Long>> countLinks(
+            Map<String, List<Location>> index,
+            BiFunction<AlignedSentence, Integer, String> aligned) {
+        // TODO Is there a better way to process map values?
+        return index.keySet().stream().collect(Collectors.toMap(
+                Function.identity(),
+                k -> index.get(k).stream().map((Location loc) ->
+                        aligned.apply(loc.sentence, loc.tokenIndex))
+                        .filter(s -> s != null)
+                        .collect(Collectors.groupingBy(
+                                Function.identity(),
+                                Collectors.counting()))));
+    }
+
+
+    /*
+     * Sum counts.
+     */
+    private Map<String,Long> sumCounts(Map<String, Map<String, Long>> counts) {
+        return counts.keySet().stream().collect(Collectors.toMap(
+                Function.identity(),
+                k -> counts.get(k).values().stream().collect(Collectors.summingLong(c -> c))));
     }
 
     /* Helper functions TODO Can these be replaced? */
@@ -108,6 +131,24 @@ public class AlignedCorpus {
 
     private static String alignedSource(AlignedSentence s, Integer pos) {
         return s.alignedSource(pos);
+    }
+
+    public double getFrequency(Expression source, Expression target) {
+        if (source.language == sourceSuffix && target.language == targetSuffix) {
+            Map<String, Long> counts = targetsBySource.get(source.text);
+            if (counts != null && counts.containsKey(target.text)) {
+                return 1.0 * counts.get(target.text) / sumBySource.get(source.text);
+            }
+            return 0.0;
+        }
+        if (source.language == targetSuffix && target.language == sourceSuffix) {
+            Map<String, Long> counts = sourcesByTarget.get(source.text);
+            if (counts != null && counts.containsKey(target.text)) {
+                return 1.0 * counts.get(target.text) / sumByTarget.get(source.text);
+            }
+            return 0.0;
+        }
+        return 0.0;
     }
 
     private class Location {

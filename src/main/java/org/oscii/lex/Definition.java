@@ -11,4 +11,12 @@ public class Definition {
         this.text = text;
         this.languageTag = languageTag;
     }
+
+    @Override
+    public String toString() {
+        return "Definition{" +
+                "text='" + text + '\'' +
+                ", languageTag='" + languageTag + '\'' +
+                '}';
+    }
 }
