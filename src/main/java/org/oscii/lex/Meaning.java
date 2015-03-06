@@ -2,7 +2,6 @@ package org.oscii.lex;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * A collection of information related to a meaning of an expression

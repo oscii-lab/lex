@@ -8,7 +8,10 @@ import org.oscii.lex.Expression;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -41,6 +44,7 @@ public class AlignedCorpus {
         StreamUtils.zip(sources, targets, aligns,
                 (s, t, a) -> AlignedSentence.parse(s, t, a, sourceLanguage, targetLanguage))
                 .forEach(aligned::addAll);
+        log.info("Grouping by language");
         sentences = aligned.stream().collect(Collectors.groupingBy(a -> a.language));
         tally();
     }
@@ -65,19 +69,21 @@ public class AlignedCorpus {
      */
     private Map<String, List<Location>> indexTokens(List<AlignedSentence> ss) {
         return ss.stream()
-                .flatMap(s -> IntStream.range(0, s.tokens.size()).mapToObj(j -> new Location(s, j)))
-                .collect(Collectors.groupingBy(c -> c.sentence.tokens.get(c.tokenIndex)));
+                .flatMap(s -> IntStream.range(0, s.tokens.length).mapToObj(j -> new Location(s, j)))
+                .collect(Collectors.groupingBy(Location::token));
     }
 
     /*
      * Count all one-to-one alignments.
      *
-     * aligned: a function from positions to aligned words.
+     * index:   word -> locations
+     * returns: word -> language -> word -> co-occurrence count
      */
-    private static Map<String, Map<String, Map<String, Long>>> countLinks(Map<String, List<Location>> index) {
-        Map<String, Map<String, List<Location>>> byTarget;
-        byTarget = groupValues(index, loc -> loc.sentence.aligned.language);
-        return mapValues(byTarget, m -> mapValues(m, AlignedCorpus::countTranslations));
+    private static Map<String, Map<String, Map<String, Long>>> countLinks(
+            Map<String, List<Location>> index) {
+        return mapValues(
+                groupValues(index, loc -> loc.sentence.aligned.language),
+                m -> mapValues(m, AlignedCorpus::countTranslations));
     }
 
     /*
@@ -88,7 +94,6 @@ public class AlignedCorpus {
                 .filter(s -> s != null)
                 .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
     }
-
 
     /*
      * Sum counts for each word by target language.
@@ -143,9 +148,13 @@ public class AlignedCorpus {
         AlignedSentence sentence;
         int tokenIndex;
 
-        public Location(AlignedSentence sentence, int tokenIndex) {
+        Location(AlignedSentence sentence, int tokenIndex) {
             this.sentence = sentence;
             this.tokenIndex = tokenIndex;
+        }
+
+        String token() {
+            return sentence.tokens[tokenIndex];
         }
     }
 }

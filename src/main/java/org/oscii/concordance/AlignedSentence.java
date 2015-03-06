@@ -9,27 +9,26 @@ import java.util.stream.Collectors;
  * A sentence word-aligned to a translation.
  */
 public class AlignedSentence {
-    public final List<String> tokens;
+    public final String[] tokens;
     public final int[][] alignment;
     public final String language;
     public AlignedSentence aligned;
 
-    private AlignedSentence(List<String> tokens, int[][] alignment, String language) {
+    private AlignedSentence(String[] tokens, int[][] alignment, String language) {
         this.tokens = tokens;
         this.alignment = alignment;
         this.language = language;
-        assert tokens.size() == alignment.length;
     }
 
     /*
      * Create an aligned sentence from space-delimited strings.
      */
     public static List<AlignedSentence> parse(String source, String target, String align, String sourceLanguage, String targetLanguage) {
-        List<String> sourceTokens = Arrays.asList(source.split("\\s"));
-        List<String> targetTokens = Arrays.asList(target.split("\\s"));
+        String[] sourceTokens = source.split("\\s");
+        String[] targetTokens = target.split("\\s");
         List<Link> links = Arrays.asList(align.split("\\s")).stream()
                 .map(Link::parse).collect(Collectors.toList());
-        int sl = sourceTokens.size(), tl = targetTokens.size();
+        int sl = sourceTokens.length, tl = targetTokens.length;
         AlignedSentence sourceToTarget = new AlignedSentence(sourceTokens, collectLinks(links, sl, false), sourceLanguage);
         AlignedSentence targetToSource = new AlignedSentence(targetTokens, collectLinks(links, tl, true), targetLanguage);
         sourceToTarget.aligned = targetToSource;
@@ -66,7 +65,7 @@ public class AlignedSentence {
         if (alignment[index].length == 1) {
             linkedIndex = alignment[index][0];
             if (aligned.alignment[linkedIndex].length == 1) {
-                return aligned.tokens.get(linkedIndex);
+                return aligned.tokens[linkedIndex];
             }
         }
         return null;

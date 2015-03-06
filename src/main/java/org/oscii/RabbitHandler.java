@@ -48,7 +48,7 @@ public class RabbitHandler {
         boolean autoAck = false;
         channel.basicConsume(queueName, autoAck, consumer);
 
-        log.info("Awaiting requests on %s", queueName);
+        log.info("Awaiting requests on " + queueName);
 
         while (true) {
             QueueingConsumer.Delivery delivery = consumer.nextDelivery();
@@ -59,10 +59,10 @@ public class RabbitHandler {
                     .build();
 
             String message = new String(delivery.getBody(), "UTF-8");
-            log.info("Message received: %s",  message);
+            log.info("Message received: " + message);
 
             String response = respond(message);
-            log.info("Message response: %s", response);
+            log.info("Message response: " + response);
 
             channel.basicPublish("", props.getReplyTo(), replyProps, response.getBytes("UTF-8"));
             channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
