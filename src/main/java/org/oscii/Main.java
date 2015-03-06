@@ -53,7 +53,8 @@ public class Main {
         if (line.hasOption("c")) {
             String corpusPath = line.getOptionValue("c");
             AlignedCorpus corpus = new AlignedCorpus();
-            corpus.read(corpusPath, "en", "es");
+            corpus.read(corpusPath, "en", "es",
+                    line.hasOption("m") ? Integer.parseInt(line.getOptionValue("m")) : 0);
             lexicon.addFrequencies(corpus);
         }
 
@@ -89,6 +90,7 @@ public class Main {
 
         // Concordance
         options.addOption("c", "corpus", true, "path to corpus (no suffixes)");
+        options.addOption("m", "max", true, "maximum number of sentence pairs");
 
         CommandLineParser parser = new BasicParser();
         CommandLine line = parser.parse(options, args);

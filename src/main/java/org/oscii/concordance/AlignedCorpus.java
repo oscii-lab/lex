@@ -35,11 +35,16 @@ public class AlignedCorpus {
     /*
      * Read and index a parallel corpus.
      */
-    public void read(String path, String sourceLanguage, String targetLanguage) throws IOException {
+    public void read(String path, String sourceLanguage, String targetLanguage, int max) throws IOException {
         log.info("Reading sentence pairs");
         Stream<String> sources = Files.lines(Paths.get(path + "." + sourceLanguage));
         Stream<String> targets = Files.lines(Paths.get(path + "." + targetLanguage));
         Stream<String> aligns = Files.lines(Paths.get(path + ".align"));
+        if (max > 0) {
+            sources = sources.limit(max);
+            targets = targets.limit(max);
+            aligns = aligns.limit(max);
+        }
         List<AlignedSentence> aligned = new ArrayList<>();
         StreamUtils.zip(sources, targets, aligns,
                 (s, t, a) -> AlignedSentence.parse(s, t, a, sourceLanguage, targetLanguage))
