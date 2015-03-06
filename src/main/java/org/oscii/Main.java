@@ -90,6 +90,7 @@ public class Main {
 
         // Concordance
         options.addOption("c", "corpus", true, "path to corpus (no suffixes)");
+        // TODO(denero) make -m an int value with default 0
         options.addOption("m", "max", true, "maximum number of sentence pairs");
 
         CommandLineParser parser = new BasicParser();
