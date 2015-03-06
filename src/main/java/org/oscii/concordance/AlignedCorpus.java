@@ -8,11 +8,7 @@ import org.oscii.lex.Expression;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.BiFunction;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -22,37 +18,30 @@ import java.util.stream.Stream;
  * Index and compute statistics over an aligned corpus.
  */
 public class AlignedCorpus {
-    private String path;
-    private String sourceSuffix;
-    private String targetSuffix;
-
-    List<AlignedSentence> sentences;
-    Map<String, List<Location>> sourceIndex;
-    Map<String, List<Location>> targetIndex;
-    Map<String, Map<String, Long>> targetsBySource;
-    Map<String, Long> sumBySource;
-    Map<String, Map<String, Long>> sourcesByTarget;
-    Map<String, Long> sumByTarget;
+    // language -> sentences
+    Map<String, List<AlignedSentence>> sentences;
+    // language -> word -> locations
+    Map<String, Map<String, List<Location>>> index = new HashMap<>();
+    // language -> word -> language -> word -> count
+    Map<String, Map<String, Map<String, Map<String, Long>>>> pairCounts = new HashMap<>();
+    // language -> word -> language -> count
+    Map<String, Map<String, Map<String, Long>>> wordCounts = new HashMap<>();
 
     private final static Logger log = LogManager.getLogger(AlignedCorpus.class);
-
-    public AlignedCorpus(String path, String sourceSuffix, String targetSuffix) {
-        this.path = path;
-        this.sourceSuffix = sourceSuffix;
-        this.targetSuffix = targetSuffix;
-    }
 
     /*
      * Read and index a parallel corpus.
      */
-    public void read() throws IOException {
+    public void read(String path, String sourceLanguage, String targetLanguage) throws IOException {
         log.info("Reading sentence pairs");
-        Stream<String> sources = Files.lines(Paths.get(path + "." + sourceSuffix));
-        Stream<String> targets = Files.lines(Paths.get(path + "." + targetSuffix));
+        Stream<String> sources = Files.lines(Paths.get(path + "." + sourceLanguage));
+        Stream<String> targets = Files.lines(Paths.get(path + "." + targetLanguage));
         Stream<String> aligns = Files.lines(Paths.get(path + ".align"));
-        sentences = StreamUtils.zip(sources, targets, aligns,
-                (s, t, a) -> AlignedSentence.create(s, t, a))
-                .collect(Collectors.toList());
+        List<AlignedSentence> aligned = new ArrayList<>();
+        StreamUtils.zip(sources, targets, aligns,
+                (s, t, a) -> AlignedSentence.parse(s, t, a, sourceLanguage, targetLanguage))
+                .forEach(aligned::addAll);
+        sentences = aligned.stream().collect(Collectors.groupingBy(a -> a.language));
         tally();
     }
 
@@ -60,97 +49,96 @@ public class AlignedCorpus {
      * Create indices and counts.
      */
     public void tally() {
-        log.info("Indexing sentence pairs");
-        sourceIndex = indexTokens(AlignedCorpus::sourceTokens);
-        targetIndex = indexTokens(AlignedCorpus::targetTokens);
-        log.info("Counting alignments");
-        targetsBySource = countLinks(sourceIndex, AlignedCorpus::alignedTarget);
-        sourcesByTarget = countLinks(targetIndex, AlignedCorpus::alignedSource);
-        log.info("Normalizing");
-        sumBySource = sumCounts(targetsBySource);
-        sumByTarget = sumCounts(sourcesByTarget);
+        sentences.keySet().stream().forEach(language -> {
+            log.info("Indexing words");
+            Map<String, List<Location>> indexForLanguage = indexTokens(sentences.get(language));
+            index.put(language, indexForLanguage);
+            log.info("Counting aligned pairs");
+            Map<String, Map<String, Map<String, Long>>> pairs = countLinks(indexForLanguage);
+            pairCounts.put(language, pairs);
+            wordCounts.put(language, sumCounts(pairs));
+        });
     }
-
-
-
 
     /*
      * Index tokens of sentences by their type.
      */
-    private Map<String, List<Location>> indexTokens(
-            Function<AlignedSentence, List<String>> tokens) {
-        return sentences.stream().flatMap(s ->
-                IntStream.range(0, tokens.apply(s).size())
-                        .mapToObj((int j) -> new Location(s, j)))
-                .collect(Collectors.groupingBy(loc ->
-                        tokens.apply(loc.sentence).get(loc.tokenIndex)));
+    private Map<String, List<Location>> indexTokens(List<AlignedSentence> ss) {
+        return ss.stream()
+                .flatMap(s -> IntStream.range(0, s.tokens.size()).mapToObj(j -> new Location(s, j)))
+                .collect(Collectors.groupingBy(c -> c.sentence.tokens.get(c.tokenIndex)));
     }
 
     /*
-     * Count one-to-one alignments.
+     * Count all one-to-one alignments.
      *
      * aligned: a function from positions to aligned words.
      */
-    private static Map<String, Map<String, Long>> countLinks(
-            Map<String, List<Location>> index,
-            BiFunction<AlignedSentence, Integer, String> aligned) {
-        // TODO Is there a better way to process map values?
-        return index.keySet().stream().collect(Collectors.toMap(
-                Function.identity(),
-                k -> index.get(k).stream().map((Location loc) ->
-                        aligned.apply(loc.sentence, loc.tokenIndex))
-                        .filter(s -> s != null)
-                        .collect(Collectors.groupingBy(
-                                Function.identity(),
-                                Collectors.counting()))));
+    private static Map<String, Map<String, Map<String, Long>>> countLinks(Map<String, List<Location>> index) {
+        Map<String, Map<String, List<Location>>> byTarget;
+        byTarget = groupValues(index, loc -> loc.sentence.aligned.language);
+        return mapValues(byTarget, m -> mapValues(m, AlignedCorpus::countTranslations));
+    }
+
+    /*
+     * Count one-to-one aligned translations in locations.
+     */
+    private static Map<String, Long> countTranslations(List<Location> locations) {
+        return locations.stream().map(loc -> loc.sentence.aligned(loc.tokenIndex))
+                .filter(s -> s != null)
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
     }
 
 
     /*
-     * Sum counts.
+     * Sum counts for each word by target language.
      */
-    private Map<String,Long> sumCounts(Map<String, Map<String, Long>> counts) {
-        return counts.keySet().stream().collect(Collectors.toMap(
-                Function.identity(),
-                k -> counts.get(k).values().stream().collect(Collectors.summingLong(c -> c))));
+    private Map<String, Map<String, Long>> sumCounts(Map<String, Map<String, Map<String, Long>>> pairs) {
+        // TODO(denero) Is there a better way to sum in Java?
+        Function<Map<String, Long>, Long> sum = counts -> counts.values().stream().collect(Collectors.summingLong(c -> c));
+        return mapValues(pairs, m -> mapValues(m, sum));
     }
 
-    /* Helper functions TODO Can these be replaced? */
-
-    private static List<String> sourceTokens(AlignedSentence s) {
-        return s.sourceTokens;
-    }
-
-    private static List<String> targetTokens(AlignedSentence s) {
-        return s.targetTokens;
-    }
-
-    private static String alignedTarget(AlignedSentence s, Integer pos) {
-        return s.alignedTarget(pos);
-    }
-
-    private static String alignedSource(AlignedSentence s, Integer pos) {
-        return s.alignedSource(pos);
-    }
-
+    /*
+     * Return the translation frequency of two words.
+     */
     public double getFrequency(Expression source, Expression target) {
-        if (source.language == sourceSuffix && target.language == targetSuffix) {
-            Map<String, Long> counts = targetsBySource.get(source.text);
-            if (counts != null && counts.containsKey(target.text)) {
-                return 1.0 * counts.get(target.text) / sumBySource.get(source.text);
+        // TODO(denero) Check for null languages.
+        Map<String, Map<String, Long>> translations;
+        translations = pairCounts.get(source.language).get(source.text);
+        if (translations != null) {
+            Long count = translations.get(target.language).get(target.text);
+            if (count != null && count > 0) {
+                long total = wordCounts.get(source.language).get(source.text).get(target.language);
+                return 1.0 * count / total;
             }
-            return 0.0;
-        }
-        if (source.language == targetSuffix && target.language == sourceSuffix) {
-            Map<String, Long> counts = sourcesByTarget.get(source.text);
-            if (counts != null && counts.containsKey(target.text)) {
-                return 1.0 * counts.get(target.text) / sumByTarget.get(source.text);
-            }
-            return 0.0;
         }
         return 0.0;
     }
 
+    /* Map utilities */
+
+    /*
+     * Group values of a map by a key function.
+     */
+    private static <K, T, U> Map<K, Map<U, List<T>>> groupValues(Map<K, List<T>> m,
+                                                                 Function<T, U> key) {
+        return mapValues(m, ts -> ts.stream().collect(Collectors.groupingBy(key)));
+    }
+
+    /*
+     * Map values of a map, maintaining keys.
+     */
+    private static <K, T, U> Map<K, U> mapValues(Map<K, T> m, Function<T, U> f) {
+        return m.keySet().stream().collect(Collectors.toMap(
+                Function.identity(), k -> f.apply(m.get(k))));
+    }
+
+    /* Support classes */
+
+    /*
+     * A position in an aligned sentence.
+     */
     private class Location {
         AlignedSentence sentence;
         int tokenIndex;

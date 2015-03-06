@@ -5,6 +5,7 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 mainClassName = "org.oscii.Main"
+applicationDefaultJvmArgs = ["-ea", "-XX:+UseG1GC", "-XX:+UseStringDeduplication"]
 
 repositories {
     mavenCentral()

@@ -52,8 +52,8 @@ public class Main {
 
         if (line.hasOption("c")) {
             String corpusPath = line.getOptionValue("c");
-            AlignedCorpus corpus = new AlignedCorpus(corpusPath, "en", "es");
-            corpus.read();
+            AlignedCorpus corpus = new AlignedCorpus();
+            corpus.read(corpusPath, "en", "es");
             lexicon.addFrequencies(corpus);
         }
 

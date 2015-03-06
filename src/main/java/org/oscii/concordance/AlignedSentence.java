@@ -9,78 +9,91 @@ import java.util.stream.Collectors;
  * A sentence word-aligned to a translation.
  */
 public class AlignedSentence {
-    public final List<String> sourceTokens;
-    public final List<String> targetTokens;
-    public final List<Link> links;
-    public final Map<Integer, List<Link>> sourceByTarget;
-    public final Map<Integer, List<Link>> targetBySource;
+    public final List<String> tokens;
+    public final int[][] alignment;
+    public final String language;
+    public AlignedSentence aligned;
 
-    public AlignedSentence(List<String> sourceTokens, List<String> targetTokens, List<Link> links) {
-        this.sourceTokens = sourceTokens;
-        this.targetTokens = targetTokens;
-        this.links = links;
-        sourceByTarget = links.stream().collect(Collectors.groupingBy(
-                link -> new Integer(link.sourcePos)));
-        targetBySource = links.stream().collect(Collectors.groupingBy(
-                link -> new Integer(link.targetPos)));
+    private AlignedSentence(List<String> tokens, int[][] alignment, String language) {
+        this.tokens = tokens;
+        this.alignment = alignment;
+        this.language = language;
+        assert tokens.size() == alignment.length;
     }
 
     /*
      * Create an aligned sentence from space-delimited strings.
      */
-    public static AlignedSentence create(String source, String target, String align) {
-        return new AlignedSentence(
-                Arrays.asList(source.split("\\s")),
-                Arrays.asList(target.split("\\s")),
-                Arrays.asList(align.split("\\s")).stream()
-                        .map(Link::parse).collect(Collectors.toList()));
+    public static List<AlignedSentence> parse(String source, String target, String align, String sourceLanguage, String targetLanguage) {
+        List<String> sourceTokens = Arrays.asList(source.split("\\s"));
+        List<String> targetTokens = Arrays.asList(target.split("\\s"));
+        List<Link> links = Arrays.asList(align.split("\\s")).stream()
+                .map(Link::parse).collect(Collectors.toList());
+        int sl = sourceTokens.size(), tl = targetTokens.size();
+        AlignedSentence sourceToTarget = new AlignedSentence(sourceTokens, collectLinks(links, sl, false), sourceLanguage);
+        AlignedSentence targetToSource = new AlignedSentence(targetTokens, collectLinks(links, tl, true), targetLanguage);
+        sourceToTarget.aligned = targetToSource;
+        targetToSource.aligned = sourceToTarget;
+        return Arrays.asList(new AlignedSentence[]{sourceToTarget, targetToSource});
+    }
+
+    /*
+     * Convert list of links to a directional 2-d array of link positions.
+     */
+    private static int[][] collectLinks(List<Link> links, int len, boolean isTarget) {
+        int[][] alignment = new int[len][];
+        Map<Integer, List<Link>> index = links.stream().collect(
+                Collectors.groupingBy(link -> link.get(isTarget)));
+        for (int i = 0; i < len; i++) {
+            List<Link> s = index.get(i);
+            if (s == null) {
+                alignment[i] = new int[0];
+            } else {
+                alignment[i] = new int[s.size()];
+                for (int j = 0; j < s.size(); j++) {
+                    alignment[i][j] = s.get(j).get(!isTarget);
+                }
+            }
+        }
+        return alignment;
     }
 
     /*
      * One-to-one aligned target word for source position
      */
-    public String alignedTarget(int sourceIndex) {
-        List<Link> sourceLinks = targetBySource.get(sourceIndex);
-        if (sourceLinks != null && sourceLinks.size() == 1) {
-            int target = sourceLinks.get(0).targetPos;
-            List<Link> targetLinks = sourceByTarget.get(target);
-            if (targetLinks != null && targetLinks.size() == 1) {
-                return targetTokens.get(target);
+    public String aligned(int index) {
+        int linkedIndex = 0;
+        if (alignment[index].length == 1) {
+            linkedIndex = alignment[index][0];
+            if (aligned.alignment[linkedIndex].length == 1) {
+                return aligned.tokens.get(linkedIndex);
             }
         }
         return null;
     }
 
     /*
-     * One-to-one aligned source word for target position
+     * A parsed link.
      */
-    public String alignedSource(int targetIndex) {
-        List<Link> targetLinks = sourceByTarget.get(targetIndex);
-        if (targetLinks != null && targetLinks.size() == 1) {
-            int source = targetLinks.get(0).sourcePos;
-            List<Link> sourceLinks = targetBySource.get(source);
-            if (sourceLinks != null && sourceLinks.size() == 1) {
-                return sourceTokens.get(source);
-            }
-        }
-        return null;
-    }
-
     private static class Link {
         int sourcePos;
         int targetPos;
 
-        public Link(int sourcePos, int targetPos) {
+        Link(int sourcePos, int targetPos) {
             this.sourcePos = sourcePos;
             this.targetPos = targetPos;
         }
 
-        public static Link parse(String link) {
+        static Link parse(String link) {
             String[] parts = link.split("-");
             if (parts.length != 2) {
                 throw new NumberFormatException();
             }
             return new Link(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
+        }
+
+        Integer get(boolean target) {
+            return target ? targetPos : sourcePos;
         }
     }
 }

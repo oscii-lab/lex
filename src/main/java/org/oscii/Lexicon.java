@@ -44,6 +44,9 @@ public class Lexicon {
 
 
     public void add(Meaning meaning) {
+        if (meaning.translations.size() == 0 && meaning.definitions.size() == 0) {
+            return;
+        }
         if (!lexicon.containsKey(meaning.expression)) {
             lexicon.put(meaning.expression, new ArrayList<>());
         }
