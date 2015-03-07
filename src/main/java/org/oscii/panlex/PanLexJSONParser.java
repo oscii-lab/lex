@@ -30,8 +30,7 @@ public class PanLexJSONParser {
     private final Map<Integer, Models.Wc> wordClasses = new HashMap<>();
     private final Map<Integer, String> wordClassNames = new HashMap<>();
 
-    // Directory containing exported .json files
-    private File dir;
+    private PanLexDir dir;
 
     // Open-source license types
     private final Set<String> allowedLicenseTypes = new HashSet<>(Arrays.asList(
@@ -47,9 +46,9 @@ public class PanLexJSONParser {
 
     private final static Logger log = LogManager.getLogger(PanLexJSONParser.class);
 
-    public PanLexJSONParser(String jsonDir) {
-        dir = new File(jsonDir);
-        parse(new File(dir, "ap.json"), new Models.Source(), this::storeSource);
+    public PanLexJSONParser(PanLexDir dir) {
+        this.dir = dir;
+        parse(dir.open("ap.json"), new Models.Source(), this::storeSource);
     }
 
     /*
@@ -60,8 +59,7 @@ public class PanLexJSONParser {
         Set<String> three_letter_codes = languages.stream()
                 .map(s -> s.length() == 2 ? new Locale(s).getISO3Language() : s)
                 .collect(Collectors.toSet());
-        File lv = new File(dir, "lv.json");
-        parse(lv, new Models.Lv(), storeLanguage(three_letter_codes));
+        parse(dir.open("lv.json"), new Models.Lv(), storeLanguage(three_letter_codes));
         populateLanguageTags();
     }
 
@@ -85,12 +83,12 @@ public class PanLexJSONParser {
      * Reads expressions and denotations.
      */
     public void read(Pattern filter) {
-        parse(new File(dir, "ex.json"), new Models.Ex(), storeEx(filter));
-        parse(new File(dir, "mn.json"), new Models.Mn(), this::storeMn);
-        parse(new File(dir, "dn.json"), new Models.Dn(), this::storeDn);
-        parse(new File(dir, "df.json"), new Models.Df(), this::storeDf);
-        parse(new File(dir, "wc.json"), new Models.Wc(), this::storeWc);
-        parse(new File(dir, "wcex.json"), new Models.Wcex(), this::storeWcex);
+        parse(dir.open("ex.json"), new Models.Ex(), storeEx(filter));
+        parse(dir.open("mn.json"), new Models.Mn(), this::storeMn);
+        parse(dir.open("dn.json"), new Models.Dn(), this::storeDn);
+        parse(dir.open("df.json"), new Models.Df(), this::storeDf);
+        parse(dir.open("wc.json"), new Models.Wc(), this::storeWc);
+        parse(dir.open("wcex.json"), new Models.Wcex(), this::storeWcex);
 
         log.info("Indexing word classes");
         wordClassByExpression = wordClasses.values().stream()
@@ -103,14 +101,13 @@ public class PanLexJSONParser {
     /*
      * Parses a JSON file of T records and calls process on each.
      */
-    private <T> void parse(File path, T record, Predicate<T> process) {
+    private <T> void parse(InputStream in, T record, Predicate<T> process) {
+        int accepted = 0;
         Class type = record.getClass();
         String name = type.getSimpleName();
         Gson gson = new Gson();
-        log.info(String.format("Parsing %s from %s", name, path));
-        int accepted = 0;
+        log.info(String.format("Parsing %s records", name));
         try {
-            InputStream in = new FileInputStream(path);
             JsonReader reader = new JsonReader(new InputStreamReader(in, "UTF-8"));
             reader.beginArray();
             while (reader.hasNext()) {
@@ -188,9 +185,9 @@ public class PanLexJSONParser {
         }
     }
 
-    // JSON parsing predicates
+    // JSON parsing predicates (visible for testing)
 
-    private Predicate<Models.Lv> storeLanguage(Set<String> languages) {
+    Predicate<Models.Lv> storeLanguage(Set<String> languages) {
         return (Models.Lv lv) -> {
             if (languages.contains(lv.lc)) {
                 varieties.put(lv.lv, lv);
@@ -200,7 +197,7 @@ public class PanLexJSONParser {
         };
     }
 
-    private boolean storeSource(Models.Source ap) {
+    boolean storeSource(Models.Source ap) {
         if (allowedLicenseTypes.contains(ap.li)) {
             sources.put(ap.ap, ap);
             return true;
@@ -208,7 +205,7 @@ public class PanLexJSONParser {
         return false;
     }
 
-    private Predicate<Models.Ex> storeEx(Pattern filter) {
+    Predicate<Models.Ex> storeEx(Pattern filter) {
         return (Models.Ex ex) -> {
             if (varieties.containsKey(ex.lv) &&
                     (filter == null || filter.matcher(ex.tt).matches())) {
@@ -220,7 +217,7 @@ public class PanLexJSONParser {
         };
     }
 
-    private boolean storeMn(Models.Mn mn) {
+    boolean storeMn(Models.Mn mn) {
         if (sources.containsKey(mn.ap)) {
             meanings.put(mn.mn, mn);
             return true;
@@ -228,7 +225,7 @@ public class PanLexJSONParser {
         return false;
     }
 
-    private boolean storeDn(Models.Dn dn) {
+    boolean storeDn(Models.Dn dn) {
         if (expressions.containsKey(dn.ex) && meanings.containsKey(dn.mn)) {
             denotations.put(dn.dn, dn);
             return true;
@@ -236,7 +233,7 @@ public class PanLexJSONParser {
         return false;
     }
 
-    private boolean storeDf(Models.Df df) {
+    boolean storeDf(Models.Df df) {
         if (varieties.containsKey(df.lv) && meanings.containsKey(df.mn)) {
             definitions.put(df.df, df);
             return true;
@@ -244,7 +241,7 @@ public class PanLexJSONParser {
         return false;
     }
 
-    private boolean storeWc(Models.Wc wc) {
+    boolean storeWc(Models.Wc wc) {
         if (denotations.containsKey(wc.dn)) {
             wordClasses.put(wc.wc, wc);
             return true;
@@ -252,7 +249,7 @@ public class PanLexJSONParser {
         return false;
     }
 
-    private boolean storeWcex(Models.Wcex wcex) {
+    boolean storeWcex(Models.Wcex wcex) {
         wordClassNames.put(wcex.ex, wcex.tt);
         return true;
     }

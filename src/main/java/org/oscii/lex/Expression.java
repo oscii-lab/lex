@@ -22,7 +22,7 @@ public class Expression {
     public Expression(String text, String languageTag) {
         this.text = text;
         this.languageTag = languageTag;
-        // TODO(denero) Split language tag to get language
+        // TODO(denero) Split language tag to open language
         this.language = languageTag;
         // TODO(denero) Generate degraded text
     }

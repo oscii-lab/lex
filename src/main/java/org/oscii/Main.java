@@ -5,6 +5,7 @@ import com.google.gson.stream.JsonWriter;
 import org.apache.commons.cli.*;
 import org.oscii.concordance.AlignedCorpus;
 import org.oscii.lex.Meaning;
+import org.oscii.panlex.PanLexDir;
 import org.oscii.panlex.PanLexJSONParser;
 
 import java.io.File;
@@ -25,7 +26,7 @@ public class Main {
 
         if (line.hasOption("p")) {
             String path = line.getOptionValue("p");
-            PanLexJSONParser panLex = new PanLexJSONParser(path);
+            PanLexJSONParser panLex = new PanLexJSONParser(new PanLexDir(path));
 
             List<String> languages = Arrays.asList("en", "es");
             if (line.hasOption("l")) {
