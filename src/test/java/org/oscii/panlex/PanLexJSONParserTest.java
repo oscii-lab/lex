@@ -12,8 +12,20 @@ import static org.junit.Assert.*;
 
 public class PanLexJSONParserTest extends TestCase {
 
+    /*
+     * Create an object like obj from JSON object s.
+     */
     private <T> T create(T obj, String s) {
         return (T) new Gson().fromJson(s, obj.getClass());
+    }
+
+    /*
+     * Find and return the first element of s matching condition.
+     */
+    private <T> T getAndCheck(Collection<T> s, Predicate<? super T> condition) {
+        Optional<T> maybe = s.stream().filter(condition).findFirst();
+        assertTrue(maybe.isPresent());
+        return maybe.get();
     }
 
     @Test
@@ -44,6 +56,15 @@ public class PanLexJSONParserTest extends TestCase {
         List<Meaning> meanings = new ArrayList<>();
         parser.forEachMeaning(meanings::add);
         assertEquals(2, meanings.size());
-        // TODO(denero) Check content
+        Meaning es = getAndCheck(meanings, m -> m.expression.language.equals("es"));
+        Meaning en = getAndCheck(meanings, m -> m.expression.language.equals("en"));
+        // Definition associated with same-language expression
+        assertEquals(0, es.definitions.size());
+        assertEquals(1, en.definitions.size());
+        // Part-of-speech associated only with English expression
+        assertEquals(0, es.pos.size());
+        assertEquals(1, en.pos.size());
     }
+
+
 }

@@ -41,7 +41,7 @@ public class PanLexJSONParser {
     private final Map<Integer, String> languageTags = new HashMap<>();
 
     // Indices
-    private Map<Integer, List<Models.Wc>> wordClassByExpression;
+    private Map<Integer, List<Models.Wc>> wordClassByDn;
     private Map<Integer, List<Models.Df>> definitionByMeaning;
 
     private final static Logger log = LogManager.getLogger(PanLexJSONParser.class);
@@ -91,8 +91,8 @@ public class PanLexJSONParser {
         parse(dir.open("wcex.json"), new Models.Wcex(), this::storeWcex);
 
         log.info("Indexing word classes");
-        wordClassByExpression = wordClasses.values().stream()
-                .collect(Collectors.groupingBy(wc -> wc.ex));
+        wordClassByDn = wordClasses.values().stream()
+                .collect(Collectors.groupingBy(wc -> wc.dn));
         log.info("Indexing definitions");
         definitionByMeaning = definitions.values().stream()
                 .collect(Collectors.groupingBy(df -> df.mn));
@@ -144,7 +144,7 @@ public class PanLexJSONParser {
         String languageTag = languageTags.get(ex.lv);
         Expression expression = new Expression(ex.tt, languageTag);
         Meaning meaning = new Meaning(expression);
-        for (Models.Wc wc : wordClassByExpression.getOrDefault(dn.ex, Collections.emptyList())) {
+        for (Models.Wc wc : wordClassByDn.getOrDefault(dn.dn, Collections.emptyList())) {
             meaning.pos.add(wordClassNames.get(wc.ex));
         }
         for (Models.Df df : definitionByMeaning.getOrDefault(dn.mn, Collections.emptyList())) {
