@@ -15,8 +15,6 @@ public class PanLexDir {
         this.dir = new File(dir);
     }
 
-
-
     public InputStream open(String filename) {
         InputStream in = null;
         try {
