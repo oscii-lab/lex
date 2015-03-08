@@ -42,7 +42,6 @@ public class Lexicon {
         }
     };
 
-
     public void add(Meaning meaning) {
         if (meaning.translations.size() == 0 && meaning.definitions.size() == 0) {
             return;
@@ -61,14 +60,16 @@ public class Lexicon {
     }
 
     public List<Translation> translate(String query, String source, String target) {
-        return lookup(query, source).stream()
+        List<Translation> translations = lookup(query, source).stream()
                 // Aggregate and filter by target language
                 .flatMap(m -> m.translations.stream()
                         .filter(t -> t.translation.language.equals(target)))
                         // Remove textual duplicates, choosing the first of each group
                 .collect(Collectors.groupingBy((Translation t) -> t.translation.text))
-                .values().stream().map(ts -> ts.iterator().next())
+                .values().stream().map(ts -> ts.get(0))
                 .collect(Collectors.toList());
+        translations.sort(byFrequency);
+        return translations;
     }
 
     // Write all meanings to a file.
@@ -124,7 +125,7 @@ public class Lexicon {
             Expression adult = new Expression("adulto", "en");
             Expression adulto = new Expression("adulto", "es");
             Meaning meaning = new Meaning(adult);
-            meaning.translations.add(new Translation(adulto, 0));
+            meaning.translations.add(new Translation(adulto));
             return Arrays.asList(meaning);
         }
     }

@@ -7,9 +7,9 @@ public class Translation {
     public Expression translation;
     public double frequency;
 
-    public Translation(Expression expression, double frequency) {
+    public Translation(Expression expression) {
         this.translation = expression;
-        this.frequency = frequency;
+        this.frequency = 0.0;
     }
 
     @Override
