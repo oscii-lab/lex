@@ -1,16 +1,11 @@
 package org.oscii;
 
-import com.google.gson.Gson;
-import com.google.gson.stream.JsonWriter;
 import org.apache.commons.cli.*;
 import org.oscii.concordance.AlignedCorpus;
-import org.oscii.lex.Meaning;
 import org.oscii.panlex.PanLexDir;
 import org.oscii.panlex.PanLexJSONParser;
 
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;

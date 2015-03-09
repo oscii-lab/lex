@@ -93,10 +93,10 @@ public class RabbitHandler {
 
         Response response = new Response();
         results.forEach(t -> {
-                // TODO(denero) Add formatted source?
-                String pos = t.pos.stream().findFirst().orElse("");
-                response.translations.add(new ResponseTranslation(
-                        request.query, pos, t.translation.text, t.frequency));
+            // TODO(denero) Add formatted source?
+            String pos = t.pos.stream().findFirst().orElse("");
+            response.translations.add(new ResponseTranslation(
+                    request.query, pos, t.translation.text, t.frequency));
         });
         return response;
     }

@@ -9,7 +9,9 @@ import org.oscii.lex.Expression;
 import org.oscii.lex.Meaning;
 import org.oscii.lex.Translation;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;

@@ -65,6 +65,4 @@ public class PanLexJSONParserTest extends TestCase {
         assertEquals(0, es.pos.size());
         assertEquals(1, en.pos.size());
     }
-
-
 }
