@@ -24,17 +24,16 @@ public class Main {
         CommandLine line = ParseArgs(args);
         Lexicon lexicon = new Lexicon();
 
+        List<String> languages = Arrays.asList("en", "es");
+        if (line.hasOption("l")) {
+            languages = Arrays.asList(line.getOptionValue("l").split(","));
+        }
+
         // Parse PanLex
         if (line.hasOption("p")) {
             String path = line.getOptionValue("p");
             PanLexJSONParser panLex = new PanLexJSONParser(new PanLexDir(path));
-
-            List<String> languages = Arrays.asList("en", "es");
-            if (line.hasOption("l")) {
-                languages = Arrays.asList(line.getOptionValue("l").split(","));
-            }
             panLex.addLanguages(languages);
-
             Pattern pattern = Pattern.compile("(?U)\\p{Lower}*");
             if (line.hasOption("pattern")) {
                 pattern = Pattern.compile(line.getOptionValue("pattern"));
@@ -52,6 +51,7 @@ public class Main {
         if (line.hasOption("c")) {
             String corpusPath = line.getOptionValue("c");
             AlignedCorpus corpus = new AlignedCorpus();
+            // TODO(denero) Load all corpora for languages
             corpus.read(corpusPath, "en", "es",
                     line.hasOption("m") ? Integer.parseInt(line.getOptionValue("m")) : 0);
             lexicon.addFrequencies(corpus);
