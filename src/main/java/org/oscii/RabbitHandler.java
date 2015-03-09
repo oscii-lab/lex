@@ -1,6 +1,7 @@
 package org.oscii;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
@@ -71,7 +72,7 @@ public class RabbitHandler {
 
     // Parse message, perform a lookup, and construct a response.
     private String respond(String message) {
-        Gson gson = new Gson();
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
         Request request = gson.fromJson(message, Request.class);
         Response response = respond(message, request);
         return gson.toJson(response);

@@ -31,8 +31,7 @@ dependencies {
     compile group: 'com.codepoetics', name: 'protonpack', version: '1.2'
 }
 
-// Run .e.g., with:
-// gradle run -Pargs="-r panlex.json"
+// Run .e.g., with: gradle run -Pargs="-r panlex.json -s"
 run {
     if ( project.hasProperty('args') ) {
         args project.args.split('\\s+')
