@@ -24,6 +24,7 @@ public class Main {
         CommandLine line = ParseArgs(args);
         Lexicon lexicon = new Lexicon();
 
+        // Parse PanLex
         if (line.hasOption("p")) {
             String path = line.getOptionValue("p");
             PanLexJSONParser panLex = new PanLexJSONParser(new PanLexDir(path));
@@ -51,6 +52,7 @@ public class Main {
             lexicon.read(new File(line.getOptionValue("r")));
         }
 
+        // Index corpus
         if (line.hasOption("c")) {
             String corpusPath = line.getOptionValue("c");
             AlignedCorpus corpus = new AlignedCorpus();
@@ -59,6 +61,7 @@ public class Main {
             lexicon.addFrequencies(corpus);
         }
 
+        // Serve lexicon
         if (line.hasOption("s")) {
             String host = line.getOptionValue("t", "localhost");
             String queue = line.getOptionValue("q", "lexicon");
@@ -69,6 +72,9 @@ public class Main {
         }
     }
 
+    /*
+     * Parse command-line arguments.
+     */
     private static CommandLine ParseArgs(String[] args) throws ParseException {
         Options options = new Options();
         options.addOption("h", "help", false, "print this message");
@@ -104,6 +110,9 @@ public class Main {
         return line;
     }
 
+    /*
+     * Write filtered contents of a PanLex export to a single JSON file.
+     */
     private static void writeMeanings(String path, PanLexJSONParser panLex)
             throws IOException {
         JsonWriter writer = new JsonWriter(new FileWriter(path));
