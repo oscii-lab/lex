@@ -12,6 +12,7 @@ import org.oscii.lex.Translation;
 
 import java.io.*;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -60,13 +61,20 @@ public class Lexicon {
     }
 
     public List<Translation> translate(String query, String source, String target) {
+
+        // Prefer to return translations with parts of speech
+        Function<? super List<Translation>, Translation> pickTranslation =
+                ts -> ts.stream()
+                        .filter(t -> !t.pos.isEmpty()).findFirst()
+                        .orElse(ts.iterator().next());
+
         List<Translation> translations = lookup(query, source).stream()
                 // Aggregate and filter by target language
                 .flatMap(m -> m.translations.stream()
                         .filter(t -> t.translation.language.equals(target)))
                         // Remove textual duplicates, choosing the first of each group
                 .collect(Collectors.groupingBy((Translation t) -> t.translation.text))
-                .values().stream().map(ts -> ts.get(0))
+                .values().stream().map(pickTranslation)
                 .collect(Collectors.toList());
         translations.sort(byFrequency);
         return translations;
