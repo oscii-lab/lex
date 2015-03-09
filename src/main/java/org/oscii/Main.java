@@ -40,16 +40,12 @@ public class Main {
                 pattern = Pattern.compile(line.getOptionValue("pattern"));
             }
             panLex.read(pattern);
-
-            if (line.hasOption("w")) {
-                writeMeanings(line.getOptionValue("w"), panLex);
-            } else {
-                panLex.forEachMeaning(lexicon::add);
-            }
-        }
-
-        if (line.hasOption("r")) {
+            panLex.forEachMeaning(lexicon::add);
+        } else if (line.hasOption("r")) {
             lexicon.read(new File(line.getOptionValue("r")));
+        } else {
+            System.out.println("Must parse (-p) or read (-r) a lexicon");
+            System.exit(1);
         }
 
         // Index corpus
@@ -59,6 +55,10 @@ public class Main {
             corpus.read(corpusPath, "en", "es",
                     line.hasOption("m") ? Integer.parseInt(line.getOptionValue("m")) : 0);
             lexicon.addFrequencies(corpus);
+        }
+
+        if (line.hasOption("w")) {
+            lexicon.write(new File(line.getOptionValue("w")));
         }
 
         // Serve lexicon
@@ -108,21 +108,5 @@ public class Main {
             formatter.printHelp("lex", options);
         }
         return line;
-    }
-
-    /*
-     * Write filtered contents of a PanLex export to a single JSON file.
-     */
-    private static void writeMeanings(String path, PanLexJSONParser panLex)
-            throws IOException {
-        JsonWriter writer = new JsonWriter(new FileWriter(path));
-        writer.setIndent("  ");
-        Gson gson = new Gson();
-        writer.beginArray();
-        panLex.forEachMeaning(m -> {
-            gson.toJson(m, Meaning.class, writer);
-        });
-        writer.endArray();
-        writer.close();
     }
 }

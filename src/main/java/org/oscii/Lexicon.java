@@ -72,23 +72,24 @@ public class Lexicon {
         return translations;
     }
 
-    // Write all meanings to a file.
+    /*
+     * Write all meanings to a file.
+     */
     public void write(File file) throws IOException {
         log.info("Writing " + file);
         JsonWriter writer = new JsonWriter(new FileWriter(file));
+        writer.setIndent("  ");
         Gson gson = new Gson();
-
         writer.beginArray();
-        for (List<Meaning> meanings : lexicon.values()) {
-            for (Meaning meaning : meanings) {
-                gson.toJson(meaning, Meaning.class, writer);
-            }
-        }
+        lexicon.values().stream().forEachOrdered(ms -> ms.stream().forEach(
+                meaning -> gson.toJson(meaning, Meaning.class, writer)));
         writer.endArray();
         writer.close();
     }
 
-    // Read all meanings from a file.
+    /*
+     * Read all meanings from a file.
+     */
     public void read(File file) throws IOException {
         log.info("Reading " + file);
         Gson gson = new Gson();
