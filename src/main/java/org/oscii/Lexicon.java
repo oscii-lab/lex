@@ -125,7 +125,8 @@ public class Lexicon {
             Expression adult = new Expression("adulto", "en");
             Expression adulto = new Expression("adulto", "es");
             Meaning meaning = new Meaning(adult);
-            meaning.translations.add(new Translation(adulto));
+            List<String> noun = Arrays.asList(new String[]{"noun"});
+            meaning.translations.add(new Translation(adulto, noun));
             return Arrays.asList(meaning);
         }
     }

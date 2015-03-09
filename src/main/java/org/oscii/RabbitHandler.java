@@ -70,22 +70,37 @@ public class RabbitHandler {
     }
 
     // Parse message, perform a lookup, and construct a response.
-    // TODO(denero) Error handling
     private String respond(String message) {
         Gson gson = new Gson();
         Request request = gson.fromJson(message, Request.class);
-        List<Translation> translations =
-                lexicon.translate(request.query, request.source, request.target);
-
-        Response response = new Response();
-        translations.forEach(t ->
-                // TODO(denero) Add formatted source, POS, frequency
-                response.translations.add(new ResponseTranslation(
-                        request.query, "", t.translation.text, t.frequency)));
+        Response response = respond(message, request);
         return gson.toJson(response);
     }
 
-    class Request {
+    /*
+     * Generate a response to a request parsed from requestString.
+     */
+    Response respond(String requestString, Request request) {
+        if (request.query == null || request.source == null || request.target == null) {
+            log.error("Invalid request: " + requestString);
+            return new Response();
+        }
+
+        // TODO(denero) Add definitions and check for keys
+        List<Translation> results;
+        results = lexicon.translate(request.query, request.source, request.target);
+
+        Response response = new Response();
+        results.forEach(t -> {
+                // TODO(denero) Add formatted source?
+                String pos = t.pos.stream().findFirst().orElse("");
+                response.translations.add(new ResponseTranslation(
+                        request.query, pos, t.translation.text, t.frequency));
+        });
+        return response;
+    }
+
+    static class Request {
         String query;
         String source;
         String target;
@@ -93,17 +108,17 @@ public class RabbitHandler {
         String context;
     }
 
-    class Response {
+    static class Response {
         List<ResponseTranslation> translations = new ArrayList<>();
     }
 
-    private class ResponseTranslation {
+    static class ResponseTranslation {
         String source;
         String pos;
         String target;
         double frequency;
 
-        public ResponseTranslation(String source, String pos, String target, double frequency) {
+        ResponseTranslation(String source, String pos, String target, double frequency) {
             this.source = source;
             this.pos = pos;
             this.target = target;

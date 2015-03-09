@@ -7,6 +7,7 @@ import org.oscii.lex.Expression;
 import org.oscii.lex.Meaning;
 import org.oscii.lex.Translation;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -23,10 +24,12 @@ public class LexiconTest extends TestCase {
         Meaning common = new Meaning(dog);
         Meaning medium = new Meaning(dog);
         Meaning rare = new Meaning(dog);
-        common.translations.add(new Translation(perro));
-        common.translations.add(new Translation(can));
-        medium.translations.add(new Translation(zorro));
-        rare.translations.add(new Translation(perseguir));
+        List<String> noun = Arrays.asList(new String[]{"noun"});
+        List<String> verb = Arrays.asList(new String[]{"verb"});
+        common.translations.add(new Translation(perro, noun));
+        common.translations.add(new Translation(can, noun));
+        medium.translations.add(new Translation(zorro, noun));
+        rare.translations.add(new Translation(perseguir, verb));
 
         // Assign frequencies
         AlignedCorpus corpus = new AlignedCorpus() {

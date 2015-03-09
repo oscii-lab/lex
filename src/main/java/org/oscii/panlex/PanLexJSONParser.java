@@ -168,7 +168,7 @@ public class PanLexJSONParser {
                 if (!sourceLanguage.equals(targetLanguage)) {
                     for (Meaning source : meanings) {
                         for (Meaning target : byLanguage.get(targetLanguage)) {
-                            source.translations.add(new Translation(target.expression));
+                            source.translations.add(new Translation(target.expression, target.pos));
                         }
                     }
                 }
