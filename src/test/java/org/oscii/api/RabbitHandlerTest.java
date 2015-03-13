@@ -1,14 +1,14 @@
-package org.oscii;
+package org.oscii.api;
 
 import junit.framework.TestCase;
 import org.junit.Test;
+import org.oscii.Lexicon;
+import org.oscii.api.RabbitHandler;
 import org.oscii.lex.Expression;
 import org.oscii.lex.Translation;
 
 import java.util.Arrays;
 import java.util.List;
-
-import static org.junit.Assert.*;
 
 public class RabbitHandlerTest extends TestCase {
 
@@ -16,6 +16,7 @@ public class RabbitHandlerTest extends TestCase {
     public void testRespond() throws Exception {
         List<String> noun = Arrays.asList(new String[]{"noun"});
         Translation translation = new Translation(new Expression("perro", "es"), noun);
+        translation.frequency = 0.1;
         Lexicon lexicon = new Lexicon() {
             @Override
             public List<Translation> translate(String query, String source, String target) {
@@ -25,13 +26,14 @@ public class RabbitHandlerTest extends TestCase {
                 return Arrays.asList(new Translation[]{translation});
             }
         };
+        Protocol protocol = new Protocol(lexicon);
 
-        RabbitHandler handler = new RabbitHandler("", "", "", "", lexicon);
-        RabbitHandler.Request request = new RabbitHandler.Request();
+        RabbitHandler handler = new RabbitHandler("", "", "", "", protocol);
+        Protocol.Request request = new Protocol.Request();
         request.query = "dog";
         request.source = "en";
         request.target = "es";
-        RabbitHandler.Response response = handler.respond("", request);
+        Protocol.Response response = protocol.respond(request);
         assertEquals("perro", response.translations.get(0).target);
     }
 }

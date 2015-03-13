@@ -1,6 +1,12 @@
 package org.oscii;
 
 import org.apache.commons.cli.*;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.servlet.ServletHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
+import org.oscii.api.Protocol;
+import org.oscii.api.RabbitHandler;
+import org.oscii.api.Servlet;
 import org.oscii.concordance.AlignedCorpus;
 import org.oscii.panlex.PanLexDir;
 import org.oscii.panlex.PanLexJSONParser;
@@ -12,10 +18,7 @@ import java.util.regex.Pattern;
 
 public class Main {
 
-    public static void main(String[] args)
-            throws java.io.IOException,
-            java.lang.InterruptedException,
-            ParseException {
+    public static void main(String[] args) throws Exception {
         CommandLine line = ParseArgs(args);
         Lexicon lexicon = new Lexicon();
 
@@ -37,9 +40,6 @@ public class Main {
             panLex.forEachMeaning(lexicon::add);
         } else if (line.hasOption("r")) {
             lexicon.read(new File(line.getOptionValue("r")));
-        } else {
-            System.out.println("Must parse (-p) or read (-r) a lexicon");
-            System.exit(1);
         }
 
         // Index corpus
@@ -56,14 +56,33 @@ public class Main {
             lexicon.write(new File(line.getOptionValue("w")));
         }
 
-        // Serve lexicon
+        Protocol protocol = new Protocol(lexicon);
+
+        // Serve lexicon (rabbitmq)
         if (line.hasOption("s")) {
             String host = line.getOptionValue("t", "localhost");
             String queue = line.getOptionValue("q", "lexicon");
             String username = line.getOptionValue("u", "");
             String password = line.getOptionValue("v", "");
-            RabbitHandler handler = new RabbitHandler(host, queue, username, password, lexicon);
+            RabbitHandler handler =
+                    new RabbitHandler(host, queue, username, password, protocol);
             handler.ConnectAndListen();
+        }
+
+        // Serve lexicon (http API)
+        if (line.hasOption("a")) {
+            int port = 8080;
+            if (line.hasOption("port")) {
+                Integer.parseInt(line.getOptionValue("port"));
+            }
+            Server server = new Server(port);
+            ServletHandler handler = new ServletHandler();
+            ServletHolder holder = new ServletHolder(new Servlet(protocol));
+            handler.addServletWithMapping(holder, "/translate/lexicon");
+            server.setHandler(handler);
+            server.start();
+            // TODO(denero) allow both serving methods at once
+            server.join();
         }
     }
 
@@ -77,6 +96,10 @@ public class Main {
         // Vanilla I/O
         options.addOption("r", "read", true, "read JSON file");
         options.addOption("w", "write", true, "write JSON file");
+
+        // HTTP Rest API
+        options.addOption("a", "api", false, "serve API over HTTP");
+        options.addOption("port", false, "API port");
 
         // Rabbitmq
         options.addOption("s", "serve", false, "listen on local rabbitmq");

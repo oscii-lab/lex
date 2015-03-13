@@ -1,4 +1,4 @@
-package org.oscii;
+package org.oscii.api;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -9,6 +9,7 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.oscii.Lexicon;
 import org.oscii.lex.Translation;
 
 import java.util.ArrayList;
@@ -19,16 +20,16 @@ public class RabbitHandler {
     private final String queueName;
     private final String username;
     private final String password;
-    private final Lexicon lexicon;
+    private final Protocol protocol;
 
     private final static Logger log = LogManager.getLogger(RabbitHandler.class);
 
-    public RabbitHandler(String host, String queueName, String username, String password, Lexicon lexicon) {
+    public RabbitHandler(String host, String queueName, String username, String password, Protocol protocol) {
         this.host = host;
         this.queueName = queueName;
         this.username = username;
         this.password = password;
-        this.lexicon = lexicon;
+        this.protocol = protocol;
     }
 
     public void ConnectAndListen()
@@ -70,60 +71,10 @@ public class RabbitHandler {
         }
     }
 
-    // Parse message, perform a lookup, and construct a response.
     private String respond(String message) {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        Request request = gson.fromJson(message, Request.class);
-        Response response = respond(message, request);
+        Protocol.Request request = gson.fromJson(message, Protocol.Request.class);
+        Protocol.Response response = protocol.respond(request);
         return gson.toJson(response);
-    }
-
-    /*
-     * Generate a response to a request parsed from requestString.
-     */
-    Response respond(String requestString, Request request) {
-        if (request.query == null || request.source == null || request.target == null) {
-            log.error("Invalid request: " + requestString);
-            return new Response();
-        }
-
-        // TODO(denero) Add definitions and check for keys
-        List<Translation> results;
-        results = lexicon.translate(request.query, request.source, request.target);
-
-        Response response = new Response();
-        results.forEach(t -> {
-            // TODO(denero) Add formatted source?
-            String pos = t.pos.stream().findFirst().orElse("");
-            response.translations.add(new ResponseTranslation(
-                    request.query, pos, t.translation.text, t.frequency));
-        });
-        return response;
-    }
-
-    static class Request {
-        String query;
-        String source;
-        String target;
-        String[] keys;
-        String context;
-    }
-
-    static class Response {
-        List<ResponseTranslation> translations = new ArrayList<>();
-    }
-
-    static class ResponseTranslation {
-        String source;
-        String pos;
-        String target;
-        double frequency;
-
-        ResponseTranslation(String source, String pos, String target, double frequency) {
-            this.source = source;
-            this.pos = pos;
-            this.target = target;
-            this.frequency = frequency;
-        }
     }
 }
