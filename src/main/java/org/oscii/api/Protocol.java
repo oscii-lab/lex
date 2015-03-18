@@ -11,10 +11,12 @@ import java.util.List;
  * Transmission protocol for HTTP & Rabbit Handlers
  */
 public class Protocol {
-    Lexicon lexicon;
+    final Lexicon lexicon;
+    final double minFrequency;
 
-    public Protocol(Lexicon lexicon) {
+    public Protocol(Lexicon lexicon, double minFrequency) {
         this.lexicon = lexicon;
+        this.minFrequency = minFrequency;
     }
 
     /*
@@ -33,7 +35,7 @@ public class Protocol {
         results.forEach(t -> {
             // TODO(denero) Add formatted source?
             String pos = t.pos.stream().findFirst().orElse("");
-            if (t.frequency > 1e-4) {
+            if (t.frequency >= minFrequency) {
                 response.translations.add(new ResponseTranslation(
                         request.query, pos, t.translation.text, t.frequency));
             }
@@ -47,8 +49,6 @@ public class Protocol {
         String target;
         String[] keys;
         String context;
-
-
 
         @Override
         public String toString() {

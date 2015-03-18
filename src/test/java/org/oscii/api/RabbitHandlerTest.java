@@ -16,7 +16,6 @@ public class RabbitHandlerTest extends TestCase {
     public void testRespond() throws Exception {
         List<String> noun = Arrays.asList(new String[]{"noun"});
         Translation translation = new Translation(new Expression("perro", "es"), noun);
-        translation.frequency = 0.1;
         Lexicon lexicon = new Lexicon() {
             @Override
             public List<Translation> translate(String query, String source, String target) {
@@ -26,7 +25,7 @@ public class RabbitHandlerTest extends TestCase {
                 return Arrays.asList(new Translation[]{translation});
             }
         };
-        Protocol protocol = new Protocol(lexicon);
+        Protocol protocol = new Protocol(lexicon, 0);
 
         RabbitHandler handler = new RabbitHandler("", "", "", "", protocol);
         Protocol.Request request = new Protocol.Request();

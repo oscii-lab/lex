@@ -7,11 +7,9 @@ import org.oscii.lex.Expression;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -32,14 +30,26 @@ public class AlignedCorpus {
 
     private final static Logger log = LogManager.getLogger(AlignedCorpus.class);
 
+    public boolean exists(String path, String sourceLanguage, String targetLanguage) {
+        return paths(path, sourceLanguage, targetLanguage).stream().allMatch(Files::exists);
+    }
+
+    private List<Path> paths(String path, String sourceLanguage, String targetLanguage) {
+        return Arrays.asList(new String[]{sourceLanguage, targetLanguage, "align"}).stream()
+                .map(extension -> Paths.get(String.format("%s.%s-%s.%s", path, sourceLanguage, targetLanguage, extension)))
+                .collect(Collectors.toList());
+    }
+
     /*
      * Read and index a parallel corpus.
      */
     public void read(String path, String sourceLanguage, String targetLanguage, int max) throws IOException {
         log.info("Reading sentence pairs");
-        Stream<String> sources = Files.lines(Paths.get(path + "." + sourceLanguage));
-        Stream<String> targets = Files.lines(Paths.get(path + "." + targetLanguage));
-        Stream<String> aligns = Files.lines(Paths.get(path + ".align"));
+
+        List<Path> paths = paths(path, sourceLanguage, targetLanguage);
+        Stream<String> sources = Files.lines(paths.get(0));
+        Stream<String> targets = Files.lines(paths.get(1));
+        Stream<String> aligns = Files.lines(paths.get(2));
         if (max > 0) {
             sources = sources.limit(max);
             targets = targets.limit(max);
@@ -116,7 +126,7 @@ public class AlignedCorpus {
         // TODO(denero) Check for null languages.
         Map<String, Map<String, Long>> translations;
         translations = pairCounts.get(source.language).get(source.text);
-        if (translations != null) {
+        if (translations != null && translations.containsKey(target.language)) {
             Long count = translations.get(target.language).get(target.text);
             if (count != null && count > 0) {
                 long total = wordCounts.get(source.language).get(source.text).get(target.language);
