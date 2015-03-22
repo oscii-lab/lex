@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A collection of information related to a meaning of an expression
+ * A collection of information related to a meaning of an expression.
  */
 public class Meaning {
     public final Expression expression;

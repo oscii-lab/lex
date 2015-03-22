@@ -20,7 +20,7 @@ import java.util.stream.Stream;
  */
 public class AlignedCorpus {
     // language -> sentences
-    Map<String, List<AlignedSentence>> sentences;
+    Map<String, List<AlignedSentence>> sentences = new HashMap<>();
     // language -> word -> locations
     Map<String, Map<String, List<Location>>> index = new HashMap<>();
     // language -> word -> language -> word -> count
@@ -44,8 +44,7 @@ public class AlignedCorpus {
      * Read and index a parallel corpus.
      */
     public void read(String path, String sourceLanguage, String targetLanguage, int max) throws IOException {
-        log.info("Reading sentence pairs");
-
+        log.info("Reading sentences: " + sourceLanguage + "-" + targetLanguage);
         List<Path> paths = paths(path, sourceLanguage, targetLanguage);
         Stream<String> sources = Files.lines(paths.get(0));
         Stream<String> targets = Files.lines(paths.get(1));
@@ -60,8 +59,15 @@ public class AlignedCorpus {
                 (s, t, a) -> AlignedSentence.parse(s, t, a, sourceLanguage, targetLanguage))
                 .forEach(aligned::addAll);
         log.info("Grouping by language");
-        sentences = aligned.stream().collect(Collectors.groupingBy(a -> a.language));
-        tally();
+        aligned.stream().collect(Collectors.groupingBy(a -> a.language))
+                .entrySet().stream().forEach(e -> {
+            List<AlignedSentence> all = sentences.get(e.getKey());
+            if (all == null) {
+                all = new ArrayList<>(e.getValue().size());
+                sentences.put(e.getKey(), all);
+            }
+            all.addAll(e.getValue());
+        });
     }
 
     /*

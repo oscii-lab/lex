@@ -3,7 +3,6 @@ package org.oscii.api;
 import org.oscii.Lexicon;
 import org.oscii.lex.Translation;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,7 +21,7 @@ public class Protocol {
     /*
      * Generate a response to a request parsed from requestString.
      */
-    Response respond(Request request) {
+    public Response respond(Request request) {
         if (request.query == null || request.source == null || request.target == null) {
             return new Response();
         }
@@ -43,12 +42,18 @@ public class Protocol {
         return response;
     }
 
-    static class Request {
+    public static class Request {
         String query;
         String source;
         String target;
         String[] keys;
         String context;
+
+        public Request(String query, String source, String target) {
+            this.query = query;
+            this.source = source;
+            this.target = target;
+        }
 
         @Override
         public String toString() {

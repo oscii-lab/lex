@@ -3,7 +3,6 @@ package org.oscii.api;
 import junit.framework.TestCase;
 import org.junit.Test;
 import org.oscii.Lexicon;
-import org.oscii.api.RabbitHandler;
 import org.oscii.lex.Expression;
 import org.oscii.lex.Translation;
 
@@ -28,10 +27,7 @@ public class RabbitHandlerTest extends TestCase {
         Protocol protocol = new Protocol(lexicon, 0);
 
         RabbitHandler handler = new RabbitHandler("", "", "", "", protocol);
-        Protocol.Request request = new Protocol.Request();
-        request.query = "dog";
-        request.source = "en";
-        request.target = "es";
+        Protocol.Request request = new Protocol.Request("dog", "en", "es");
         Protocol.Response response = protocol.respond(request);
         assertEquals("perro", response.translations.get(0).target);
     }

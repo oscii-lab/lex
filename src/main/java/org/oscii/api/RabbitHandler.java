@@ -9,11 +9,6 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.oscii.Lexicon;
-import org.oscii.lex.Translation;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class RabbitHandler {
     private final String host;

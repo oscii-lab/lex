@@ -150,6 +150,7 @@ public class PanLexJSONParser {
             meaning.pos.add(wordClassNames.get(wc.ex));
         }
         for (Models.Df df : definitionByMeaning.getOrDefault(dn.mn, Collections.emptyList())) {
+            // TODO(denero) Should definitions be restricted by source language?
             if (df.lv == ex.lv) {
                 meaning.definitions.add(new Definition(df.tt, languageTag));
             }
@@ -187,7 +188,7 @@ public class PanLexJSONParser {
         }
     }
 
-    // JSON parsing predicates (visible for testing)
+    // JSON parsing predicates (package visible for testing)
 
     Predicate<Models.Lv> storeLanguage(Set<String> languages) {
         return (Models.Lv lv) -> {

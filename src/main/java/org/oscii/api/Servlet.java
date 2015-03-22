@@ -1,16 +1,12 @@
 package org.oscii.api;
 
 import com.google.gson.Gson;
-import org.oscii.Lexicon;
-import org.oscii.lex.Translation;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Serve API
@@ -35,11 +31,9 @@ public class Servlet extends HttpServlet {
     }
 
     private static Protocol.Request parse(HttpServletRequest request) {
-        Protocol.Request r = new Protocol.Request();
-        r.query = request.getParameter("query");
-        r.source = request.getParameter("source");
-        r.target = request.getParameter("target");
-        System.out.println(r);
-        return r;
+        return new Protocol.Request(
+                request.getParameter("query"),
+                request.getParameter("source"),
+                request.getParameter("target"));
     }
 }

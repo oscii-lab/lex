@@ -60,6 +60,7 @@ public class Main {
                     }
                 }
             }
+            corpus.tally();
             lexicon.addFrequencies(corpus);
         }
 
