@@ -12,6 +12,7 @@ import org.oscii.lex.Translation;
 
 import java.io.*;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -116,10 +117,9 @@ public class Lexicon {
     public void addFrequencies(AlignedCorpus corpus) {
         lexicon.values().forEach(ms -> {
             ms.forEach(m -> {
+                Function<Expression, Double> getFrequency = corpus.translationFrequencies(m.expression);
                 m.translations.forEach(translation -> {
-                    Expression source = m.expression;
-                    Expression target = translation.translation;
-                    translation.frequency = corpus.getFrequency(source, target);
+                    translation.frequency = getFrequency.apply(translation.translation);
                 });
                 m.translations.sort(byFrequency);
             });

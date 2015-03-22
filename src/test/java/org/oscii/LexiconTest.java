@@ -9,6 +9,7 @@ import org.oscii.lex.Translation;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 import static org.junit.Assert.*;
 
@@ -34,19 +35,21 @@ public class LexiconTest extends TestCase {
         // Assign frequencies
         AlignedCorpus corpus = new AlignedCorpus() {
             @Override
-            public double getFrequency(Expression source, Expression target) {
+            public Function<Expression, Double> translationFrequencies(Expression source) {
                 assertEquals(source, dog);
-                if (target.equals(perro)) {
-                    return 0.8;
-                } else if (target.equals(zorro)) {
-                    return 0.1;
-                } else if (target.equals(can)) {
-                    return 0.09;
-                } else if (target.equals(perseguir)) {
-                    return 0.01;
-                } else {
-                    return 0.0;
-                }
+                return target -> {
+                    if (target.equals(perro)) {
+                        return 0.8;
+                    } else if (target.equals(zorro)) {
+                        return 0.1;
+                    } else if (target.equals(can)) {
+                        return 0.09;
+                    } else if (target.equals(perseguir)) {
+                        return 0.01;
+                    } else {
+                        return 0.0;
+                    }
+                };
             }
         };
 

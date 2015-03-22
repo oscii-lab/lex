@@ -24,10 +24,6 @@ public class AlignedCorpus {
     Map<String, List<AlignedSentence>> sentences = new HashMap<>();
     // language -> word -> locations
     Map<String, Map<String, List<Location>>> index = new HashMap<>();
-    // language -> word -> language -> word -> count
-    Map<String, Map<String, Map<String, Map<String, Long>>>> pairCounts = new HashMap<>();
-    // language -> word -> language -> count
-    Map<String, Map<String, Map<String, Long>>> wordCounts = new HashMap<>();
 
     private final static Logger log = LogManager.getLogger(AlignedCorpus.class);
 
@@ -79,10 +75,6 @@ public class AlignedCorpus {
             log.info("Indexing words for " + language);
             Map<String, List<Location>> indexForLanguage = indexTokens(sentences.get(language));
             index.put(language, indexForLanguage);
-            log.info("Counting aligned pairs for " + language);
-            Map<String, Map<String, Map<String, Long>>> pairs = countLinks(indexForLanguage);
-            pairCounts.put(language, pairs);
-            wordCounts.put(language, sumCounts(pairs));
         });
     }
 
@@ -96,16 +88,30 @@ public class AlignedCorpus {
     }
 
     /*
-     * Count all one-to-one alignments.
-     *
-     * index:   word -> locations
-     * returns: word -> language -> word -> co-occurrence count
+     * Return a function that takes words in another langauge and returns translation frequencies.
      */
-    private static Map<String, Map<String, Map<String, Long>>> countLinks(
-            Map<String, List<Location>> index) {
+    public Function<Expression, Double> translationFrequencies(Expression source) {
+        List<Location> locations = index.get(source.language).get(source.text);
+        if (locations == null) {
+            return target -> 0.0;
+        }
+        Map<String, Map<String, Long>> counts = countAll(locations);
+        Map<String, Long> totals = sumCounts(counts);
+        return target -> {
+            Long count = counts.get(target.language).get(target.text);
+            if (count != null && count > 0) {
+                long total = totals.get(target.language);
+                return 1.0 * count / total;
+            }
+            return 0.0;
+        };
+    }
+
+    private Map<String, Map<String, Long>> countAll(List<Location> locations) {
         return mapValues(
-                groupValues(index, loc -> loc.sentence.aligned.language),
-                m -> mapValues(m, AlignedCorpus::countTranslations));
+                locations.stream().collect(
+                        Collectors.groupingBy(t -> t.sentence.aligned.language)),
+                AlignedCorpus::countTranslations);
     }
 
     /*
@@ -120,27 +126,10 @@ public class AlignedCorpus {
     /*
      * Sum counts for each word by target language.
      */
-    private Map<String, Map<String, Long>> sumCounts(Map<String, Map<String, Map<String, Long>>> pairs) {
+    private Map<String, Long> sumCounts(Map<String, Map<String, Long>> counts) {
         Function<Map<String, Long>, Long> sumValues =
-                counts -> counts.values().stream().mapToLong(x -> x).sum();
-        return mapValues(pairs, m -> mapValues(m, sumValues));
-    }
-
-    /*
-     * Return the translation frequency of two words.
-     */
-    public double getFrequency(Expression source, Expression target) {
-        // TODO(denero) Check for null languages.
-        Map<String, Map<String, Long>> translations;
-        translations = pairCounts.get(source.language).get(source.text);
-        if (translations != null && translations.containsKey(target.language)) {
-            Long count = translations.get(target.language).get(target.text);
-            if (count != null && count > 0) {
-                long total = wordCounts.get(source.language).get(source.text).get(target.language);
-                return 1.0 * count / total;
-            }
-        }
-        return 0.0;
+                c -> c.values().stream().mapToLong(x -> x).sum();
+        return mapValues(counts, sumValues);
     }
 
     /* Map utilities */
