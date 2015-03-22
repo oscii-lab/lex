@@ -1,7 +1,7 @@
 package org.oscii.concordance;
 
 import com.codepoetics.protonpack.StreamUtils;
-import gnu.trove.THashMap;
+import gnu.trove.map.hash.THashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.oscii.lex.Expression;
