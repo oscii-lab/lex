@@ -18,6 +18,9 @@ public class AlignedSentence {
         this.tokens = tokens;
         this.alignment = alignment;
         this.language = language;
+        for (int i = 0; i < tokens.length; i++) {
+            tokens[i] = tokens[i].intern();
+        }
     }
 
     /*
