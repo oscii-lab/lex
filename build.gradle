@@ -30,6 +30,7 @@ dependencies {
     compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.1'
     compile group: 'com.codepoetics', name: 'protonpack', version: '1.2'
     compile group: 'org.eclipse.jetty.aggregate', name: 'jetty-all-server', version: '8.1.16.v20140903'
+    compile group: 'trove', name: 'trove', version: '1.0.2'
 }
 
 // Run .e.g., with: gradle run -Pargs="-r panlex.json -s"

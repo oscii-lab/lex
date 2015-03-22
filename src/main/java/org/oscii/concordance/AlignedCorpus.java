@@ -1,6 +1,7 @@
 package org.oscii.concordance;
 
 import com.codepoetics.protonpack.StreamUtils;
+import gnu.trove.THashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.oscii.lex.Expression;
@@ -75,10 +76,10 @@ public class AlignedCorpus {
      */
     public void tally() {
         sentences.keySet().stream().forEach(language -> {
-            log.info("Indexing words");
+            log.info("Indexing words for " + language);
             Map<String, List<Location>> indexForLanguage = indexTokens(sentences.get(language));
             index.put(language, indexForLanguage);
-            log.info("Counting aligned pairs");
+            log.info("Counting aligned pairs for " + language);
             Map<String, Map<String, Map<String, Long>>> pairs = countLinks(indexForLanguage);
             pairCounts.put(language, pairs);
             wordCounts.put(language, sumCounts(pairs));
@@ -120,9 +121,9 @@ public class AlignedCorpus {
      * Sum counts for each word by target language.
      */
     private Map<String, Map<String, Long>> sumCounts(Map<String, Map<String, Map<String, Long>>> pairs) {
-        // TODO(denero) Is there a better way to sum in Java?
-        Function<Map<String, Long>, Long> sum = counts -> counts.values().stream().collect(Collectors.summingLong(c -> c));
-        return mapValues(pairs, m -> mapValues(m, sum));
+        Function<Map<String, Long>, Long> sumValues =
+                counts -> counts.values().stream().mapToLong(x -> x).sum();
+        return mapValues(pairs, m -> mapValues(m, sumValues));
     }
 
     /*
@@ -157,7 +158,10 @@ public class AlignedCorpus {
      */
     private static <K, T, U> Map<K, U> mapValues(Map<K, T> m, Function<T, U> f) {
         return m.keySet().stream().collect(Collectors.toMap(
-                Function.identity(), k -> f.apply(m.get(k))));
+                Function.identity(),
+                k -> f.apply(m.get(k)),
+                (a, b) -> a,
+                THashMap::new));
     }
 
     /* Support classes */
