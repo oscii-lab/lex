@@ -4,6 +4,7 @@ import org.oscii.Lexicon;
 import org.oscii.lex.Translation;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -23,36 +24,60 @@ public class Protocol {
      */
     public Response respond(Request request) {
         if (request.query == null || request.source == null || request.target == null) {
-            return new Response();
+            return Response.error("Invalid request");
         }
 
-        // TODO(denero) Add definitions and check for keys
-        List<Translation> results;
-        results = lexicon.translate(request.query, request.source, request.target);
-
         Response response = new Response();
-        results.forEach(t -> {
-            // TODO(denero) Add formatted source?
-            String pos = t.pos.stream().findFirst().orElse("");
-            if (t.frequency >= minFrequency) {
-                response.translations.add(new ResponseTranslation(
-                        request.query, pos, t.translation.text, t.frequency));
-            }
-        });
+
+        if (request.aspects.contains(Aspect.TRANSLATIONS)) {
+            List<Translation> results;
+            results = lexicon.translate(request.query, request.source, request.target);
+            results.forEach(t -> {
+                // TODO(denero) Add formatted source?
+                String pos = t.pos.stream().findFirst().orElse("");
+                if (t.frequency >= minFrequency) {
+                    response.translations.add(new ResponseTranslation(
+                            request.query, pos, t.translation.text, t.frequency));
+                }
+            });
+        }
+
+        if (request.aspects.contains(Aspect.DEFINITIONS)) {
+            // TODO(denero) Add definitions
+        }
+
+
+        if (request.aspects.contains(Aspect.EXAMPLES)) {
+            // TODO(denero) Add examples
+        }
+
+        if (request.aspects.contains(Aspect.EXTENSIONS)) {
+            // TODO(denero) Add extensions
+        }
+        
         return response;
+    }
+
+    public static enum Aspect {
+        TRANSLATIONS, DEFINITIONS, EXAMPLES, EXTENSIONS;
     }
 
     public static class Request {
         String query;
         String source;
         String target;
-        String[] keys;
+        List<Aspect> aspects;
         String context;
 
         public Request(String query, String source, String target) {
+            this(query, source, target, Arrays.asList(new Aspect[]{Aspect.TRANSLATIONS}));
+        }
+
+        public Request(String query, String source, String target, List<Aspect> aspects) {
             this.query = query;
             this.source = source;
             this.target = target;
+            this.aspects = aspects;
         }
 
         @Override
@@ -67,12 +92,26 @@ public class Protocol {
 
     static class Response {
         List<ResponseTranslation> translations = new ArrayList<>();
+        List<ResponseDefinition> definitions = new ArrayList<>();
+        List<ResponseExample> examples = new ArrayList();
+        List<String> extensions = new ArrayList<>();
+        String error;
 
         @Override
         public String toString() {
             return "Response{" +
                     "translations=" + translations +
+                    ", definitions=" + definitions +
+                    ", examples=" + examples +
+                    ", extensions=" + extensions +
+                    ", error='" + error + '\'' +
                     '}';
+        }
+
+        public static Response error(String message) {
+            Response response = new Response();
+            response.error = message;
+            return response;
         }
     }
 
@@ -98,5 +137,11 @@ public class Protocol {
                     ", frequency=" + frequency +
                     '}';
         }
+    }
+
+    private static class ResponseDefinition {
+    }
+
+    private static class ResponseExample {
     }
 }
