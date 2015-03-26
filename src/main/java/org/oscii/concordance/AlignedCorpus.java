@@ -87,13 +87,21 @@ public class AlignedCorpus {
                 .collect(Collectors.groupingBy(Location::token));
     }
 
+    // Always return 0.0
+    private static Double zeroFrequency(Expression e) {
+        return 0.0;
+    }
+
     /*
-     * Return a function that takes words in another langauge and returns translation frequencies.
+     * Return a function that takes words in another language and returns translation frequencies.
      */
     public Function<Expression, Double> translationFrequencies(Expression source) {
+        if (!index.containsKey(source.language)) {
+            return AlignedCorpus::zeroFrequency;
+        }
         List<Location> locations = index.get(source.language).get(source.text);
         if (locations == null) {
-            return target -> 0.0;
+            return AlignedCorpus::zeroFrequency;
         }
         Map<String, Map<String, Long>> counts = countAll(locations);
         Map<String, Long> totals = sumCounts(counts);
@@ -135,14 +143,6 @@ public class AlignedCorpus {
     /* Map utilities */
 
     /*
-     * Group values of a map by a key function.
-     */
-    private static <K, T, U> Map<K, Map<U, List<T>>> groupValues(Map<K, List<T>> m,
-                                                                 Function<T, U> key) {
-        return mapValues(m, ts -> ts.stream().collect(Collectors.groupingBy(key)));
-    }
-
-    /*
      * Map values of a map, maintaining keys.
      */
     private static <K, T, U> Map<K, U> mapValues(Map<K, T> m, Function<T, U> f) {
@@ -158,7 +158,7 @@ public class AlignedCorpus {
     /*
      * A position in an aligned sentence.
      */
-    private class Location {
+    private static class Location {
         AlignedSentence sentence;
         int tokenIndex;
 
