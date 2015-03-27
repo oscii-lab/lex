@@ -64,22 +64,26 @@ public class LexiconTest extends TestCase {
         assertEquals(0.01, translations.get(3).frequency);
     }
 
-    @Test
-    public void testDefinitions() throws Exception {
-
-    }
-
-    private Meaning enMeaning(String exp) {
+    private Meaning noun(String exp) {
         Meaning m = new Meaning(new Expression(exp, "en"));
-        m.definitions.add(new Definition(exp, Collections.EMPTY_LIST, exp));
+        m.definitions.add(new Definition("a " + exp, Collections.singletonList("noun"), exp));
         return m;
     }
 
     @Test
+    public void testDefinitions() throws Exception {
+        Meaning dog = noun("dog");
+        Lexicon lex = new Lexicon();
+        lex.add(dog);
+        List<Definition> expected = Collections.singletonList(dog.definitions.get(0));
+        assertEquals(expected, lex.define("dog", "en"));
+    }
+
+    @Test
     public void testExtensions() throws Exception {
-        Meaning dog = enMeaning("dog");
-        Meaning doggy = enMeaning("doggy");
-        Meaning donkey = enMeaning("donkey");
+        Meaning dog = noun("dog");
+        Meaning doggy = noun("doggy");
+        Meaning donkey = noun("donkey");
 
         Lexicon lex = new Lexicon();
         Arrays.asList(new Meaning[]{dog, doggy, donkey}).stream().forEach(

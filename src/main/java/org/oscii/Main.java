@@ -69,8 +69,7 @@ public class Main {
             lexicon.write(new File(line.getOptionValue("write")));
         }
 
-        final double threshold = Double.parseDouble(line.getOptionValue("threshold", "1e-4"));
-        final Protocol protocol = new Protocol(lexicon, threshold);
+        final Protocol protocol = new Protocol(lexicon);
 
         // Serve lexicon (http API)
         Server server = null;
@@ -116,12 +115,6 @@ public class Main {
         options.addOption(OptionBuilder
                 .withLongOpt("port")
                 .withDescription("API port")
-                .withType(Number.class)
-                .hasArg()
-                .create());
-        options.addOption(OptionBuilder
-                .withLongOpt("threshold")
-                .withDescription("minimum frequency for result")
                 .withType(Number.class)
                 .hasArg()
                 .create());

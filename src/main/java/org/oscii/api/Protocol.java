@@ -9,21 +9,13 @@ import java.util.*;
 import java.util.function.BiConsumer;
 
 /**
- * Transmission protocol for HTTP & Rabbit Handlers
+ * Transmission protocol for Lexicon API
  */
 public class Protocol {
-    private static final int MAX_EXTENSIONS = 100;
     final Lexicon lexicon;
-    final double minFrequency;
-    final Map<Aspect, BiConsumer<Request, Response>> aspects = new HashMap<>();
 
-    public Protocol(Lexicon lexicon, double minFrequency) {
+    public Protocol(Lexicon lexicon) {
         this.lexicon = lexicon;
-        this.minFrequency = minFrequency;
-        aspects.put(Aspect.TRANSLATIONS, this::addTranslations);
-        aspects.put(Aspect.DEFINITIONS, this::addDefinitions);
-        aspects.put(Aspect.EXAMPLES, this::addExamples);
-        aspects.put(Aspect.EXTENSIONS, this::addExtensions);
     }
 
     /*
@@ -34,12 +26,11 @@ public class Protocol {
             return Response.error("Invalid request");
         }
         Response response = new Response();
-        for (Aspect aspect : request.aspects) {
-            BiConsumer<Request, Response> fn = aspects.get(aspect);
-            if (fn != null) {
-                fn.accept(request, response);
-            }
-        }
+        if (request.translate)  addTranslations(request, response);
+        if (request.define)  addDefinitions(request, response);
+        if (request.example)  addExamples(request, response);
+        if (request.extend)  addExtensions(request, response);
+        // TODO(denero) Synonyms?
         return response;
     }
 
@@ -54,7 +45,7 @@ public class Protocol {
         results.forEach(t -> {
             // TODO(denero) Add formatted source?
             String pos = t.pos.stream().findFirst().orElse("");
-            if (t.frequency >= minFrequency) {
+            if (t.frequency >= request.minFrequency) {
                 response.translations.add(new ResponseTranslation(
                         request.query, pos, t.translation.text, t.frequency));
             }
@@ -82,32 +73,29 @@ public class Protocol {
 
     private void addExtensions(Request request, Response response) {
         List<Expression> results =
-                lexicon.extend(request.query, request.source, MAX_EXTENSIONS);
+                lexicon.extend(request.query, request.source, request.maxExtensions);
         results.forEach(ex -> response.extensions.add(ex.text));
     }
 
     /* Support classes (serializable) */
 
-    public static enum Aspect {
-        TRANSLATIONS, DEFINITIONS, EXAMPLES, EXTENSIONS;
-    }
-
     public static class Request {
-        String query;
-        String source;
-        String target;
-        List<Aspect> aspects;
-        String context;
+        String query = "";
+        String source = "";
+        String target = "";
+        String context = "";
+        boolean translate = false;
+        boolean define = false;
+        boolean example = false;
+        boolean extend = false;
+        double minFrequency = 1e-4;
+        int maxExtensions = 100;
 
         public Request(String query, String source, String target) {
-            this(query, source, target, Arrays.asList(new Aspect[]{Aspect.TRANSLATIONS}));
-        }
-
-        public Request(String query, String source, String target, List<Aspect> aspects) {
             this.query = query;
             this.source = source;
             this.target = target;
-            this.aspects = aspects;
+            this.translate = true;
         }
 
         @Override

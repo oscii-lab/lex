@@ -21,7 +21,7 @@ public class Expression {
 
     public Expression(String text, String degraded_text, String languageTag) {
         this.text = text;
-        this.degraded_text = degraded_text;
+        this.degraded_text = degraded_text == null ? Lexicon.degrade(text) : degraded_text;
         this.languageTag = languageTag;
         // TODO(denero) Split language tag to open language
         this.language = languageTag;

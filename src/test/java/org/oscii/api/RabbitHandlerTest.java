@@ -24,10 +24,11 @@ public class RabbitHandlerTest extends TestCase {
                 return Arrays.asList(new Translation[]{translation});
             }
         };
-        Protocol protocol = new Protocol(lexicon, 0);
+        Protocol protocol = new Protocol(lexicon);
 
         RabbitHandler handler = new RabbitHandler("", "", "", "", protocol);
         Protocol.Request request = new Protocol.Request("dog", "en", "es");
+        request.minFrequency = 0.0;
         Protocol.Response response = protocol.respond(request);
         assertEquals("perro", response.translations.get(0).target);
     }
