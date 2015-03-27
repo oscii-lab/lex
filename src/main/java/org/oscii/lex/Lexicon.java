@@ -121,14 +121,11 @@ public class Lexicon {
             return Collections.EMPTY_LIST;
         }
         Collection<Set<Expression>> all = index.get(language).prefixMap(degrade(query)).values();
-        Stream<Expression> expressions = all.stream().flatMap(Set::stream);
+        Stream<Expression> expressions = all.stream().flatMap(Set::stream).sorted(Order.byLength);
         if (max > 0) {
             expressions = expressions.limit(max);
         }
-        List<Expression> extensions = expressions.collect(Collectors.toList());
-        // TODO(denero) Order by corpus frequency instead
-        extensions.sort(Order.byLength);
-        return extensions;
+        return expressions.collect(Collectors.toList());
     }
 
     /* I/O */
