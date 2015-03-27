@@ -8,7 +8,6 @@ import org.oscii.lex.Lexicon;
 import org.oscii.lex.Translation;
 
 import java.util.*;
-import java.util.function.BiConsumer;
 
 /**
  * Transmission protocol for Lexicon API

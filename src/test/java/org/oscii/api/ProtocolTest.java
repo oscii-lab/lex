@@ -9,7 +9,7 @@ import org.oscii.lex.Translation;
 import java.util.Arrays;
 import java.util.List;
 
-public class RabbitHandlerTest extends TestCase {
+public class ProtocolTest extends TestCase {
 
     @Test
     public void testRespond() throws Exception {
@@ -26,9 +26,9 @@ public class RabbitHandlerTest extends TestCase {
         };
         Protocol protocol = new Protocol(lexicon, null);
 
-        RabbitHandler handler = new RabbitHandler("", "", "", "", protocol);
         Protocol.Request request = new Protocol.Request("dog", "en", "es");
         request.minFrequency = 0.0;
+        request.translate = true;
         Protocol.Response response = protocol.respond(request);
         assertEquals("perro", response.translations.get(0).target);
     }
