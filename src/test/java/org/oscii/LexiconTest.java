@@ -3,12 +3,10 @@ package org.oscii;
 import junit.framework.TestCase;
 import org.junit.Test;
 import org.oscii.concordance.AlignedCorpus;
-import org.oscii.lex.Expression;
-import org.oscii.lex.Lexicon;
-import org.oscii.lex.Meaning;
-import org.oscii.lex.Translation;
+import org.oscii.lex.*;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
@@ -64,5 +62,33 @@ public class LexiconTest extends TestCase {
         assertEquals(0.1, translations.get(1).frequency);
         assertEquals(0.09, translations.get(2).frequency);
         assertEquals(0.01, translations.get(3).frequency);
+    }
+
+    @Test
+    public void testDefinitions() throws Exception {
+
+    }
+
+    private Meaning enMeaning(String exp) {
+        Meaning m = new Meaning(new Expression(exp, "en"));
+        m.definitions.add(new Definition(exp, Collections.EMPTY_LIST, exp));
+        return m;
+    }
+
+    @Test
+    public void testExtensions() throws Exception {
+        Meaning dog = enMeaning("dog");
+        Meaning doggy = enMeaning("doggy");
+        Meaning donkey = enMeaning("donkey");
+
+        Lexicon lex = new Lexicon();
+        Arrays.asList(new Meaning[]{dog, doggy, donkey}).stream().forEach(
+                m -> lex.add(m));
+
+        assertEquals(Collections.singletonList(dog), lex.lookup("Dog", "en"));
+        assertEquals(Arrays.asList(new Expression[]{dog.expression, doggy.expression}), lex.extend("Dog", "en", 0));
+        assertEquals(Arrays.asList(new Expression[]{dog.expression, doggy.expression, donkey.expression}), lex.extend("Do", "en", 3));
+        assertEquals(Arrays.asList(new Expression[]{dog.expression, doggy.expression}), lex.extend("Do", "en", 2));
+        assertEquals(Collections.EMPTY_LIST, lex.extend("cat", "en", 0));
     }
 }

@@ -12,6 +12,7 @@ import java.io.*;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * A map from expressions to meanings.
@@ -137,6 +138,18 @@ public class Lexicon {
     public List<Definition> define(String query, String source) {
         List<Meaning> all = lookup(query, source);
         return all.stream().flatMap((Meaning m) -> m.definitions.stream()).collect(Collectors.toList());
+    }
+
+    public List<Expression> extend(String query, String language, int max) {
+        if (!index.containsKey(language)) {
+            return Collections.EMPTY_LIST;
+        }
+        Collection<List<Expression>> all = index.get(language).prefixMap(degrade(query)).values();
+        Stream<Expression> extensions = all.stream().flatMap(List::stream);
+        if (max > 0) {
+            extensions = extensions.limit(max);
+        }
+        return extensions.collect(Collectors.toList());
     }
 
     // A lexicon that always translates "adult" to "adulto", ignoring args

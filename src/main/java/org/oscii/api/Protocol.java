@@ -1,6 +1,7 @@
 package org.oscii.api;
 
 import org.oscii.lex.Definition;
+import org.oscii.lex.Expression;
 import org.oscii.lex.Lexicon;
 import org.oscii.lex.Translation;
 
@@ -11,6 +12,7 @@ import java.util.function.BiConsumer;
  * Transmission protocol for HTTP & Rabbit Handlers
  */
 public class Protocol {
+    private static final int MAX_EXTENSIONS = 100;
     final Lexicon lexicon;
     final double minFrequency;
     final Map<Aspect, BiConsumer<Request, Response>> aspects = new HashMap<>();
@@ -79,7 +81,9 @@ public class Protocol {
     }
 
     private void addExtensions(Request request, Response response) {
-
+        List<Expression> results =
+                lexicon.extend(request.query, request.source, MAX_EXTENSIONS);
+        results.forEach(ex -> response.extensions.add(ex.text));
     }
 
     /* Support classes (serializable) */
