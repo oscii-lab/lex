@@ -24,7 +24,7 @@ public class RabbitHandlerTest extends TestCase {
                 return Arrays.asList(new Translation[]{translation});
             }
         };
-        Protocol protocol = new Protocol(lexicon);
+        Protocol protocol = new Protocol(lexicon, null);
 
         RabbitHandler handler = new RabbitHandler("", "", "", "", protocol);
         Protocol.Request request = new Protocol.Request("dog", "en", "es");
