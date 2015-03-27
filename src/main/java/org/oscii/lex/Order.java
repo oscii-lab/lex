@@ -28,4 +28,10 @@ public class Order {
         }
     };
 
+    static Comparator<? super Expression> byLength = new Comparator<Expression>() {
+        @Override
+        public int compare(Expression o1, Expression o2) {
+            return o1.text.length() - o2.text.length();
+        }
+    };
 }
