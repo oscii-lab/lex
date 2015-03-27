@@ -10,6 +10,7 @@ import org.oscii.api.Protocol;
 import org.oscii.api.RabbitHandler;
 import org.oscii.api.Servlet;
 import org.oscii.concordance.AlignedCorpus;
+import org.oscii.lex.Lexicon;
 import org.oscii.panlex.PanLexDir;
 import org.oscii.panlex.PanLexJSONParser;
 

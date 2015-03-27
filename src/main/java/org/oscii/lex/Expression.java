@@ -4,9 +4,9 @@ package org.oscii.lex;
  * A written form of a lexeme in a language.
  */
 public class Expression {
-    public String text;
-    String degraded_text; // Lowercased, etc.
-    public String language; // ISO-639-1 code (2-letter), e.g., "zh"
+    public final String text;
+    public final String degraded_text; // Lowercased, etc.
+    public final String language; // ISO-639-1 code (2-letter), e.g., "zh"
 
     @Override
     public String toString() {
@@ -19,12 +19,16 @@ public class Expression {
     // Tag inventory: http://www.iana.org/assignments/language-subtag-registry/language-subtag-registry
     public String languageTag; // RFC5654 language tag, e.g., "zh-cmn-Hans-CN"
 
-    public Expression(String text, String languageTag) {
+    public Expression(String text, String degraded_text, String languageTag) {
         this.text = text;
+        this.degraded_text = degraded_text;
         this.languageTag = languageTag;
         // TODO(denero) Split language tag to open language
         this.language = languageTag;
-        // TODO(denero) Generate degraded text
+    }
+
+    public Expression(String text, String languageTag) {
+        this(text, Lexicon.degrade(text), languageTag);
     }
 
     @Override

@@ -1,14 +1,18 @@
 package org.oscii.lex;
 
+import java.util.List;
+
 /**
  * A definition of an expression
  */
 public class Definition {
-    String text;
-    String languageTag;
+    public final String text;
+    public final List<String> pos;
+    public final String languageTag;
 
-    public Definition(String text, String languageTag) {
+    public Definition(String text, List<String> pos, String languageTag) {
         this.text = text;
+        this.pos = pos;
         this.languageTag = languageTag;
     }
 
@@ -16,6 +20,7 @@ public class Definition {
     public String toString() {
         return "Definition{" +
                 "text='" + text + '\'' +
+                ", pos=" + pos +
                 ", languageTag='" + languageTag + '\'' +
                 '}';
     }

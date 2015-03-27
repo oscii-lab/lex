@@ -144,7 +144,7 @@ public class PanLexJSONParser {
     private Meaning createMeaning(Models.Dn dn) {
         Models.Ex ex = expressions.get(dn.ex);
         String languageTag = languageTags.get(ex.lv);
-        Expression expression = new Expression(ex.tt, languageTag);
+        Expression expression = new Expression(ex.tt, ex.td, languageTag);
         Meaning meaning = new Meaning(expression);
         for (Models.Wc wc : wordClassByDn.getOrDefault(dn.dn, Collections.emptyList())) {
             meaning.pos.add(wordClassNames.get(wc.ex));
@@ -152,7 +152,7 @@ public class PanLexJSONParser {
         for (Models.Df df : definitionByMeaning.getOrDefault(dn.mn, Collections.emptyList())) {
             // TODO(denero) Should definitions be restricted by source language?
             if (df.lv == ex.lv) {
-                meaning.definitions.add(new Definition(df.tt, languageTag));
+                meaning.definitions.add(new Definition(df.tt, meaning.pos, languageTag));
             }
         }
         return meaning;

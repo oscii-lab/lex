@@ -1,14 +1,12 @@
-package org.oscii;
+package org.oscii.lex;
 
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
+import org.apache.commons.collections4.trie.PatriciaTrie;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.oscii.concordance.AlignedCorpus;
-import org.oscii.lex.Expression;
-import org.oscii.lex.Meaning;
-import org.oscii.lex.Translation;
 
 import java.io.*;
 import java.util.*;
@@ -20,28 +18,10 @@ import java.util.stream.Collectors;
  */
 public class Lexicon {
     Map<Expression, List<Meaning>> lexicon = new HashMap<>();
+    // language -> degraded text -> matching expressions
+    Map<String, PatriciaTrie<List<Expression>>> index = new PatriciaTrie<>();
 
     private final static Logger log = LogManager.getLogger(Lexicon.class);
-    private static Comparator<? super Translation> byFrequency = new Comparator<Translation>() {
-        @Override
-        public int compare(Translation o1, Translation o2) {
-            return Double.compare(o2.frequency, o1.frequency);
-        }
-    };
-    private static Comparator<? super Meaning> byMaxTranslationFrequency = new Comparator<Meaning>() {
-        @Override
-        public int compare(Meaning o1, Meaning o2) {
-            if (o2.translations.size() == 0) {
-                return -1;
-            } else if (o1.translations.size() == 0) {
-                return 1;
-            } else {
-                return Double.compare(
-                        o2.translations.get(0).frequency,
-                        o1.translations.get(0).frequency);
-            }
-        }
-    };
 
     public void add(Meaning meaning) {
         if (meaning.translations.size() == 0 && meaning.definitions.size() == 0) {
@@ -51,13 +31,40 @@ public class Lexicon {
             lexicon.put(meaning.expression, new ArrayList<>());
         }
         lexicon.get(meaning.expression).add(meaning);
+        addToIndex(meaning.expression);
     }
 
+    private void addToIndex(Expression expression) {
+        if (!index.containsKey(expression.language)) {
+            index.put(expression.language, new PatriciaTrie<>());
+        }
+        String key = expression.degraded_text;
+        List<Expression> expressions = index.get(expression.language).get(key);
+        if (expressions == null) {
+            expressions = new ArrayList<>(1);
+            index.get(expression.language).put(key, expressions);
+        }
+        expressions.add(expression);
+    }
+
+    /*
+     * Return all meanings for all matching expressions.
+     */
     public List<Meaning> lookup(String query, String language) {
-        // TODO(denero) Query using degraded text
-        return lexicon.getOrDefault(
-                new Expression(query, language),
-                Collections.emptyList());
+        if (!index.containsKey(language)) {
+            return Collections.EMPTY_LIST;
+        }
+
+        List<Expression> expressions = index.get(language).get(degrade(query));
+        if (expressions == null) {
+            return Collections.EMPTY_LIST;
+        }
+        return expressions.stream().flatMap(e -> lexicon.get(e).stream()).collect(Collectors.toList());
+    }
+
+    static String degrade(String query) {
+        // TODO(denero) Unicode normalize, remove non alpha, & normalize diacritics
+        return query.toLowerCase();
     }
 
     // Prefer to return translations with parts of speech
@@ -77,7 +84,7 @@ public class Lexicon {
                 .collect(Collectors.groupingBy(t -> t.translation.text))
                 .values().stream().map(Lexicon::pickTranslation)
                 .collect(Collectors.toList());
-        translations.sort(byFrequency);
+        translations.sort(Order.byFrequency);
         return translations;
     }
 
@@ -121,10 +128,15 @@ public class Lexicon {
                 m.translations.forEach(translation -> {
                     translation.frequency = getFrequency.apply(translation.translation);
                 });
-                m.translations.sort(byFrequency);
+                m.translations.sort(Order.byFrequency);
             });
-            ms.sort(byMaxTranslationFrequency);
+            ms.sort(Order.byMaxTranslationFrequency);
         });
+    }
+
+    public List<Definition> define(String query, String source) {
+        List<Meaning> all = lookup(query, source);
+        return all.stream().flatMap((Meaning m) -> m.definitions.stream()).collect(Collectors.toList());
     }
 
     // A lexicon that always translates "adult" to "adulto", ignoring args

@@ -4,14 +4,13 @@ import junit.framework.TestCase;
 import org.junit.Test;
 import org.oscii.concordance.AlignedCorpus;
 import org.oscii.lex.Expression;
+import org.oscii.lex.Lexicon;
 import org.oscii.lex.Meaning;
 import org.oscii.lex.Translation;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
-
-import static org.junit.Assert.*;
 
 public class LexiconTest extends TestCase {
 
