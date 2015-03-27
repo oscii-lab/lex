@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import gnu.trove.map.hash.THashMap;
-import gnu.trove.set.hash.THashSet;
 import org.apache.commons.collections4.trie.PatriciaTrie;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -46,7 +45,7 @@ public class Lexicon {
         String key = expression.degraded_text;
         Set<Expression> expressions = index.get(expression.language).get(key);
         if (expressions == null) {
-            expressions = new THashSet<>(1);
+            expressions = new HashSet<>(1);
             index.get(expression.language).put(key, expressions);
         }
         expressions.add(expression);
