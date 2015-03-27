@@ -106,7 +106,8 @@ public class AlignedCorpus {
         Map<String, Map<String, Long>> counts = countAll(locations);
         Map<String, Long> totals = sumCounts(counts);
         return target -> {
-            Long count = counts.get(target.language).get(target.text);
+            Map<String, Long> byTarget = counts.get(target.language);
+            Long count = byTarget == null ? null : byTarget.get(target.text);
             if (count != null && count > 0) {
                 long total = totals.get(target.language);
                 return 1.0 * count / total;
@@ -138,6 +139,22 @@ public class AlignedCorpus {
         Function<Map<String, Long>, Long> sumValues =
                 c -> c.values().stream().mapToLong(x -> x).sum();
         return mapValues(counts, sumValues);
+    }
+
+    public List<AlignedSentence> examples(String query, String source, String target, int max) {
+        if (!index.containsKey(source)) {
+            return Collections.EMPTY_LIST;
+        }
+        Map<String, List<Location>> locations = index.get(source);
+        if (!locations.containsKey(query))  {
+            return Collections.EMPTY_LIST;
+        }
+        Stream<Location> forQuery = locations.get(query).stream()
+                .filter(loc -> loc.sentence.aligned.language.equals(target));
+        if (max > 0) {
+            forQuery = forQuery.limit(max);
+        }
+        return forQuery.map(loc -> loc.sentence).collect(Collectors.toList());
     }
 
     /* Map utilities */

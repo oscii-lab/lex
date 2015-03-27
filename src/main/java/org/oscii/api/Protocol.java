@@ -1,5 +1,7 @@
 package org.oscii.api;
 
+import org.oscii.concordance.AlignedCorpus;
+import org.oscii.concordance.AlignedSentence;
 import org.oscii.lex.Definition;
 import org.oscii.lex.Expression;
 import org.oscii.lex.Lexicon;
@@ -13,14 +15,16 @@ import java.util.function.BiConsumer;
  */
 public class Protocol {
     final Lexicon lexicon;
+    final AlignedCorpus corpus;
 
-    public Protocol(Lexicon lexicon) {
+    public Protocol(Lexicon lexicon, AlignedCorpus corpus) {
         this.lexicon = lexicon;
+        this.corpus = corpus;
     }
 
     /*
-     * Generate a response to a request parsed from requestString.
-     */
+         * Generate a response to a request parsed from requestString.
+         */
     public Response respond(Request request) {
         if (request.query == null || request.source == null || request.target == null) {
             return Response.error("Invalid request");
@@ -64,10 +68,17 @@ public class Protocol {
                     return new ResponseDefinition(request.query, pos, d.text);
                 })
                 .distinct()
-                .forEach(rd -> response.definitions.add(rd));
+                .forEach(response.definitions::add);
     }
 
     private void addExamples(Request request, Response response) {
+        List<AlignedSentence> results =
+                corpus.examples(request.query, request.source, request.target, request.maxExamples);
+        results.forEach(r -> {
+            // TODO(denero) Add index and alignment index of query
+            ResponseExample example = new ResponseExample(r.tokens, r.aligned.tokens, 0, 0);
+            response.examples.add(example);
+        });
 
     }
 
@@ -90,6 +101,7 @@ public class Protocol {
         boolean extend = false;
         double minFrequency = 1e-4;
         int maxExtensions = 100;
+        int maxExamples = 100;
 
         public Request(String query, String source, String target) {
             this.query = query;

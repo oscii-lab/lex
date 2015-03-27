@@ -26,6 +26,7 @@ public class Main {
     public static void main(String[] args) throws Exception {
         CommandLine line = ParseArgs(args);
         Lexicon lexicon = new Lexicon();
+        final AlignedCorpus corpus = new AlignedCorpus();
 
         final String defaultLanguages = "en,es";
         final List<String> languages =
@@ -47,7 +48,6 @@ public class Main {
         // Index corpus
         if (line.hasOption("corpus")) {
             final String corpusPath = line.getOptionValue("corpus");
-            final AlignedCorpus corpus = new AlignedCorpus();
             final int max = Integer.parseInt(line.getOptionValue("max", "0"));
             for (String source : languages) {
                 for (String target : languages) {
@@ -69,7 +69,7 @@ public class Main {
             lexicon.write(new File(line.getOptionValue("write")));
         }
 
-        final Protocol protocol = new Protocol(lexicon);
+        final Protocol protocol = new Protocol(lexicon, corpus);
 
         // Serve lexicon (http API)
         Server server = null;
