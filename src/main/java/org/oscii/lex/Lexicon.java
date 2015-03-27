@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import gnu.trove.map.hash.THashMap;
+import gnu.trove.set.hash.THashSet;
 import org.apache.commons.collections4.trie.PatriciaTrie;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -21,7 +22,7 @@ import java.util.stream.Stream;
 public class Lexicon {
     Map<Expression, List<Meaning>> lexicon = new THashMap<>();
     // language -> degraded text -> matching expressions
-    Map<String, PatriciaTrie<List<Expression>>> index = new PatriciaTrie<>();
+    Map<String, PatriciaTrie<Set<Expression>>> index = new PatriciaTrie<>();
 
     private final static Logger log = LogManager.getLogger(Lexicon.class);
 
@@ -43,9 +44,9 @@ public class Lexicon {
             index.put(expression.language, new PatriciaTrie<>());
         }
         String key = expression.degraded_text;
-        List<Expression> expressions = index.get(expression.language).get(key);
+        Set<Expression> expressions = index.get(expression.language).get(key);
         if (expressions == null) {
-            expressions = new ArrayList<>(1);
+            expressions = new THashSet<>(1);
             index.get(expression.language).put(key, expressions);
         }
         expressions.add(expression);
@@ -78,7 +79,7 @@ public class Lexicon {
             return Collections.EMPTY_LIST;
         }
 
-        List<Expression> expressions = index.get(language).get(degrade(query));
+        Set<Expression> expressions = index.get(language).get(degrade(query));
         if (expressions == null) {
             return Collections.EMPTY_LIST;
         }
@@ -120,8 +121,8 @@ public class Lexicon {
         if (!index.containsKey(language)) {
             return Collections.EMPTY_LIST;
         }
-        Collection<List<Expression>> all = index.get(language).prefixMap(degrade(query)).values();
-        Stream<Expression> extensions = all.stream().flatMap(List::stream);
+        Collection<Set<Expression>> all = index.get(language).prefixMap(degrade(query)).values();
+        Stream<Expression> extensions = all.stream().flatMap(Set::stream);
         if (max > 0) {
             extensions = extensions.limit(max);
         }

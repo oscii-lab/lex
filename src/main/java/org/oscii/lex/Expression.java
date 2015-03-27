@@ -7,15 +7,6 @@ public class Expression {
     public final String text;
     public final String degraded_text; // Lowercased, etc.
     public final String language; // ISO-639-1 code (2-letter), e.g., "zh"
-
-    @Override
-    public String toString() {
-        return "Expression{" +
-                "text='" + text + '\'' +
-                "language='" + language + '\'' +
-                '}';
-    }
-
     // Tag inventory: http://www.iana.org/assignments/language-subtag-registry/language-subtag-registry
     public String languageTag; // RFC5654 language tag, e.g., "zh-cmn-Hans-CN"
 
@@ -29,6 +20,14 @@ public class Expression {
 
     public Expression(String text, String languageTag) {
         this(text, Lexicon.degrade(text), languageTag);
+    }
+
+    @Override
+    public String toString() {
+        return "Expression{" +
+                "text='" + text + '\'' +
+                "language='" + language + '\'' +
+                '}';
     }
 
     @Override
