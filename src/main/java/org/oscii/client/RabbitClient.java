@@ -29,7 +29,7 @@ public class RabbitClient {
                 .build();
 
         channel.queueDeclare("lexicon", false, false, false, null);
-        String message = "{ query: \"adult\", source: \"en\", target: \"es\", keys: [\"definition\", \"translation\"], context: \"I am an adult.\" }";
+        String message = "{ query: \"adult\", source: \"en\", target: \"es\", translate: true, context: \"I am an adult.\" }";
         channel.basicPublish("", "lexicon", props, message.getBytes());
         System.out.println(" [x] Sent '" + message + "'");
 
