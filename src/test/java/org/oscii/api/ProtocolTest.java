@@ -11,6 +11,15 @@ import java.util.List;
 
 public class ProtocolTest extends TestCase {
 
+    public static Protocol.Request translation(String query, String source, String target) {
+        Protocol.Request r = new Protocol.Request();
+        r.query = query;
+        r.source = source;
+        r.target = target;
+        r.translate = true;
+        return r;
+    }
+
     @Test
     public void testRespond() throws Exception {
         List<String> noun = Arrays.asList(new String[]{"noun"});
@@ -25,8 +34,7 @@ public class ProtocolTest extends TestCase {
             }
         };
         Protocol protocol = new Protocol(lexicon, null);
-
-        Protocol.Request request = new Protocol.Request("dog", "en", "es");
+        Protocol.Request request = translation("dog", "en", "es");
         request.minFrequency = 0.0;
         request.translate = true;
         Protocol.Response response = protocol.respond(request);

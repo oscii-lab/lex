@@ -1,5 +1,6 @@
 package org.oscii.api;
 
+import com.google.gson.Gson;
 import org.oscii.concordance.AlignedCorpus;
 import org.oscii.concordance.AlignedSentence;
 import org.oscii.lex.Definition;
@@ -87,9 +88,16 @@ public class Protocol {
         results.forEach(ex -> response.extensions.add(ex.text));
     }
 
-    /* Support classes (serializable) */
+    /* API classes to define JSON serialization */
 
-    public static class Request {
+    private static abstract class Jsonable {
+        @Override
+        public String toString() {
+            return new Gson().toJson(this, this.getClass());
+        }
+    }
+
+    public static class Request extends Jsonable {
         String query = "";
         String source = "";
         String target = "";
@@ -101,41 +109,14 @@ public class Protocol {
         double minFrequency = 1e-4;
         int maxExtensions = 100;
         int maxExamples = 100;
-
-        public Request(String query, String source, String target) {
-            this.query = query;
-            this.source = source;
-            this.target = target;
-            this.translate = true;
-        }
-
-        @Override
-        public String toString() {
-            return "Request{" +
-                    "target='" + target + '\'' +
-                    ", query='" + query + '\'' +
-                    ", source='" + source + '\'' +
-                    '}';
-        }
     }
 
-    static class Response {
+    public static class Response extends Jsonable {
         List<ResponseTranslation> translations = new ArrayList<>();
         List<ResponseDefinition> definitions = new ArrayList<>();
         List<ResponseExample> examples = new ArrayList();
         List<String> extensions = new ArrayList<>();
         String error;
-
-        @Override
-        public String toString() {
-            return "Response{" +
-                    "translations=" + translations +
-                    ", definitions=" + definitions +
-                    ", examples=" + examples +
-                    ", extensions=" + extensions +
-                    ", error='" + error + '\'' +
-                    '}';
-        }
 
         public static Response error(String message) {
             Response response = new Response();
@@ -144,7 +125,7 @@ public class Protocol {
         }
     }
 
-    static class ResponseTranslation {
+    static class ResponseTranslation extends Jsonable {
         String source;
         String pos;
         String target;
@@ -156,19 +137,9 @@ public class Protocol {
             this.target = target;
             this.frequency = frequency;
         }
-
-        @Override
-        public String toString() {
-            return "ResponseTranslation{" +
-                    "source='" + source + '\'' +
-                    ", pos='" + pos + '\'' +
-                    ", target='" + target + '\'' +
-                    ", frequency=" + frequency +
-                    '}';
-        }
     }
 
-    private static class ResponseDefinition {
+    private static class ResponseDefinition extends Jsonable {
         String source;
         String pos;
         String text;
@@ -177,15 +148,6 @@ public class Protocol {
             this.source = source;
             this.pos = pos;
             this.text = text;
-        }
-
-        @Override
-        public String toString() {
-            return "ResponseDefinition{" +
-                    "source='" + source + '\'' +
-                    ", pos='" + pos + '\'' +
-                    ", text='" + text + '\'' +
-                    '}';
         }
 
         @Override
@@ -225,16 +187,6 @@ public class Protocol {
             this.target = target;
             this.sourceIndex = sourceIndex;
             this.targetIndex = targetIndex;
-        }
-
-        @Override
-        public String toString() {
-            return "ResponseExample{" +
-                    "source=" + Arrays.toString(source) +
-                    ", target=" + Arrays.toString(target) +
-                    ", sourceIndex=" + sourceIndex +
-                    ", targetIndex=" + targetIndex +
-                    '}';
         }
     }
 }
