@@ -1,6 +1,8 @@
 package org.oscii.api;
 
 import com.google.gson.Gson;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -17,6 +19,8 @@ public class Servlet extends HttpServlet {
 
     private final Protocol protocol;
 
+    private final static Logger log = LogManager.getLogger(RabbitHandler.class);
+
     public Servlet(Protocol protocol) {
         this.protocol = protocol;
     }
@@ -27,8 +31,11 @@ public class Servlet extends HttpServlet {
         Gson gson = new Gson();
         response.setStatus(HttpServletResponse.SC_OK);
         response.addHeader("Access-Control-Allow-Origin", "*");
-        response.addHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT");
+        response.addHeader("Access-Control-Allow-Methods", "GET, POST");
+        Protocol.Request req = parse(request);
+        log.info("Message received: " + req);
         Protocol.Response resp = protocol.respond(parse(request));
+        log.info("Message response: " + resp);
         response.getWriter().println(gson.toJson(resp));
     }
 
@@ -40,9 +47,8 @@ public class Servlet extends HttpServlet {
                 .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()[0]));
         if (params.size() != 0) {
             return gson.fromJson(gson.toJson(params), Protocol.Request.class);
-        } else {
-            // Then try parsing body as a JSON object
-            return gson.fromJson(request.getReader(), Protocol.Request.class);
         }
+        // Then try parsing body as a JSON object
+        return gson.fromJson(request.getReader(), Protocol.Request.class);
     }
 }
