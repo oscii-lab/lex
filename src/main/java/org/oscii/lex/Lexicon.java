@@ -79,8 +79,10 @@ public class Lexicon {
         if (!index.containsKey(language)) {
             return Collections.EMPTY_LIST;
         }
-
         Map<Expression, Meanings> entries = index.get(language).get(degrade(query));
+        if (entries == null) {
+            return Collections.EMPTY_LIST;
+        }
         return entries.values().stream().flatMap(ms -> ms.meanings.stream()).collect(Collectors.toList());
     }
 
