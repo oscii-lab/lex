@@ -90,9 +90,10 @@ public class LexiconTest extends TestCase {
                 m -> lex.add(m));
 
         assertEquals(Collections.singletonList(dog), lex.lookup("Dog", "en"));
-        assertEquals(Arrays.asList(new Expression[]{dog.expression, doggy.expression}), lex.extend("Dog", "en", 0));
-        assertEquals(Arrays.asList(new Expression[]{dog.expression, doggy.expression, donkey.expression}), lex.extend("Do", "en", 3));
-        assertEquals(Arrays.asList(new Expression[]{dog.expression, doggy.expression}), lex.extend("Do", "en", 2));
-        assertEquals(Collections.EMPTY_LIST, lex.extend("cat", "en", 0));
+        assertEquals(Arrays.asList(new Expression[]{dog.expression, doggy.expression}), lex.extend("Dog", "en", null, 0));
+        assertEquals(Arrays.asList(new Expression[]{dog.expression, doggy.expression, donkey.expression}), lex.extend("Do", "en", null, 3));
+        assertEquals(Arrays.asList(new Expression[]{dog.expression, doggy.expression}), lex.extend("Do", "en", null, 2));
+        assertEquals(Collections.EMPTY_LIST, lex.extend("cat", "en", null, 0));
+        assertEquals(Collections.EMPTY_LIST, lex.extend("Dog", "en", "fr", 0));
     }
 }

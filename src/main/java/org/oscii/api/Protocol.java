@@ -84,7 +84,7 @@ public class Protocol {
 
     private void addExtensions(Request request, Response response) {
         List<Expression> results =
-                lexicon.extend(request.query, request.source, request.maxExtensions);
+                lexicon.extend(request.query, request.source, request.target, request.maxExtensions);
         results.forEach(ex -> response.extensions.add(ex.text));
     }
 

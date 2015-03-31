@@ -11,6 +11,7 @@ import org.oscii.concordance.AlignedCorpus;
 
 import java.io.*;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -19,9 +20,8 @@ import java.util.stream.Stream;
  * A map from expressions to meanings.
  */
 public class Lexicon {
-    Map<Expression, List<Meaning>> lexicon = new THashMap<>();
-    // language -> degraded text -> matching expressions
-    Map<String, PatriciaTrie<Set<Expression>>> index = new PatriciaTrie<>();
+    // language -> degraded text -> matching expressions -> meanings
+    Map<String, PatriciaTrie<Map<Expression, Meanings>>> index = new PatriciaTrie<>();
 
     private final static Logger log = LogManager.getLogger(Lexicon.class);
 
@@ -31,24 +31,26 @@ public class Lexicon {
         if (meaning.translations.size() == 0 && meaning.definitions.size() == 0) {
             return;
         }
-        if (!lexicon.containsKey(meaning.expression)) {
-            lexicon.put(meaning.expression, new ArrayList<>());
-        }
-        lexicon.get(meaning.expression).add(meaning);
-        addToIndex(meaning.expression);
-    }
-
-    private void addToIndex(Expression expression) {
+        Expression expression = meaning.expression;
         if (!index.containsKey(expression.language)) {
             index.put(expression.language, new PatriciaTrie<>());
         }
         String key = expression.degraded_text;
-        Set<Expression> expressions = index.get(expression.language).get(key);
-        if (expressions == null) {
-            expressions = new HashSet<>(1);
-            index.get(expression.language).put(key, expressions);
+        Map<Expression, Meanings> entries = index.get(expression.language).get(key);
+        if (entries == null) {
+            entries = new THashMap<>(1);
+            index.get(expression.language).put(key, entries);
         }
-        expressions.add(expression);
+        Meanings meanings = entries.get(expression);
+        if (meanings == null) {
+            meanings = new Meanings(expression);
+            entries.put(expression, meanings);
+        }
+        meanings.add(meaning);
+    }
+
+    private void forEachMeanings(Consumer<Meanings> fn) {
+        index.values().stream().forEach(trie -> trie.values().forEach(map -> map.values().forEach(fn)));
     }
 
     /*
@@ -56,37 +58,42 @@ public class Lexicon {
      */
     public void addFrequencies(AlignedCorpus corpus) {
         log.info("Computing translation frequencies");
-        lexicon.values().forEach(ms -> {
-            ms.forEach(m -> {
+        forEachMeanings(ms -> {
+            ms.meanings.forEach(m -> {
                 Function<Expression, Double> getFrequency = corpus.translationFrequencies(m.expression);
                 m.translations.forEach(translation -> {
                     translation.frequency = getFrequency.apply(translation.translation);
                 });
                 m.translations.sort(Order.byFrequency);
             });
-            ms.sort(Order.byMaxTranslationFrequency);
+            ms.meanings.sort(Order.byMaxTranslationFrequency);
         });
     }
 
     /* Lexicon access methods */
 
     /*
-     * Return all meanings for all matching expressions.
+     * Return all meanings for all expressions matching a query.
      */
     public List<Meaning> lookup(String query, String language) {
         if (!index.containsKey(language)) {
             return Collections.EMPTY_LIST;
         }
 
-        Set<Expression> expressions = index.get(language).get(degrade(query));
-        if (expressions == null) {
+        Map<Expression, Meanings> entries = index.get(language).get(degrade(query));
+        return entries.values().stream().flatMap(ms -> ms.meanings.stream()).collect(Collectors.toList());
+    }
+
+    public List<Meaning> lookup(Expression expression) {
+        String language = expression.language;
+        if (!index.containsKey(language)) {
             return Collections.EMPTY_LIST;
         }
-        return expressions.stream().flatMap(e -> lexicon.get(e).stream()).collect(Collectors.toList());
+        return index.get(language).get(expression.degraded_text).get(expression).meanings;
     }
 
     static String degrade(String query) {
-        // TODO(denero) Unicode normalize, remove non alpha, & normalize diacritics
+        // TODO(denero) Unicode normalize, remove non-alpha, & normalize diacritics
         return query.toLowerCase();
     }
 
@@ -116,12 +123,16 @@ public class Lexicon {
         return all.stream().flatMap((Meaning m) -> m.definitions.stream()).collect(Collectors.toList());
     }
 
-    public List<Expression> extend(String query, String language, int max) {
+    public List<Expression> extend(String query, String language, String translationLanguage, int max) {
         if (!index.containsKey(language)) {
             return Collections.EMPTY_LIST;
         }
-        Collection<Set<Expression>> all = index.get(language).prefixMap(degrade(query)).values();
-        Stream<Expression> expressions = all.stream().flatMap(Set::stream).sorted(Order.byLength);
+        Collection<Map<Expression, Meanings>> all = index.get(language).prefixMap(degrade(query)).values();
+        Stream<Meanings> meanings = all.stream().flatMap(m -> m.values().stream());
+        if (translationLanguage != null) {
+            meanings = meanings.filter(ms -> ms.translationLanguages.contains(translationLanguage));
+        }
+        Stream<Expression> expressions = meanings.map(ms -> ms.expression).sorted(Order.byLength);
         if (max > 0) {
             expressions = expressions.limit(max);
         }
@@ -139,7 +150,7 @@ public class Lexicon {
         writer.setIndent("  ");
         Gson gson = new Gson();
         writer.beginArray();
-        lexicon.values().stream().forEachOrdered(ms -> ms.stream().forEach(
+        forEachMeanings(ms -> ms.meanings.stream().forEach(
                 meaning -> gson.toJson(meaning, Meaning.class, writer)));
         writer.endArray();
         writer.close();
@@ -158,5 +169,23 @@ public class Lexicon {
             add(gson.fromJson(reader, Meaning.class));
         }
         reader.close();
+    }
+
+    // What is known about the meanings of an expression.
+    private static class Meanings {
+        Expression expression;
+        List<Meaning> meanings = new ArrayList<>(1);
+        boolean hasDefinition;
+        Set<String> translationLanguages = new HashSet<>();
+
+        public Meanings(Expression expression) {
+            this.expression = expression;
+        }
+
+        public void add(Meaning meaning) {
+            meanings.add(meaning);
+            hasDefinition &= !meaning.definitions.isEmpty();
+            meaning.translations.forEach(t -> translationLanguages.add(t.translation.language));
+        }
     }
 }
