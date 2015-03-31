@@ -46,7 +46,7 @@ public class Protocol {
     private void addTranslations(Request request, Response response) {
         List<Translation> results =
                 lexicon.translate(request.query, request.source, request.target);
-        results.forEach(t -> {
+        results.stream().limit(request.maxCount).forEach(t -> {
             // TODO(denero) Add formatted source?
             String pos = t.pos.stream().findFirst().orElse("");
             if (t.frequency >= request.minFrequency) {
@@ -63,6 +63,7 @@ public class Protocol {
         List<Definition> results =
                 lexicon.define(request.query, request.source);
         results.stream()
+                .limit(request.maxCount)
                 .map(d -> {
                     String pos = d.pos.stream().findFirst().orElse("");
                     return new ResponseDefinition(request.query, pos, d.text);
@@ -73,7 +74,7 @@ public class Protocol {
 
     private void addExamples(Request request, Response response) {
         List<AlignedSentence> results =
-                corpus.examples(request.query, request.source, request.target, request.maxExamples);
+                corpus.examples(request.query, request.source, request.target, request.maxCount);
         results.forEach(r -> {
             // TODO(denero) Add index and alignment index of query
             ResponseExample example = new ResponseExample(r.tokens, r.aligned.tokens, 0, 0);
@@ -84,7 +85,7 @@ public class Protocol {
 
     private void addExtensions(Request request, Response response) {
         List<Expression> results =
-                lexicon.extend(request.query, request.source, request.target, request.maxExtensions);
+                lexicon.extend(request.query, request.source, request.target, request.maxCount);
         results.forEach(ex -> response.extensions.add(ex.text));
     }
 
@@ -107,8 +108,7 @@ public class Protocol {
         boolean example = false;
         boolean extend = false;
         double minFrequency = 1e-4;
-        int maxExtensions = 100;
-        int maxExamples = 100;
+        int maxCount = 10;
     }
 
     public static class Response extends Jsonable {
