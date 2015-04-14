@@ -9,7 +9,7 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.oscii.api.Protocol;
 import org.oscii.api.RabbitHandler;
 import org.oscii.api.Servlet;
-import org.oscii.concordance.AlignedCorpus;
+import org.oscii.concordance.IndexedAlignedCorpus;
 import org.oscii.lex.Lexicon;
 import org.oscii.panlex.PanLexDir;
 import org.oscii.panlex.PanLexJSONParser;
@@ -26,7 +26,7 @@ public class Main {
     public static void main(String[] args) throws Exception {
         CommandLine line = ParseArgs(args);
         Lexicon lexicon = new Lexicon();
-        final AlignedCorpus corpus = new AlignedCorpus();
+        final IndexedAlignedCorpus corpus = new IndexedAlignedCorpus();
 
         final String defaultLanguages = "en,es";
         final List<String> languages =

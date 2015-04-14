@@ -3,6 +3,7 @@ package org.oscii;
 import junit.framework.TestCase;
 import org.junit.Test;
 import org.oscii.concordance.AlignedCorpus;
+import org.oscii.concordance.IndexedAlignedCorpus;
 import org.oscii.lex.*;
 
 import java.util.Arrays;
@@ -30,7 +31,7 @@ public class LexiconTest extends TestCase {
         rare.translations.add(new Translation(perseguir, verb));
 
         // Assign frequencies
-        AlignedCorpus corpus = new AlignedCorpus() {
+        AlignedCorpus corpus = new IndexedAlignedCorpus() {
             @Override
             public Function<Expression, Double> translationFrequencies(Expression source) {
                 assertEquals(source, dog);
