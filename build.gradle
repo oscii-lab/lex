@@ -2,8 +2,10 @@ apply plugin: 'java'
 apply plugin: 'application'
 apply plugin: 'eclipse'
 
+// Gradle java plugin
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
+compileJava.options.encoding = 'UTF-8'
 
 mainClassName = "org.oscii.Main"
 applicationDefaultJvmArgs = ["-ea", "-XX:+UseG1GC", "-XX:+UseStringDeduplication"]
