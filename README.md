@@ -4,11 +4,6 @@ A research project to learn, index, and display all lexical information.
 
 ## Building
 
-* Check out the `master` branch of https://github.com/stanfordnlp/CoreNLP
-* Check out the `suffix-array` branch of https://github.com/stanfordnlp/phrasal
-* Set environment variables (e.g., add these lines to your `.bashrc`):
-    - `export CORENLP_HOME=/path/to/CoreNLP`
-    - `export PHRASAL_HOME=/path/to.phrasal`
 * Run `gradle test` to build and test `lex`
 
 ## Getting started
