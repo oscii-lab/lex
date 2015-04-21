@@ -16,7 +16,9 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toSet;
 
 /*
  * Parse JSON export of PanLex.
@@ -60,7 +62,7 @@ public class PanLexJSONParser {
         // Convert 2-letter to 3-letter language codes
         Set<String> three_letter_codes = languages.stream()
                 .map(s -> s.length() == 2 ? new Locale(s).getISO3Language() : s)
-                .collect(Collectors.toSet());
+                .collect(toSet());
         parse(dir.open("lv.json"), new Models.Lv(), storeLanguage(three_letter_codes));
         populateLanguageTags();
     }
@@ -93,11 +95,9 @@ public class PanLexJSONParser {
         parse(dir.open("wcex.json"), new Models.Wcex(), this::storeWcex);
 
         log.info("Indexing word classes");
-        wordClassByDn = wordClasses.values().stream()
-                .collect(Collectors.groupingBy(wc -> wc.dn));
+        wordClassByDn = wordClasses.values().stream().collect(groupingBy(wc -> wc.dn));
         log.info("Indexing definitions");
-        definitionByMeaning = definitions.values().stream()
-                .collect(Collectors.groupingBy(df -> df.mn));
+        definitionByMeaning = definitions.values().stream().collect(groupingBy(df -> df.mn));
     }
 
     /*
@@ -130,10 +130,9 @@ public class PanLexJSONParser {
      */
     public void forEachMeaning(Consumer<Meaning> process) {
         denotations.values().stream()
-                .collect(Collectors.groupingBy(dn -> dn.mn)).values().stream()
+                .collect(groupingBy(dn -> dn.mn)).values().stream()
                 .map(dns -> dns.stream().map(this::createMeaning))
-                .map(exs -> exs.collect(Collectors.groupingBy(
-                        m -> m.expression.languageTag)))
+                .map(exs -> exs.collect(groupingBy(m -> m.expression.languageTag)))
                 .forEach(g -> processMeanings(process, g));
     }
 

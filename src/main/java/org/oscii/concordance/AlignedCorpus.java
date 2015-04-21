@@ -82,6 +82,9 @@ public abstract class AlignedCorpus {
      */
     public abstract List<AlignedSentence> examples(String query, String source, String target, int max);
 
+    public void tally() {
+    }
+
     static class ParallelFiles {
         Path sourceSentences;
         Path targetSentences;

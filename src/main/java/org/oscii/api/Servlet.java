@@ -10,7 +10,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Map;
-import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toMap;
 
 /**
  * Serve API
@@ -44,7 +45,7 @@ public class Servlet extends HttpServlet {
         // Try parsing params
         Map<String, String> params = request.getParameterMap().entrySet().stream()
                 .filter(e -> e.getValue().length == 1)
-                .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()[0]));
+                .collect(toMap(Map.Entry::getKey, e -> e.getValue()[0]));
         if (params.size() != 0) {
             return gson.fromJson(gson.toJson(params), Protocol.Request.class);
         }

@@ -1,7 +1,6 @@
 package org.oscii.concordance;
 
 import com.codepoetics.protonpack.StreamUtils;
-import gnu.trove.map.hash.THashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.oscii.lex.Expression;
@@ -13,9 +12,7 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.counting;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 /**
  * Index and compute statistics over an aligned corpus.
@@ -56,9 +53,7 @@ public class IndexedAlignedCorpus extends AlignedCorpus {
         });
     }
 
-    /*
-     * Create indices and counts.
-     */
+    @Override
     public void tally() {
         sentences.keySet().stream().forEach(language -> {
             log.info("Indexing words for " + language);
@@ -109,14 +104,13 @@ public class IndexedAlignedCorpus extends AlignedCorpus {
     }
 
 
-
     @Override
     public List<AlignedSentence> examples(String query, String source, String target, int max) {
         if (!index.containsKey(source)) {
             return Collections.EMPTY_LIST;
         }
         Map<String, List<Location>> locations = index.get(source);
-        if (!locations.containsKey(query))  {
+        if (!locations.containsKey(query)) {
             return Collections.EMPTY_LIST;
         }
         Stream<Location> forQuery = locations.get(query).stream()
