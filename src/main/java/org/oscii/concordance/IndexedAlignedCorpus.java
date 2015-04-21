@@ -8,13 +8,14 @@ import org.oscii.lex.Expression;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Index and compute statistics over an aligned corpus.
@@ -26,8 +27,6 @@ public class IndexedAlignedCorpus extends AlignedCorpus {
     Map<String, Map<String, List<Location>>> index = new HashMap<>();
 
     private final static Logger log = LogManager.getLogger(IndexedAlignedCorpus.class);
-
-
 
     @Override
     public void read(String path, String sourceLanguage, String targetLanguage, int max) throws IOException {
@@ -46,7 +45,7 @@ public class IndexedAlignedCorpus extends AlignedCorpus {
                 (s, t, a) -> AlignedSentence.parse(s, t, a, sourceLanguage, targetLanguage))
                 .forEach(aligned::addAll);
         log.info("Grouping by language");
-        aligned.stream().collect(Collectors.groupingBy(a -> a.language))
+        aligned.stream().collect(groupingBy(a -> a.language))
                 .entrySet().stream().forEach(e -> {
             List<AlignedSentence> all = sentences.get(e.getKey());
             if (all == null) {
@@ -74,12 +73,7 @@ public class IndexedAlignedCorpus extends AlignedCorpus {
     private Map<String, List<Location>> indexTokens(List<AlignedSentence> ss) {
         return ss.stream()
                 .flatMap(s -> IntStream.range(0, s.tokens.length).mapToObj(j -> new Location(s, j)))
-                .collect(Collectors.groupingBy(Location::token));
-    }
-
-    // Always return 0.0
-    private static Double zeroFrequency(Expression e) {
-        return 0.0;
+                .collect(groupingBy(Location::token));
     }
 
     /*
@@ -88,29 +82,20 @@ public class IndexedAlignedCorpus extends AlignedCorpus {
     @Override
     public Function<Expression, Double> translationFrequencies(Expression source) {
         if (!index.containsKey(source.language)) {
-            return IndexedAlignedCorpus::zeroFrequency;
+            return AlignedCorpus::zeroFrequency;
         }
         List<Location> locations = index.get(source.language).get(source.text);
         if (locations == null) {
-            return IndexedAlignedCorpus::zeroFrequency;
+            return AlignedCorpus::zeroFrequency;
         }
         Map<String, Map<String, Long>> counts = countAll(locations);
-        Map<String, Long> totals = sumCounts(counts);
-        return target -> {
-            Map<String, Long> byTarget = counts.get(target.language);
-            Long count = byTarget == null ? null : byTarget.get(target.text);
-            if (count != null && count > 0) {
-                long total = totals.get(target.language);
-                return 1.0 * count / total;
-            }
-            return 0.0;
-        };
+        return normalizeByLanguage(counts);
     }
 
     private Map<String, Map<String, Long>> countAll(List<Location> locations) {
         return mapValues(
                 locations.stream().collect(
-                        Collectors.groupingBy(t -> t.sentence.aligned.language)),
+                        groupingBy(t -> t.sentence.aligned.language)),
                 IndexedAlignedCorpus::countTranslations);
     }
 
@@ -120,17 +105,10 @@ public class IndexedAlignedCorpus extends AlignedCorpus {
     private static Map<String, Long> countTranslations(List<Location> locations) {
         return locations.stream().map(loc -> loc.sentence.aligned(loc.tokenIndex))
                 .filter(s -> s != null)
-                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+                .collect(groupingBy(Function.identity(), counting()));
     }
 
-    /*
-     * Sum counts for each word by target language.
-     */
-    private Map<String, Long> sumCounts(Map<String, Map<String, Long>> counts) {
-        Function<Map<String, Long>, Long> sumValues =
-                c -> c.values().stream().mapToLong(x -> x).sum();
-        return mapValues(counts, sumValues);
-    }
+
 
     @Override
     public List<AlignedSentence> examples(String query, String source, String target, int max) {
@@ -146,21 +124,12 @@ public class IndexedAlignedCorpus extends AlignedCorpus {
         if (max > 0) {
             forQuery = forQuery.limit(max);
         }
-        return forQuery.map(loc -> loc.sentence).collect(Collectors.toList());
+        return forQuery.map(loc -> loc.sentence).collect(toList());
     }
 
     /* Map utilities */
 
-    /*
-     * Map values of a map, maintaining keys.
-     */
-    private static <K, T, U> Map<K, U> mapValues(Map<K, T> m, Function<T, U> f) {
-        return m.keySet().stream().collect(Collectors.toMap(
-                Function.identity(),
-                k -> f.apply(m.get(k)),
-                (a, b) -> a,
-                THashMap::new));
-    }
+
 
     /* Support classes */
 

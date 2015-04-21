@@ -5,11 +5,12 @@ import edu.stanford.nlp.mt.decoder.util.UniformScorer;
 import edu.stanford.nlp.mt.tm.ConcreteRule;
 import edu.stanford.nlp.mt.tm.DynamicTranslationModel;
 import edu.stanford.nlp.mt.tm.Rule;
-import edu.stanford.nlp.mt.train.DynamicTMBuilder;
+import edu.stanford.nlp.mt.tm.SampledRule;
 import edu.stanford.nlp.mt.util.IString;
-import edu.stanford.nlp.mt.util.IStrings;
 import edu.stanford.nlp.mt.util.InputProperties;
+import edu.stanford.nlp.mt.util.ParallelSuffixArray;
 import edu.stanford.nlp.mt.util.Sequence;
+import gnu.trove.map.hash.THashMap;
 import org.oscii.lex.Expression;
 
 import java.io.IOException;
@@ -17,62 +18,75 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.groupingBy;
 
 /**
  * Corpus backed by a suffix array.
  */
 public class SuffixArrayCorpus extends AlignedCorpus {
-    // TODO(denero) Use frequency feature when it's set
-    private static final String FREQUENCY_FEATURE = "";
-    DynamicTranslationModel<String> translationModel;
-    int translationFrequencyFeatureIndex;
-    final Scorer<String> scorer = new UniformScorer<>();
-    final InputProperties inputProperties = new InputProperties();
-
-
+    // source language -> target language -> suffix array
+    Map<String, Map<String, ParallelSuffixArray>> suffixes;
+    private int maxSamples = 1000;
+    private int maxTargetPhrase = 5;
 
     @Override
     public void read(String path, String sourceLanguage, String targetLanguage, int max) throws IOException {
         ParallelFiles paths = paths(path, sourceLanguage, targetLanguage);
-        translationModel = new DynamicTMBuilder(
+        ParallelSuffixArray suffixArray = new ParallelSuffixArray(
                 paths.sourceSentences.toString(),
                 paths.targetSentences.toString(),
                 paths.alignments.toString(),
-                0, false).getModel();
-        translationModel.setFeatureTemplate(DynamicTranslationModel.FeatureTemplate.DENSE);
-        for (int i = 0; i < translationModel.getFeatureNames().size(); i++) {
-            if (translationModel.getFeatureNames().get(i).equals(FREQUENCY_FEATURE)) {
-                translationFrequencyFeatureIndex = i;
-            }
+                0);
+        Map<String, ParallelSuffixArray> bySource = suffixes.getOrDefault(sourceLanguage, new THashMap<>());
+        if (bySource.containsKey(targetLanguage)) {
+            throw new RuntimeException("Multiple corpora for a language pair: "
+                    + sourceLanguage + ", " + targetLanguage);
         }
+        bySource.put(targetLanguage, suffixArray);
     }
 
     @Override
     public Function<Expression, Double> translationFrequencies(Expression source) {
-        Sequence<IString> sequence = IStrings.tokenize(source.text);
-        List<ConcreteRule<IString, String>> rules = translationModel
-                .getRules(sequence, inputProperties, null, 0, scorer);
-        Map<String, Double> frequencies = new HashMap<>();
-        rules.stream().forEach(r -> frequencies.put(
-                join(r.abstractRule.target),
-                getTranslationFrequency(r.abstractRule)));
-        return exp -> frequencies.getOrDefault(exp.text, 0.0);
-    }
-
-    private double getTranslationFrequency(Rule<IString> rule) {
-        for (int i = 0; i < rule.scores.length; i++) {
-            if (i.)
+        Map<String, ParallelSuffixArray> arrays = suffixes.get(source.language);
+        if (arrays == null) {
+            return AlignedCorpus::zeroFrequency;
         }
 
+        Map<String, Map<String, Long>> counts = new THashMap<>();
+        arrays.entrySet().forEach(kv -> counts.put(kv.getKey(), countAll(source.text, kv.getValue())));
+        return normalizeByLanguage(counts);
     }
 
+    private Map<String, Long> countAll(String text, ParallelSuffixArray suffixArray) {
+        // Generate samples
+        String[] words = text.trim().split("\\s+");
+        int[] phrase = new int[words.length];
+        for (int i = 0; i < phrase.length; i++) {
+            phrase[i] = suffixArray.getVocabulary().indexOf(words[i]);
+        }
+        List<ParallelSuffixArray.QueryResult> samples = suffixArray.sample(phrase, true, maxSamples).samples;
 
-    private static String join(Sequence<IString> phrase) {
+        // Count translations
+        Map<String,Long> counts = new THashMap<>();
+        return samples.stream().flatMap(
+                r -> DynamicTranslationModel.extractRules(r, words.length, maxTargetPhrase).stream())
+                .collect(groupingBy(rule -> targetOf(rule, suffixArray), counting()));
+    }
 
+    private String targetOf(SampledRule rule, ParallelSuffixArray suffixArray) {
+        String[] words = new String[rule.tgt.length];
+        for (int i = 0; i < rule.tgt.length; i++) {
+            words[i] = suffixArray.getVocabulary().get(rule.tgt[i]);
+        }
+        return String.join(" ", words);
     }
 
     @Override
     public List<AlignedSentence> examples(String query, String source, String target, int max) {
-        return null;
+        return emptyList();
     }
 }
