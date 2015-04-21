@@ -19,7 +19,7 @@ import java.util.stream.Stream;
 /**
  * Index and compute statistics over an aligned corpus.
  */
-public class IndexedAlignedCorpus implements AlignedCorpus {
+public class IndexedAlignedCorpus extends AlignedCorpus {
     // language -> sentences
     Map<String, List<AlignedSentence>> sentences = new HashMap<>();
     // language -> word -> locations
@@ -27,25 +27,15 @@ public class IndexedAlignedCorpus implements AlignedCorpus {
 
     private final static Logger log = LogManager.getLogger(IndexedAlignedCorpus.class);
 
-    public boolean exists(String path, String sourceLanguage, String targetLanguage) {
-        return paths(path, sourceLanguage, targetLanguage).stream().allMatch(Files::exists);
-    }
 
-    private List<Path> paths(String path, String sourceLanguage, String targetLanguage) {
-        return Arrays.asList(new String[]{sourceLanguage, targetLanguage, "align"}).stream()
-                .map(extension -> Paths.get(String.format("%s.%s-%s.%s", path, sourceLanguage, targetLanguage, extension)))
-                .collect(Collectors.toList());
-    }
 
-    /*
-     * Read and index a parallel corpus.
-     */
+    @Override
     public void read(String path, String sourceLanguage, String targetLanguage, int max) throws IOException {
         log.info("Reading sentences: " + sourceLanguage + "-" + targetLanguage);
-        List<Path> paths = paths(path, sourceLanguage, targetLanguage);
-        Stream<String> sources = Files.lines(paths.get(0));
-        Stream<String> targets = Files.lines(paths.get(1));
-        Stream<String> aligns = Files.lines(paths.get(2));
+        AlignedCorpus.ParallelFiles paths = paths(path, sourceLanguage, targetLanguage);
+        Stream<String> sources = Files.lines(paths.sourceSentences);
+        Stream<String> targets = Files.lines(paths.targetSentences);
+        Stream<String> aligns = Files.lines(paths.alignments);
         if (max > 0) {
             sources = sources.limit(max);
             targets = targets.limit(max);
