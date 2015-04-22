@@ -13,8 +13,10 @@ import java.io.*;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
 
 /**
  * A map from expressions to meanings.
@@ -83,7 +85,7 @@ public class Lexicon {
         if (entries == null) {
             return Collections.EMPTY_LIST;
         }
-        return entries.values().stream().flatMap(ms -> ms.meanings.stream()).collect(Collectors.toList());
+        return entries.values().stream().flatMap(ms -> ms.meanings.stream()).collect(toList());
     }
 
     public List<Meaning> lookup(Expression expression) {
@@ -113,16 +115,16 @@ public class Lexicon {
                 .flatMap(m -> m.translations.stream()
                         .filter(t -> t.translation.language.equals(target)))
                         // Remove textual duplicates, choosing the first of each group
-                .collect(Collectors.groupingBy(t -> t.translation.text))
+                .collect(groupingBy(t -> t.translation.text))
                 .values().stream().map(Lexicon::pickTranslation)
-                .collect(Collectors.toList());
+                .collect(toList());
         translations.sort(Order.byFrequency);
         return translations;
     }
 
     public List<Definition> define(String query, String source) {
         List<Meaning> all = lookup(query, source);
-        return all.stream().flatMap((Meaning m) -> m.definitions.stream()).collect(Collectors.toList());
+        return all.stream().flatMap((Meaning m) -> m.definitions.stream()).collect(toList());
     }
 
     public List<Expression> extend(String query, String language, String translationLanguage, int max) {
@@ -138,7 +140,7 @@ public class Lexicon {
         if (max > 0) {
             expressions = expressions.limit(max);
         }
-        return expressions.collect(Collectors.toList());
+        return expressions.collect(toList());
     }
 
     /* I/O */

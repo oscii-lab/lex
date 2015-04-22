@@ -8,8 +8,6 @@ import org.oscii.lex.Meaning;
 import java.util.*;
 import java.util.function.Predicate;
 
-import static org.junit.Assert.*;
-
 public class PanLexJSONParserTest extends TestCase {
 
     /*

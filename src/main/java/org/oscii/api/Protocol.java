@@ -8,7 +8,8 @@ import org.oscii.lex.Expression;
 import org.oscii.lex.Lexicon;
 import org.oscii.lex.Translation;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Transmission protocol for Lexicon API
@@ -30,10 +31,10 @@ public class Protocol {
             return Response.error("Invalid request");
         }
         Response response = new Response();
-        if (request.translate)  addTranslations(request, response);
-        if (request.define)  addDefinitions(request, response);
-        if (request.example)  addExamples(request, response);
-        if (request.extend)  addExtensions(request, response);
+        if (request.translate) addTranslations(request, response);
+        if (request.define) addDefinitions(request, response);
+        if (request.example) addExamples(request, response);
+        if (request.extend) addExtensions(request, response);
         // TODO(denero) Synonyms?
         return response;
     }

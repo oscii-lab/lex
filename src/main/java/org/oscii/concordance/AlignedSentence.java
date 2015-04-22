@@ -1,9 +1,11 @@
 package org.oscii.concordance;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+
+import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
 
 /**
  * A sentence word-aligned to a translation.
@@ -29,14 +31,13 @@ public class AlignedSentence {
     public static List<AlignedSentence> parse(String source, String target, String align, String sourceLanguage, String targetLanguage) {
         String[] sourceTokens = source.split("\\s");
         String[] targetTokens = target.split("\\s");
-        List<Link> links = Arrays.asList(align.split("\\s")).stream()
-                .map(Link::parse).collect(Collectors.toList());
+        List<Link> links = asList(align.split("\\s")).stream().map(Link::parse).collect(toList());
         int sl = sourceTokens.length, tl = targetTokens.length;
         AlignedSentence sourceToTarget = new AlignedSentence(sourceTokens, collectLinks(links, sl, false), sourceLanguage);
         AlignedSentence targetToSource = new AlignedSentence(targetTokens, collectLinks(links, tl, true), targetLanguage);
         sourceToTarget.aligned = targetToSource;
         targetToSource.aligned = sourceToTarget;
-        return Arrays.asList(new AlignedSentence[]{sourceToTarget, targetToSource});
+        return asList(new AlignedSentence[]{sourceToTarget, targetToSource});
     }
 
     /*
@@ -45,7 +46,7 @@ public class AlignedSentence {
     private static int[][] collectLinks(List<Link> links, int len, boolean isTarget) {
         int[][] alignment = new int[len][];
         Map<Integer, List<Link>> index = links.stream().collect(
-                Collectors.groupingBy(link -> link.get(isTarget)));
+                groupingBy(link -> link.get(isTarget)));
         for (int i = 0; i < len; i++) {
             List<Link> s = index.get(i);
             if (s == null) {
