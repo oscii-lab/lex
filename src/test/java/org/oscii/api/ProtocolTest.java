@@ -2,8 +2,8 @@ package org.oscii.api;
 
 import junit.framework.TestCase;
 import org.junit.Test;
-import org.oscii.lex.Lexicon;
 import org.oscii.lex.Expression;
+import org.oscii.lex.Lexicon;
 import org.oscii.lex.Translation;
 
 import java.util.Arrays;

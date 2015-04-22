@@ -9,11 +9,14 @@ import org.apache.logging.log4j.Logger;
 import org.oscii.lex.Expression;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
 
@@ -22,8 +25,8 @@ import static java.util.stream.Collectors.groupingBy;
  */
 public class SuffixArrayCorpus extends AlignedCorpus {
     // source language -> target language -> suffix array
-    Map<String, Map<String, ParallelSuffixArray>> suffixes;
-    private int maxSamples = 1000;
+    Map<String, Map<String, ParallelSuffixArray>> suffixes = new HashMap<>();
+    private int maxSamples = 100;
     private int maxTargetPhrase = 5;
 
     private final static Logger log = LogManager.getLogger(SuffixArrayCorpus.class);
@@ -36,8 +39,13 @@ public class SuffixArrayCorpus extends AlignedCorpus {
                 paths.sourceSentences.toString(),
                 paths.targetSentences.toString(),
                 paths.alignments.toString(),
-                0);
-        Map<String, ParallelSuffixArray> bySource = suffixes.getOrDefault(sourceLanguage, new THashMap<>());
+                10000);
+        suffixArray.createRuleCaches(maxSamples, 1000);
+        Map<String, ParallelSuffixArray> bySource = suffixes.get(sourceLanguage);
+        if (bySource == null) {
+            bySource = new THashMap<>();
+            suffixes.put(sourceLanguage, bySource);
+        }
         if (bySource.containsKey(targetLanguage)) {
             throw new RuntimeException("Multiple corpora for a language pair: "
                     + sourceLanguage + ", " + targetLanguage);
@@ -63,14 +71,16 @@ public class SuffixArrayCorpus extends AlignedCorpus {
         int[] phrase = new int[words.length];
         for (int i = 0; i < phrase.length; i++) {
             phrase[i] = suffixArray.getVocabulary().indexOf(words[i]);
+            if (phrase[i] == -1) {
+                return emptyMap();
+            }
         }
         List<ParallelSuffixArray.QueryResult> samples = suffixArray.sample(phrase, true, maxSamples).samples;
 
         // Count translations
-        Map<String, Long> counts = new THashMap<>();
-        return samples.stream().flatMap(
-                r -> DynamicTranslationModel.extractRules(r, words.length, maxTargetPhrase).stream())
-                .collect(groupingBy(rule -> targetOf(rule, suffixArray), counting()));
+        Stream<SampledRule> rules = samples.stream().flatMap(
+                s -> DynamicTranslationModel.extractRules(s, words.length, maxTargetPhrase).stream());
+        return rules.collect(groupingBy(rule -> targetOf(rule, suffixArray), counting()));
     }
 
     private String targetOf(SampledRule rule, ParallelSuffixArray suffixArray) {
