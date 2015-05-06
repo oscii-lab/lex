@@ -1,0 +1,12 @@
+//
+// lex dependencies
+//
+
+// CoreNLP
+include "CoreNLP"
+project(":CoreNLP").projectDir = new File("$System.env.CORENLP_HOME")
+
+// Phrasal
+include "phrasal"
+project(":phrasal").projectDir = new File("$System.env.PHRASAL_HOME")
+
