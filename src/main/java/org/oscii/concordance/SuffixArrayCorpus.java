@@ -40,7 +40,8 @@ public class SuffixArrayCorpus extends AlignedCorpus {
                 paths.targetSentences.toString(),
                 paths.alignments.toString(),
                 10000);
-        suffixArray.createRuleCaches(maxSamples, 1000);
+        // TODO(spenceg) Fix build
+//        suffixArray.createRuleCaches(maxSamples, 1000);
         Map<String, ParallelSuffixArray> bySource = suffixes.get(sourceLanguage);
         if (bySource == null) {
             bySource = new THashMap<>();
@@ -78,9 +79,11 @@ public class SuffixArrayCorpus extends AlignedCorpus {
         List<ParallelSuffixArray.QueryResult> samples = suffixArray.sample(phrase, true, maxSamples).samples;
 
         // Count translations
-        Stream<SampledRule> rules = samples.stream().flatMap(
-                s -> DynamicTranslationModel.extractRules(s, words.length, maxTargetPhrase).stream());
-        return rules.collect(groupingBy(rule -> targetOf(rule, suffixArray), counting()));
+        // TODO(spenceg) Comment out to fix build
+//        Stream<SampledRule> rules = samples.stream().flatMap(
+//                s -> DynamicTranslationModel.extractRules(s, words.length, maxTargetPhrase).stream());
+//        return rules.collect(groupingBy(rule -> targetOf(rule, suffixArray), counting()));
+        return null;
     }
 
     private String targetOf(SampledRule rule, ParallelSuffixArray suffixArray) {
