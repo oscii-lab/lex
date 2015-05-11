@@ -12,8 +12,9 @@ A research project to learn, index, and display all lexical information.
 
 ## IDEA
 
-To run `gradle` within Intellij IDEA, the cloned versions of `CoreNLP` and `phrasal` must
-be in a sub-directory of `lex`, such as `deps`. 
+* To run `gradle` within Intellij IDEA, the cloned versions of `CoreNLP` and `phrasal` must
+  be in a sub-directory of `lex`, such as `deps`. 
+* Run `gradle idea` to create project files.
 
 ## Getting started
 
