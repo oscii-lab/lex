@@ -35,13 +35,12 @@ public class SuffixArrayCorpus extends AlignedCorpus {
     public void read(String path, String sourceLanguage, String targetLanguage, int max) throws IOException {
         log.info("Reading sentences: " + sourceLanguage + "-" + targetLanguage);
         ParallelFiles paths = paths(path, sourceLanguage, targetLanguage);
+        final int expectedSize = 100000;
         ParallelSuffixArray suffixArray = new ParallelSuffixArray(
                 paths.sourceSentences.toString(),
                 paths.targetSentences.toString(),
                 paths.alignments.toString(),
-                10000);
-        // TODO(spenceg) Fix build
-//        suffixArray.createRuleCaches(maxSamples, 1000);
+                expectedSize);
         Map<String, ParallelSuffixArray> bySource = suffixes.get(sourceLanguage);
         if (bySource == null) {
             bySource = new THashMap<>();
@@ -79,11 +78,9 @@ public class SuffixArrayCorpus extends AlignedCorpus {
         List<ParallelSuffixArray.QueryResult> samples = suffixArray.sample(phrase, true, maxSamples).samples;
 
         // Count translations
-        // TODO(spenceg) Comment out to fix build
-//        Stream<SampledRule> rules = samples.stream().flatMap(
-//                s -> DynamicTranslationModel.extractRules(s, words.length, maxTargetPhrase).stream());
-//        return rules.collect(groupingBy(rule -> targetOf(rule, suffixArray), counting()));
-        return null;
+        Stream<SampledRule> rules = samples.stream().flatMap(
+                s -> DynamicTranslationModel.extractRules(s, words.length, maxTargetPhrase).stream());
+        return rules.collect(groupingBy(rule -> targetOf(rule, suffixArray), counting()));
     }
 
     private String targetOf(SampledRule rule, ParallelSuffixArray suffixArray) {
