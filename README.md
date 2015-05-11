@@ -10,6 +10,11 @@ A research project to learn, index, and display all lexical information.
   the path to this repository directory on your local machine.
 * Run `gradle test` to build and test `lex`.
 
+## IDEA
+
+To run `gradle` within Intellij IDEA, the cloned versions of `CoreNLP` and `phrasal` must
+be in a sub-directory of `lex`, such as `deps`. 
+
 ## Getting started
 
 The lexicon uses [PanLex](http://panlex.org/) data as a seed. To run the
