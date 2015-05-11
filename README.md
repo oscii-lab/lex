@@ -4,7 +4,11 @@ A research project to learn, index, and display all lexical information.
 
 ## Building
 
-* Run `gradle test` to build and test `lex`
+* Clone `https://github.com/stanfordnlp/CoreNLP.git` and set `CORENLP_HOME` to
+  the path to this repository directory on your local machine.
+* Clone `https://github.com/stanfordnlp/phrasal.git` and set `PHRASAL_HOME` to
+  the path to this repository directory on your local machine.
+* Run `gradle test` to build and test `lex`.
 
 ## Getting started
 
