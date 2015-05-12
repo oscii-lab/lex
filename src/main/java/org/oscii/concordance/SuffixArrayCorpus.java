@@ -35,23 +35,23 @@ public class SuffixArrayCorpus extends AlignedCorpus {
     public void read(String path, String sourceLanguage, String targetLanguage, int max) throws IOException {
         log.info("Reading sentences: " + sourceLanguage + "-" + targetLanguage);
         ParallelFiles paths = paths(path, sourceLanguage, targetLanguage);
-        ParallelSuffixArray suffixArray = new ParallelSuffixArray(
-                paths.sourceSentences.toString(),
-                paths.targetSentences.toString(),
-                paths.alignments.toString(),
-                10000);
         // TODO(spenceg) Fix build
+//        ParallelSuffixArray suffixArray = new ParallelSuffixArray(
+//                paths.sourceSentences.toString(),
+//                paths.targetSentences.toString(),
+//                paths.alignments.toString(),
+//                10000);
 //        suffixArray.createRuleCaches(maxSamples, 1000);
-        Map<String, ParallelSuffixArray> bySource = suffixes.get(sourceLanguage);
-        if (bySource == null) {
-            bySource = new THashMap<>();
-            suffixes.put(sourceLanguage, bySource);
-        }
-        if (bySource.containsKey(targetLanguage)) {
-            throw new RuntimeException("Multiple corpora for a language pair: "
-                    + sourceLanguage + ", " + targetLanguage);
-        }
-        bySource.put(targetLanguage, suffixArray);
+//        Map<String, ParallelSuffixArray> bySource = suffixes.get(sourceLanguage);
+//        if (bySource == null) {
+//            bySource = new THashMap<>();
+//            suffixes.put(sourceLanguage, bySource);
+//        }
+//        if (bySource.containsKey(targetLanguage)) {
+//            throw new RuntimeException("Multiple corpora for a language pair: "
+//                    + sourceLanguage + ", " + targetLanguage);
+//        }
+//        bySource.put(targetLanguage, suffixArray);
     }
 
     @Override
@@ -76,7 +76,7 @@ public class SuffixArrayCorpus extends AlignedCorpus {
                 return emptyMap();
             }
         }
-        List<ParallelSuffixArray.QueryResult> samples = suffixArray.sample(phrase, true, maxSamples).samples;
+        List<ParallelSuffixArray.SentencePair> samples = suffixArray.sample(phrase, maxSamples).samples;
 
         // Count translations
         // TODO(spenceg) Comment out to fix build
