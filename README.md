@@ -4,15 +4,27 @@ A research project to learn, index, and display all lexical information.
 
 ## Building
 
-* Run `gradle test` to build and test `lex`
+* Clone `https://github.com/stanfordnlp/CoreNLP.git` and set `CORENLP_HOME` to
+  the path to this repository directory on your local machine.
+* Clone `https://github.com/stanfordnlp/phrasal.git` and set `PHRASAL_HOME` to
+  the path to this repository directory on your local machine.
+* Run `gradle test` to build and test `lex`.
+
+## IDEA
+
+* To run `gradle` within Intellij IDEA, the cloned versions of `CoreNLP` and `phrasal` must
+  be in a sub-directory of `lex`, such as `deps`. 
+* Run `gradle idea` to create project files.
 
 ## Getting started
 
 The lexicon uses [PanLex](http://panlex.org/) data as a seed. To run the
 system,
 * [download](http://dev.panlex.org/db/) a `JSON`-formatted archive of PanLex data.
-* To compile a lexicon as a `lex.json` file, execute `gradle run -Pargs="-p /path/to/panlex/directory -w /path/to/lex.json"`
-* To serve translations using rabbitmq, execute `gradle run -Pargs="-r /path/to/lex.json -s"`
+* To compile a lexicon as a `lex.json` file,  execute 
+  `gradle :run -Pargs="-p /path/to/panlex/directory -w /path/to/lex.json"`
+* To serve the lexicon and a corpus using `rabbitmq` and `http`, execute 
+  `gradle :run -Pargs="-r /path/to/lex.json -c /path/to/corpus/prefix -a -s"`
 
 ## API
 

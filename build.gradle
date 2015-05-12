@@ -1,6 +1,7 @@
 apply plugin: 'java'
 apply plugin: 'application'
 apply plugin: 'eclipse'
+apply plugin: 'idea'
 
 // Gradle java plugin
 sourceCompatibility = 1.8
@@ -25,7 +26,6 @@ sourceSets {
 }
 
 dependencies {
-    // CoreNLP dependencies
     compile project(":phrasal")
 
     testCompile group: 'junit', name: 'junit', version: '4.12'

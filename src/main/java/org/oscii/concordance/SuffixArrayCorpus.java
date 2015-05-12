@@ -2,8 +2,10 @@ package org.oscii.concordance;
 
 import edu.stanford.nlp.mt.tm.DynamicTranslationModel;
 import edu.stanford.nlp.mt.tm.SampledRule;
+import edu.stanford.nlp.mt.util.ParallelCorpus;
 import edu.stanford.nlp.mt.util.ParallelSuffixArray;
 import gnu.trove.map.hash.THashMap;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.oscii.lex.Expression;
@@ -35,23 +37,23 @@ public class SuffixArrayCorpus extends AlignedCorpus {
     public void read(String path, String sourceLanguage, String targetLanguage, int max) throws IOException {
         log.info("Reading sentences: " + sourceLanguage + "-" + targetLanguage);
         ParallelFiles paths = paths(path, sourceLanguage, targetLanguage);
-        // TODO(spenceg) Fix build
-//        ParallelSuffixArray suffixArray = new ParallelSuffixArray(
-//                paths.sourceSentences.toString(),
-//                paths.targetSentences.toString(),
-//                paths.alignments.toString(),
-//                10000);
-//        suffixArray.createRuleCaches(maxSamples, 1000);
-//        Map<String, ParallelSuffixArray> bySource = suffixes.get(sourceLanguage);
-//        if (bySource == null) {
-//            bySource = new THashMap<>();
-//            suffixes.put(sourceLanguage, bySource);
-//        }
-//        if (bySource.containsKey(targetLanguage)) {
-//            throw new RuntimeException("Multiple corpora for a language pair: "
-//                    + sourceLanguage + ", " + targetLanguage);
-//        }
-//        bySource.put(targetLanguage, suffixArray);
+        final int expectedSize = 100000;
+        ParallelCorpus corpus = ParallelCorpus.loadCorpusFromFiles(paths.sourceSentences.toString(), 
+            paths.targetSentences.toString(), paths.alignments.toString(), expectedSize);
+        ParallelSuffixArray suffixArray = new ParallelSuffixArray();
+        suffixArray.loadCorpus(corpus);
+        corpus = null;
+        suffixArray.build();
+        Map<String, ParallelSuffixArray> bySource = suffixes.get(sourceLanguage);
+        if (bySource == null) {
+            bySource = new THashMap<>();
+            suffixes.put(sourceLanguage, bySource);
+        }
+        if (bySource.containsKey(targetLanguage)) {
+            throw new RuntimeException("Multiple corpora for a language pair: "
+                    + sourceLanguage + ", " + targetLanguage);
+        }
+        bySource.put(targetLanguage, suffixArray);
     }
 
     @Override
@@ -79,11 +81,9 @@ public class SuffixArrayCorpus extends AlignedCorpus {
         List<ParallelSuffixArray.SentencePair> samples = suffixArray.sample(phrase, maxSamples).samples;
 
         // Count translations
-        // TODO(spenceg) Comment out to fix build
-//        Stream<SampledRule> rules = samples.stream().flatMap(
-//                s -> DynamicTranslationModel.extractRules(s, words.length, maxTargetPhrase).stream());
-//        return rules.collect(groupingBy(rule -> targetOf(rule, suffixArray), counting()));
-        return null;
+        Stream<SampledRule> rules = samples.stream().flatMap(
+                s -> DynamicTranslationModel.extractRules(s, words.length, maxTargetPhrase).stream());
+        return rules.collect(groupingBy(rule -> targetOf(rule, suffixArray), counting()));
     }
 
     private String targetOf(SampledRule rule, ParallelSuffixArray suffixArray) {

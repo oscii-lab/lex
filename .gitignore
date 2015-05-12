@@ -36,5 +36,8 @@ hs_err_pid*
 # Other
 .DS_Store
 .idea
+lex.iml
+lex.ipr
+lex.iws
 .gradle
 /bin/
