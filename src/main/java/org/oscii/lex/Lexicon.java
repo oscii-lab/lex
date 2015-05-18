@@ -61,9 +61,9 @@ public class Lexicon {
     public void addFrequencies(AlignedCorpus corpus) {
         log.info("Computing translation frequencies");
         forEachMeanings(ms -> {
-            ms.meanings.forEach(m -> {
+            ms.meanings.parallelStream().forEach(m -> {
                 Function<Expression, Double> getFrequency = corpus.translationFrequencies(m.expression);
-                m.translations.forEach(translation -> {
+                m.translations.parallelStream().forEach(translation -> {
                     translation.frequency = getFrequency.apply(translation.translation);
                 });
                 m.translations.sort(Order.byFrequency);
