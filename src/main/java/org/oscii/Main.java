@@ -28,7 +28,7 @@ public class Main {
     public static void main(String[] args) throws Exception {
         CommandLine line = ParseArgs(args);
         Lexicon lexicon = new Lexicon();
-        final AlignedCorpus corpus = line.hasOption("suffix") ? new SuffixArrayCorpus() : new IndexedAlignedCorpus();
+        final AlignedCorpus corpus = new SuffixArrayCorpus();
 
         final String defaultLanguages = "en,es";
         final List<String> languages =
@@ -141,7 +141,6 @@ public class Main {
                 .withType(Number.class)
                 .hasArg()
                 .create("m"));
-        options.addOption("f", "suffix", false, "use suffix array");
 
         CommandLineParser parser = new BasicParser();
         CommandLine line = parser.parse(options, args);
