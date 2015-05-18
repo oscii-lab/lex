@@ -16,7 +16,7 @@ import static java.util.stream.Collectors.*;
 
 /**
  * Index and compute statistics over an aligned corpus.
- *
+ * <p>
  * This implementation is deprecated; use the SuffixArrayCorpus instead.
  */
 public class IndexedAlignedCorpus extends AlignedCorpus {

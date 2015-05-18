@@ -21,9 +21,7 @@ import java.util.stream.Stream;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
-import static java.util.stream.Collectors.counting;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 /**
  * Corpus backed by a suffix array.
@@ -66,7 +64,7 @@ public class SuffixArrayCorpus extends AlignedCorpus {
      */
     private void registerSuffixArray(ParallelSuffixArray suffixArray,
                                      String sourceLanguage,
-                                     String targetLanguage ) {
+                                     String targetLanguage) {
         Map<String, ParallelSuffixArray> bySource = suffixes.get(sourceLanguage);
         if (bySource == null) {
             bySource = new THashMap<>();

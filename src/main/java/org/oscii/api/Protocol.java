@@ -192,9 +192,9 @@ public class Protocol {
         }
 
         public String[] Slice(String[] sequence) {
-            String[] slice = new String[end-start];
+            String[] slice = new String[end - start];
             for (int i = start; i < end; i++) {
-                slice[i-start] = sequence[i];
+                slice[i - start] = sequence[i];
             }
             return slice;
         }

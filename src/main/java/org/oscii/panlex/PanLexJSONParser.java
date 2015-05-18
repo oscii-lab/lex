@@ -151,7 +151,7 @@ public class PanLexJSONParser {
         for (Models.Df df : definitionByMeaning.getOrDefault(dn.mn, Collections.emptyList())) {
             // TODO(denero) Should definitions be restricted by source language? They are now
             if (df.lv == ex.lv) {
-                String dataSource =  sources.get(meanings.get(df.mn).ap).ti;
+                String dataSource = sources.get(meanings.get(df.mn).ap).ti;
                 meaning.definitions.add(new Definition(df.tt, meaning.pos, languageTag, dataSource));
             }
         }
