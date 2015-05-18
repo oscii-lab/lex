@@ -28,15 +28,19 @@ public class Servlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        request.setCharacterEncoding("UTF8");
+        Protocol.Request req = parse(request);
+        log.info("Message received: " + req);
+
+        Protocol.Response resp = protocol.respond(parse(request));
+        log.info("Message response: " + resp);
+
         response.setContentType("text/json");
-        Gson gson = new Gson();
         response.setStatus(HttpServletResponse.SC_OK);
         response.addHeader("Access-Control-Allow-Origin", "*");
         response.addHeader("Access-Control-Allow-Methods", "GET, POST");
-        Protocol.Request req = parse(request);
-        log.info("Message received: " + req);
-        Protocol.Response resp = protocol.respond(parse(request));
-        log.info("Message response: " + resp);
+        response.setCharacterEncoding("UTF8");
+        Gson gson = new Gson();
         response.getWriter().println(gson.toJson(resp));
     }
 

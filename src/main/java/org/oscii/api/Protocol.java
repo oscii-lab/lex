@@ -77,8 +77,9 @@ public class Protocol {
         List<AlignedSentence> results =
                 corpus.examples(request.query, request.source, request.target, request.maxCount);
         results.forEach(r -> {
-            // TODO(denero) Add index and alignment index of query
-            ResponseExample example = new ResponseExample(r.tokens, r.aligned.tokens, 0, 0);
+            // TODO(denero) Encode and set span correctly
+            Span span = new Span(0, 1);
+            ResponseExample example = new ResponseExample(r.tokens, r.aligned.tokens, r.alignment, span);
             response.examples.add(example);
         });
 
@@ -177,17 +178,39 @@ public class Protocol {
         }
     }
 
+    /*
+     * A span of a sequence; start is inclusive and end is exclusive.
+     */
+    private static class Span {
+        int start;
+        int end;
+
+        public Span(int start, int end) {
+            assert end > start;
+            this.start = start;
+            this.end = end;
+        }
+
+        public String[] Slice(String[] sequence) {
+            String[] slice = new String[end-start];
+            for (int i = start; i < end; i++) {
+                slice[i-start] = sequence[i];
+            }
+            return slice;
+        }
+    }
+
     private static class ResponseExample {
         String[] source;
         String[] target;
-        int sourceIndex;
-        int targetIndex;
+        int[][] sourceToTarget;
+        Span sourceSpan;
 
-        public ResponseExample(String[] source, String[] target, int sourceIndex, int targetIndex) {
+        public ResponseExample(String[] source, String[] target, int[][] sourceToTarget, Span sourceSpan) {
             this.source = source;
             this.target = target;
-            this.sourceIndex = sourceIndex;
-            this.targetIndex = targetIndex;
+            this.sourceToTarget = sourceToTarget;
+            this.sourceSpan = sourceSpan;
         }
     }
 }

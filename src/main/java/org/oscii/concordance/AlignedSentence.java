@@ -28,10 +28,9 @@ public class AlignedSentence {
     /*
      * Create an aligned sentence from space-delimited strings.
      */
-    public static List<AlignedSentence> parse(String source, String target, String align, String sourceLanguage, String targetLanguage) {
-        String[] sourceTokens = source.split("\\s");
-        String[] targetTokens = target.split("\\s");
-        List<Link> links = asList(align.split("\\s")).stream().map(Link::parse).collect(toList());
+    public static List<AlignedSentence> parse(String[] sourceTokens, String[] targetTokens, String[] alignment,
+                                              String sourceLanguage, String targetLanguage) {
+        List<Link> links = asList(alignment).stream().map(Link::parse).collect(toList());
         int sl = sourceTokens.length, tl = targetTokens.length;
         AlignedSentence sourceToTarget = new AlignedSentence(sourceTokens, collectLinks(links, sl, false), sourceLanguage);
         AlignedSentence targetToSource = new AlignedSentence(targetTokens, collectLinks(links, tl, true), targetLanguage);

@@ -16,6 +16,8 @@ import static java.util.stream.Collectors.*;
 
 /**
  * Index and compute statistics over an aligned corpus.
+ *
+ * This implementation is deprecated; use the SuffixArrayCorpus instead.
  */
 public class IndexedAlignedCorpus extends AlignedCorpus {
     // language -> sentences
@@ -39,7 +41,7 @@ public class IndexedAlignedCorpus extends AlignedCorpus {
         }
         List<AlignedSentence> aligned = new ArrayList<>();
         StreamUtils.zip(sources, targets, aligns,
-                (s, t, a) -> AlignedSentence.parse(s, t, a, sourceLanguage, targetLanguage))
+                (s, t, a) -> AlignedSentence.parse(s.split("\\s+"), t.split("\\s+"), a.split("\\s+"), sourceLanguage, targetLanguage))
                 .forEach(aligned::addAll);
         log.info("Grouping by language");
         aligned.stream().collect(groupingBy(a -> a.language))
