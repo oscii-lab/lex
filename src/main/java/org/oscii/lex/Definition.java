@@ -9,11 +9,13 @@ public class Definition {
     public final String text;
     public final List<String> pos;
     public final String languageTag;
+    public final String dataSource;
 
-    public Definition(String text, List<String> pos, String languageTag) {
+    public Definition(String text, List<String> pos, String languageTag, String dataSoure) {
         this.text = text;
         this.pos = pos;
         this.languageTag = languageTag;
+        this.dataSource = dataSoure;
     }
 
     @Override
@@ -22,6 +24,7 @@ public class Definition {
                 "text='" + text + '\'' +
                 ", pos=" + pos +
                 ", languageTag='" + languageTag + '\'' +
+                ", dataSource='" + dataSource + '\'' +
                 '}';
     }
 }

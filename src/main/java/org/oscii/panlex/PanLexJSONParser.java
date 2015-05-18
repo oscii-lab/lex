@@ -2,6 +2,7 @@ package org.oscii.panlex;
 
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
+import gnu.trove.map.hash.THashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.oscii.lex.Definition;
@@ -25,14 +26,14 @@ import static java.util.stream.Collectors.toSet;
  */
 public class PanLexJSONParser {
     // Filtered subsets of original PanLex tables, keyed by PanLex ID.
-    private final Map<Integer, Models.Lv> varieties = new HashMap<>();
-    private final Map<Integer, Models.Source> sources = new HashMap<>();
-    private final Map<Integer, Models.Ex> expressions = new HashMap<>();
-    private final Map<Integer, Models.Mn> meanings = new HashMap<>();
-    private final Map<Integer, Models.Dn> denotations = new HashMap<>();
-    private final Map<Integer, Models.Df> definitions = new HashMap<>();
-    private final Map<Integer, Models.Wc> wordClasses = new HashMap<>();
-    private final Map<Integer, String> wordClassNames = new HashMap<>();
+    private final Map<Integer, Models.Lv> varieties = new THashMap<>();
+    private final Map<Integer, Models.Source> sources = new THashMap<>();
+    private final Map<Integer, Models.Ex> expressions = new THashMap<>();
+    private final Map<Integer, Models.Mn> meanings = new THashMap<>();
+    private final Map<Integer, Models.Dn> denotations = new THashMap<>();
+    private final Map<Integer, Models.Df> definitions = new THashMap<>();
+    private final Map<Integer, Models.Wc> wordClasses = new THashMap<>();
+    private final Map<Integer, String> wordClassNames = new THashMap<>();
 
     private PanLexDir dir;
 
@@ -95,9 +96,9 @@ public class PanLexJSONParser {
         parse(dir.open("wcex.json"), new Models.Wcex(), this::storeWcex);
 
         log.info("Indexing word classes");
-        wordClassByDn = wordClasses.values().stream().collect(groupingBy(wc -> wc.dn));
+        wordClassByDn = wordClasses.values().parallelStream().collect(groupingBy(wc -> wc.dn));
         log.info("Indexing definitions");
-        definitionByMeaning = definitions.values().stream().collect(groupingBy(df -> df.mn));
+        definitionByMeaning = definitions.values().parallelStream().collect(groupingBy(df -> df.mn));
     }
 
     /*
@@ -131,7 +132,7 @@ public class PanLexJSONParser {
     public void forEachMeaning(Consumer<Meaning> process) {
         denotations.values().stream()
                 .collect(groupingBy(dn -> dn.mn)).values().stream()
-                .map(dns -> dns.stream().map(this::createMeaning))
+                .map(dns -> dns.parallelStream().map(this::createMeaning))
                 .map(exs -> exs.collect(groupingBy(m -> m.expression.languageTag)))
                 .forEach(g -> processMeanings(process, g));
     }
@@ -148,9 +149,10 @@ public class PanLexJSONParser {
             meaning.pos.add(wordClassNames.get(wc.ex));
         }
         for (Models.Df df : definitionByMeaning.getOrDefault(dn.mn, Collections.emptyList())) {
-            // TODO(denero) Should definitions be restricted by source language?
+            // TODO(denero) Should definitions be restricted by source language? They are now
             if (df.lv == ex.lv) {
-                meaning.definitions.add(new Definition(df.tt, meaning.pos, languageTag));
+                String dataSource =  sources.get(meanings.get(df.mn).ap).ti;
+                meaning.definitions.add(new Definition(df.tt, meaning.pos, languageTag, dataSource));
             }
         }
         return meaning;

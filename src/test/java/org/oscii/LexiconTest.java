@@ -67,7 +67,7 @@ public class LexiconTest extends TestCase {
 
     private Meaning noun(String exp) {
         Meaning m = new Meaning(new Expression(exp, "en"));
-        m.definitions.add(new Definition("a " + exp, Collections.singletonList("noun"), exp));
+        m.definitions.add(new Definition("a " + exp, Collections.singletonList("noun"), exp, ""));
         return m;
     }
 
