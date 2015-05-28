@@ -11,6 +11,8 @@ import org.oscii.lex.Translation;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.util.Collections.emptyList;
+
 /**
  * Transmission protocol for Lexicon API
  */
@@ -88,7 +90,15 @@ public class Protocol {
     private void addExtensions(Request request, Response response) {
         List<Expression> results =
                 lexicon.extend(request.query, request.source, request.target, request.maxCount);
-        results.forEach(ex -> response.extensions.add(ex.text));
+        results.forEach(ex -> {
+            List<Translation> translations =
+                    lexicon.translate(ex.text, request.source, request.target);
+            if (translations.isEmpty()) return;
+            Translation first = translations.get(0);
+            String pos = first.pos.stream().findFirst().orElse("");
+            ResponseTranslation entry = new ResponseTranslation(ex.text, pos, first.translation.text, first.frequency);
+            response.extensions.add(entry);
+        });
     }
 
     /* API classes to define JSON serialization */
@@ -117,7 +127,7 @@ public class Protocol {
         List<ResponseTranslation> translations = new ArrayList<>();
         List<ResponseDefinition> definitions = new ArrayList<>();
         List<ResponseExample> examples = new ArrayList();
-        List<String> extensions = new ArrayList<>();
+        List<ResponseTranslation> extensions = new ArrayList<>();
         String error;
 
         public static Response error(String message) {

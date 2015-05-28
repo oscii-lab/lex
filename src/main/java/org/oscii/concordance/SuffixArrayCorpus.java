@@ -38,9 +38,8 @@ public class SuffixArrayCorpus extends AlignedCorpus {
     public void read(String path, String sourceLanguage, String targetLanguage, int max) throws IOException {
         log.info("Building suffix array");
         ParallelCorpus corpus = readCorpus(path, sourceLanguage, targetLanguage, max);
-        ParallelSuffixArray suffixArray = new ParallelSuffixArray();
-        suffixArray.loadCorpus(corpus);
-        corpus = null;  // Drop reference to corpus for garbage collection
+        ParallelSuffixArray suffixArray = new ParallelSuffixArray(corpus);
+        corpus = null;  // Drop reference to corpus for possible garbage collection
         suffixArray.build();
         registerSuffixArray(suffixArray, sourceLanguage, targetLanguage);
         registerSuffixArray(suffixArray.swapLanguages(), targetLanguage, sourceLanguage);
