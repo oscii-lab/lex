@@ -3,15 +3,13 @@ package org.oscii.api;
 import com.google.gson.Gson;
 import org.oscii.concordance.AlignedCorpus;
 import org.oscii.concordance.AlignedSentence;
-import org.oscii.lex.Definition;
-import org.oscii.lex.Expression;
-import org.oscii.lex.Lexicon;
-import org.oscii.lex.Translation;
+import org.oscii.lex.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Transmission protocol for Lexicon API
@@ -37,9 +35,10 @@ public class Protocol {
         if (request.define) addDefinitions(request, response);
         if (request.example) addExamples(request, response);
         if (request.extend) addExtensions(request, response);
-        // TODO(denero) Synonyms?
+        if (request.synonym) addSynonyms(request, response);
         return response;
     }
+
 
     /* Aspect processing */
 
@@ -95,11 +94,31 @@ public class Protocol {
                     lexicon.translate(ex.text, request.source, request.target);
             if (translations.isEmpty()) return;
             Translation first = translations.get(0);
+            if (first.frequency < request.minFrequency) return;
             String pos = first.pos.stream().findFirst().orElse("");
             ResponseTranslation entry = new ResponseTranslation(ex.text, pos, first.translation.text, first.frequency);
             response.extensions.add(entry);
         });
     }
+
+    private void addSynonyms(Request request, Response response) {
+        List<Meaning> results = lexicon.lookup(request.query, request.source);
+        results.stream().forEach(r -> {
+            if (r.pos.isEmpty()) {
+                response.synonyms.add(new ResponseSynonymSet("", listSynonyms(r)));
+            } else {
+                r.pos.stream().distinct().forEach(pos -> {
+                    response.synonyms.add(new ResponseSynonymSet("", listSynonyms(r)));
+                });
+            }
+        });
+        response.synonyms = response.synonyms.stream().distinct().collect(toList());
+    }
+
+    private List<String> listSynonyms(Meaning r) {
+        return r.synonyms.stream().map(e -> e.text).collect(toList());
+    }
+
 
     /* API classes to define JSON serialization */
 
@@ -119,6 +138,7 @@ public class Protocol {
         boolean define = false;
         boolean example = false;
         boolean extend = false;
+        boolean synonym = false;
         double minFrequency = 1e-4;
         int maxCount = 10;
     }
@@ -128,6 +148,7 @@ public class Protocol {
         List<ResponseDefinition> definitions = new ArrayList<>();
         List<ResponseExample> examples = new ArrayList();
         List<ResponseTranslation> extensions = new ArrayList<>();
+        List<ResponseSynonymSet> synonyms = new ArrayList<>();
         String error;
 
         public static Response error(String message) {
@@ -184,6 +205,35 @@ public class Protocol {
             int result = source != null ? source.hashCode() : 0;
             result = 31 * result + (pos != null ? pos.hashCode() : 0);
             result = 31 * result + (text != null ? text.hashCode() : 0);
+            return result;
+        }
+    }
+
+    static class ResponseSynonymSet extends Jsonable {
+        String pos;
+        List<String> synonyms;
+
+        public ResponseSynonymSet(String pos, List<String> synonyms) {
+            this.pos = pos;
+            this.synonyms = synonyms;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            ResponseSynonymSet that = (ResponseSynonymSet) o;
+
+            if (!pos.equals(that.pos)) return false;
+            return synonyms.equals(that.synonyms);
+
+        }
+
+        @Override
+        public int hashCode() {
+            int result = pos.hashCode();
+            result = 31 * result + synonyms.hashCode();
             return result;
         }
     }
