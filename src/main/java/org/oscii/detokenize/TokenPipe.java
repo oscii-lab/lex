@@ -14,9 +14,10 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
- * For each sentence, create a training instance for the space after each word.
+ * For each sentence, create a training instance for each word.
  */
 public class TokenPipe extends Pipe {
+
   private final Preprocessor preprocessor;
 
   public TokenPipe(Preprocessor preprocessor) {
@@ -32,10 +33,18 @@ public class TokenPipe extends Pipe {
       List<String> tokens = tokenize(sentence);
       List<String> separators = inferSeparators(sentence, tokens);
       Stream<Integer> range = IntStream.range(0, tokens.size()).boxed();
-      return range.map(i -> Token.labeledInstance(i, tokens, separators));
+      return range.map(i -> {
+        // TODO(denero) Infer capitalization and replacement
+        TokenLabel label = new TokenLabel(false, separators.get(i), "");
+        return Token.labeledInstance(i, tokens, label);
+      });
     }).iterator();
   }
 
+  /*
+   * Infer separators.
+   * TODO(denero) Handle replacements such as " -> '
+   */
   private List<String> inferSeparators(String sentence, List<String> tokens) {
     List<String> separators = new ArrayList<>(tokens.size());
     int t = 0; // token number
@@ -72,7 +81,7 @@ public class TokenPipe extends Pipe {
 
   public List<String> tokenize(String sentence) {
     Sequence<IString> tokenSequence = preprocessor.process(sentence);
-    List<String> tokens = new ArrayList<String>(tokenSequence.size());
+    List<String> tokens = new ArrayList<>(tokenSequence.size());
     for (int i = 0; i < tokenSequence.size(); i++) {
       tokens.set(i, tokenSequence.get(i).toString());
     }

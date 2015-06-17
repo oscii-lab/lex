@@ -12,6 +12,7 @@ import cc.mallet.types.InstanceList;
 import edu.stanford.nlp.mt.process.Preprocessor;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -33,9 +34,7 @@ public class Detokenizer {
   public static Detokenizer train(Preprocessor preprocessor, List<String> examples) {
     List<Instance> unprocessed = examples.stream().map(e ->
             new Instance(e, null, null, null)).collect(toList());
-    List<Pipe> pipes = new ArrayList<>();
-    pipes.add(new TokenPipe(preprocessor));
-    pipes.add(new FeaturePipe());
+    List<Pipe> pipes = Arrays.asList(new TokenPipe(preprocessor), new FeaturePipe());
     InstanceList instances = new InstanceList(new SerialPipes(pipes));
     instances.addThruPipe(new ArrayIterator(unprocessed));
     ClassifierTrainer trainer = new MaxEntTrainer();

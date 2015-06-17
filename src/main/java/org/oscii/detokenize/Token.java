@@ -10,17 +10,17 @@ import java.util.List;
 public class Token {
   int index;
   List<String> tokens;
-  List<String> separators;
+  TokenLabel label;
 
-  public Token(int index, List<String> tokens, List<String> separators) {
+  public Token(int index, List<String> tokens, TokenLabel label) {
     this.index = index;
     this.tokens = tokens;
-    this.separators = separators;
+    this.label = label;
   }
 
-  public static Instance labeledInstance(int index, List<String> tokens, List<String> separators) {
-    Token token = new Token(index, tokens, separators);
-    return new Instance(token, separators.get(index), null, null);
+  public static Instance labeledInstance(int index, List<String> tokens, TokenLabel label) {
+    Token token = new Token(index, tokens, label);
+    return new Instance(token, label, null, null);
   }
 
   public static Instance unlabeledInstance(int index, List<String> tokens) {
