@@ -28,7 +28,7 @@ public class DetokenizerTest {
             "Here it is"
     );
     List<String> test = Arrays.asList(
-            "\"What's this place?\"",
+            "\"Where's this place?\"",
             "What is this place?",
             "Is this place it?",
             "This is it"
