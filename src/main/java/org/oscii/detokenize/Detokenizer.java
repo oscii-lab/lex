@@ -11,6 +11,7 @@ import edu.stanford.nlp.mt.process.Preprocessor;
 import edu.stanford.nlp.mt.util.IString;
 import edu.stanford.nlp.mt.util.Sequence;
 
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -30,6 +31,25 @@ public class Detokenizer {
 
   private Detokenizer(Classifier classifier) {
     this.classifier = classifier;
+  }
+
+  /*
+   * Save to a file.
+   */
+  public void save(File file) throws IOException {
+    ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file));
+    oos.writeObject (classifier);
+    oos.close();
+  }
+
+  /*
+   * Load from a file.
+   */
+  public static Detokenizer load(File file) throws IOException, ClassNotFoundException {
+    ObjectInputStream ois = new ObjectInputStream (new FileInputStream (file));
+    Classifier classifier = (Classifier) ois.readObject();
+    ois.close();
+    return new Detokenizer(classifier);
   }
 
   /*
