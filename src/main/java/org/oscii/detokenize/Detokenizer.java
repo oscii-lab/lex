@@ -3,11 +3,8 @@ package org.oscii.detokenize;
 import cc.mallet.classify.Classification;
 import cc.mallet.classify.Classifier;
 import cc.mallet.classify.ClassifierTrainer;
-import cc.mallet.classify.MaxEntTrainer;
-import cc.mallet.pipe.Pipe;
-import cc.mallet.pipe.SerialPipes;
-import cc.mallet.pipe.Target2Label;
-import cc.mallet.pipe.iterator.ArrayIterator;
+import cc.mallet.classify.MaxEntL1Trainer;
+import cc.mallet.pipe.*;
 import cc.mallet.types.Instance;
 import cc.mallet.types.InstanceList;
 import edu.stanford.nlp.mt.process.Preprocessor;
@@ -28,30 +25,68 @@ import static java.util.stream.Collectors.toList;
  */
 public class Detokenizer {
 
-  Classifier classifier;
+  private static final double L1_WEIGHT = 0.1;
+  Classifier classifier; // Weights
+  Pipe pipe; // Feature extractor
 
-  public Detokenizer(Classifier classifier) {
+  private Detokenizer(Classifier classifier, Pipe pipe) {
     this.classifier = classifier;
+    this.pipe = pipe;
   }
 
+  /*
+   * Train a detokenizer for a preprocessor by inspecting its behavior on examples.
+   */
   public static Detokenizer train(Preprocessor preprocessor, List<String> examples) {
-    InstanceList instances = new InstanceList(new SerialPipes(Arrays.asList(
-            new TokenPipe(preprocessor),
+    Pipe pipe = new SerialPipes(new Pipe[]{
             new FeaturePipe(),
+            new TokenSequence2FeatureSequence(),
+            new FeatureSequence2FeatureVector(false),
             new Target2Label()
-    )));
-    instances.addThruPipe(new ArrayIterator(examples));
-    ClassifierTrainer trainer = new MaxEntTrainer();
-    return new Detokenizer(trainer.train(instances));
+    });
+    InstanceList instances = new InstanceList(pipe);
+    Iterator<Instance> labeled = toLabeledInstances(examples, preprocessor);
+    instances.addThruPipe(labeled);
+    ClassifierTrainer trainer = new MaxEntL1Trainer(L1_WEIGHT);
+    Classifier classifier = trainer.train(instances);
+    return new Detokenizer(classifier, pipe);
   }
 
-  public List<TokenLabel> label(List<String> tokens) {
+  /*
+   * Label a list of tokens that has been tokenized using the preprocessor.
+   */
+  public List<TokenLabel> predictLabels(List<String> tokens) {
+    InstanceList instances = new InstanceList(pipe);
     Stream<Integer> range = IntStream.range(0, tokens.size()).boxed();
     Iterator<Instance> unlabeled = range.map(i -> Token.unlabeledInstance(i, tokens)).iterator();
-    InstanceList instances = new InstanceList(new FeaturePipe());
     instances.addThruPipe(unlabeled);
     List<Classification> predictions = classifier.classify(instances);
-    return predictions.stream().map(c -> (TokenLabel) c.getLabeling().getBestLabel().getEntry()).collect(toList());
+    List<TokenLabel> labels = predictions.stream().map(Detokenizer::getLabel).collect(toList());
+    return labels;
+  }
+
+  /*
+   * Generate labeled training data from a preprocessor.
+   */
+  private static Iterator<Instance> toLabeledInstances(List<String> examples, Preprocessor preprocessor) {
+    Labeler labeler = new Labeler();
+    List<Instance> instances = new ArrayList<>();
+    examples.forEach(ex -> {
+      List<String> tokens = tokenize(preprocessor, ex);
+      List<TokenLabel> labels = labeler.getLabels(ex, tokens);
+      for (int i = 0; i < tokens.size(); i++) {
+        TokenLabel label = labels.get(i);
+        instances.add(Token.labeledInstance(i, tokens, label));
+      }
+    });
+    return instances.iterator();
+  }
+
+  /*
+   * Extract the best label from a classifier prediction.
+   */
+  private static TokenLabel getLabel(Classification c) {
+    return (TokenLabel) c.getLabeling().getBestLabel().getEntry();
   }
 
   /*

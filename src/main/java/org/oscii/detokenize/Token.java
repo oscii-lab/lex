@@ -8,12 +8,16 @@ import java.util.List;
  * A token in a sentence.
  */
 public class Token {
+  // TODO(denero) Maybe this constant is defined somewhere in CoreNLP or Phrasal
   private static final String END = "</S>";
+  // This label must appear in the training set, or Mallet will crash (silly behavior)
+  // See: http://comments.gmane.org/gmane.comp.ai.mallet.devel/620
+  private static final TokenLabel DUMMY_LABEL = new TokenLabel(false, "", "");
   int index;
   List<String> tokens;
   TokenLabel label;
 
-  public Token(int index, List<String> tokens, TokenLabel label) {
+  private Token(int index, List<String> tokens, TokenLabel label) {
     this.index = index;
     this.tokens = tokens;
     this.label = label;
@@ -26,7 +30,7 @@ public class Token {
 
   public static Instance unlabeledInstance(int index, List<String> tokens) {
     Token token = new Token(index, tokens, null);
-    return new Instance(token, null, null, null);
+    return new Instance(token, DUMMY_LABEL, null, null);
   }
 
   public String current() {
@@ -34,6 +38,6 @@ public class Token {
   }
 
   public String next() {
-    return (index + 1 == tokens.size()) ? END : tokens.get(index);
+    return (index + 1 == tokens.size()) ? END : tokens.get(index+1);
   }
 }

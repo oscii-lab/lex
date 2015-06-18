@@ -7,7 +7,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Created by denero on 6/17/15.
@@ -15,15 +15,40 @@ import static org.junit.Assert.*;
 public class DetokenizerTest {
 
   @Test
-  public void testLabel() throws Exception {
-    List<String> train = Arrays.asList("\"What's to-do around here?\"");
+  public void testPredictLabels() throws Exception {
+    List<String> train = Arrays.asList(
+            "\"What's to-do around here?\"",
+            "What is this place?",
+            "This \"place\" is scary.",
+            "\"Is it this place\"",
+            "Is it this place?",
+            "This's the place.",
+            "Why this one?",
+            "This is it.",
+            "Here it is"
+    );
+    List<String> test = Arrays.asList(
+            "\"What's this place?\"",
+            "What is this place?",
+            "Is this place it?",
+            "This is it"
+    );
+
     Preprocessor pp = new EnglishPreprocessor(true);
     Detokenizer detokenizer = Detokenizer.train(pp, train);
 
-    // Test on training instance
-    String expected = train.get(0);
-    List<String> tokenized = Detokenizer.tokenize(pp, expected);
-    List<TokenLabel> labels = detokenizer.label(tokenized);
-    assertEquals(train.get(0), TokenLabel.render(tokenized, labels));
+    // Test on training instances
+    for (String expected : train) {
+      List<String> tokenized = Detokenizer.tokenize(pp, expected);
+      List<TokenLabel> labels = detokenizer.predictLabels(tokenized);
+      assertEquals(expected, TokenLabel.render(tokenized, labels));
+    }
+
+    // Test on held-out instances
+    for (String expected : test) {
+      List<String> tokenized = Detokenizer.tokenize(pp, expected);
+      List<TokenLabel> labels = detokenizer.predictLabels(tokenized);
+      assertEquals(expected, TokenLabel.render(tokenized, labels));
+    }
   }
 }
