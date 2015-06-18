@@ -3,7 +3,7 @@ package org.oscii.lex;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import gnu.trove.map.hash.THashMap;
+import gnu.trove.THashMap;
 import org.apache.commons.collections4.trie.PatriciaTrie;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

@@ -33,7 +33,7 @@ public class TokenPipe extends Pipe {
     Stream<Instance> examples = StreamSupport.stream(s, false);
     return examples.flatMap(e -> {
       String sentence = (String) e.getData();
-      List<String> tokens = tokenize(sentence);
+      List<String> tokens = Detokenizer.tokenize(preprocessor, sentence);
       List<String> separators = inferSeparators(sentence, tokens);
       Stream<Integer> range = IntStream.range(0, tokens.size()).boxed();
       return range.map(i -> {
@@ -83,12 +83,4 @@ public class TokenPipe extends Pipe {
     return separators;
   }
 
-  private List<String> tokenize(String sentence) {
-    Sequence<IString> tokenSequence = preprocessor.process(sentence);
-    List<String> tokens = new ArrayList<>(tokenSequence.size());
-    for (int i = 0; i < tokenSequence.size(); i++) {
-      tokens.add(tokenSequence.get(i).toString());
-    }
-    return tokens;
-  }
 }

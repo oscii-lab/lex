@@ -40,7 +40,7 @@ dependencies {
     compile group: 'com.codepoetics', name: 'protonpack', version: '1.2'
     compile group: 'org.eclipse.jetty', name: 'jetty-server', version: '9.2.1.v20140609'
     compile group: 'org.eclipse.jetty', name: 'jetty-servlet', version: '9.2.1.v20140609'
-    compile group: 'net.sf.trove4j', name: 'trove4j', version: '3.0.3'
+    compile group: 'net.sf.trove4j', name: 'trove4j', version: '2.0.2'
     compile group: 'cc.mallet', name: 'mallet', version: '2.0.7'
     compile group: 'com.ibm.icu', name: 'icu4j', version: '55.1'
 
