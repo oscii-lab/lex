@@ -12,7 +12,7 @@ public class Token {
   private static final String END = "</S>";
   // This label must appear in the training set, or Mallet will crash (silly behavior)
   // See: http://comments.gmane.org/gmane.comp.ai.mallet.devel/620
-  private static final TokenLabel DUMMY_LABEL = new TokenLabel(false, "", "");
+  private static final TokenLabel DUMMY_LABEL = new TokenLabel(false, "", null);
   int index;
   List<String> tokens;
   TokenLabel label;
@@ -37,7 +37,7 @@ public class Token {
     return tokens.get(index);
   }
 
-  public String next() {
-    return (index + 1 == tokens.size()) ? END : tokens.get(index + 1);
+  public String after(int k) {
+    return (index + k >= tokens.size()) ? END : tokens.get(index + k);
   }
 }

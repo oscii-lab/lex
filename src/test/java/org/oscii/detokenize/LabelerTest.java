@@ -20,11 +20,22 @@ public class LabelerTest {
     List<String> examples = Arrays.asList(
             "\"What's to-do?\"",
             "; . ... U.S.!",
-            "Yearbook 18"); // Example with non-standard space character
+            "Yearbook 18", // Example with non-standard space character
+            "eine Änderung", // Non-ASCII
+            "Hill; Tel.", // Final abbrevation
+            "Hill; Tel. Ist" // Mid abbreviation
+    );
     List<List<TokenLabel>> expected = Arrays.asList(
             toLabels(Arrays.asList("", "", " ", "", "", "")),
             toLabels(Arrays.asList(" ", " ", " ", "", "")),
-            toLabels(Arrays.asList(" ", "")));
+            toLabels(Arrays.asList(" ", "")),
+            toLabels(Arrays.asList(" ", "")),
+            toLabels(Arrays.asList("", " ", "")),
+            toLabels(Arrays.asList("", " ", " "))
+    );
+    expected.get(4).add(new TokenLabel(false, "", "")); // Delete extra .
+    expected.get(5).add(new TokenLabel(false, "", "")); // Delete extra .
+    expected.get(5).add(new TokenLabel(false, "", null));
     Preprocessor preprocessor = new EnglishPreprocessor(true);
     Labeler labeler = new Labeler();
     for (int i = 0; i < examples.size(); i++) {
@@ -35,6 +46,6 @@ public class LabelerTest {
   }
 
   private List<TokenLabel> toLabels(List<String> strings) {
-    return strings.stream().map(s -> new TokenLabel(false, s, "")).collect(toList());
+    return strings.stream().map(s -> new TokenLabel(false, s, null)).collect(toList());
   }
 }

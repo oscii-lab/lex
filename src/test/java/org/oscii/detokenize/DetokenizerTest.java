@@ -35,7 +35,7 @@ public class DetokenizerTest {
     );
 
     Preprocessor pp = new EnglishPreprocessor(true);
-    Detokenizer detokenizer = Detokenizer.train(pp, train.iterator());
+    Detokenizer detokenizer = Detokenizer.train(pp, 0.1, train.iterator());
 
     // Test on training instances
     for (String expected : train) {

@@ -17,8 +17,8 @@ public class TokenLabelTest extends TestCase {
   public void testRenderToken() throws Exception {
     List<String> tokens = Arrays.asList("hello", ",", "mundo");
     List<TokenLabel> labels = Arrays.asList(
-            new TokenLabel(true, "", ""),
-            new TokenLabel(false, " ", ""),
+            new TokenLabel(true, "", null),
+            new TokenLabel(false, " ", null),
             new TokenLabel(true, "", "world"));
     assertEquals("Hello, World", TokenLabel.render(tokens, labels));
   }
@@ -26,9 +26,10 @@ public class TokenLabelTest extends TestCase {
   @Test
   public void testRender() throws Exception {
     List<RenderTokenCase> cases = Arrays.asList(
-            new RenderTokenCase("dog", new TokenLabel(true, " ", ""), "Dog"),
+            new RenderTokenCase("dog", new TokenLabel(true, " ", null), "Dog"),
             new RenderTokenCase("dog", new TokenLabel(false, " ", "cat"), "cat"),
-            new RenderTokenCase("dog", new TokenLabel(true, " ", "cat"), "Cat"));
+            new RenderTokenCase("dog", new TokenLabel(true, " ", "cat"), "Cat"),
+    new RenderTokenCase("dog", new TokenLabel(false, "", ""), ""));
     cases.forEach(c -> assertEquals(c.label.renderToken(c.token), c.result));
   }
 

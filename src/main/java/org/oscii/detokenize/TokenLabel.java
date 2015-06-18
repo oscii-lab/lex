@@ -11,7 +11,7 @@ import java.util.List;
 public class TokenLabel {
   boolean capitalize = false;
   String following = " ";
-  String replace = "";
+  String replace = null;
 
   public TokenLabel(boolean capitalize, String following, String replace) {
     this.capitalize = capitalize;
@@ -31,7 +31,7 @@ public class TokenLabel {
   }
 
   public String renderToken(String token) {
-    if (!replace.isEmpty()) {
+    if (replace != null) {
       token = replace;
     }
     if (capitalize) {
@@ -64,7 +64,7 @@ public class TokenLabel {
 
     if (capitalize != that.capitalize) return false;
     if (!following.equals(that.following)) return false;
-    return replace.equals(that.replace);
+    return !(replace != null ? !replace.equals(that.replace) : that.replace != null);
 
   }
 
@@ -72,7 +72,7 @@ public class TokenLabel {
   public int hashCode() {
     int result = (capitalize ? 1 : 0);
     result = 31 * result + following.hashCode();
-    result = 31 * result + replace.hashCode();
+    result = 31 * result + (replace != null ? replace.hashCode() : 0);
     return result;
   }
 }

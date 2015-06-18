@@ -22,12 +22,10 @@ import static java.util.stream.Collectors.toList;
 
 /**
  * A classification-based detokenizer.
- *
+ * <p>
  * Please make sure that edu.stanford.nlp.* imports are isolated to this file.
  */
 public class Detokenizer {
-
-  private static final double L1_WEIGHT = 0.1;
   Classifier classifier; // Weights
 
   private Detokenizer(Classifier classifier) {
@@ -56,7 +54,7 @@ public class Detokenizer {
   /*
    * Train a detokenizer for a preprocessor by inspecting its behavior on examples.
    */
-  public static Detokenizer train(Preprocessor preprocessor, Iterator<String> examples) {
+  public static Detokenizer train(Preprocessor preprocessor, double regularization, Iterator<String> examples) {
     Pipe pipe = new SerialPipes(new Pipe[]{
             new FeaturePipe(),
             new TokenSequence2FeatureSequence(),
@@ -66,7 +64,7 @@ public class Detokenizer {
     InstanceList instances = new InstanceList(pipe);
     Iterator<Instance> labeled = toLabeledInstances(examples, preprocessor);
     instances.addThruPipe(labeled);
-    ClassifierTrainer trainer = new MaxEntL1Trainer(L1_WEIGHT);
+    ClassifierTrainer trainer = new MaxEntL1Trainer(regularization);
     Classifier classifier = trainer.train(instances);
     return new Detokenizer(classifier);
   }
@@ -99,7 +97,12 @@ public class Detokenizer {
     List<Instance> instances = new ArrayList<>();
     examples.forEachRemaining(ex -> {
       List<String> tokens = tokenize(preprocessor, ex);
-      List<TokenLabel> labels = labeler.getLabels(ex, tokens);
+      List<TokenLabel> labels = null;
+      try {
+        labels = labeler.getLabels(ex, tokens);
+      } catch (Labeler.LabelException e) {
+        return;
+      }
       for (int i = 0; i < tokens.size(); i++) {
         TokenLabel label = labels.get(i);
         instances.add(Token.labeledInstance(i, tokens, label));
