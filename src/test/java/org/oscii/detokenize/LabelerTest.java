@@ -19,10 +19,12 @@ public class LabelerTest {
   public void test() throws Exception {
     List<String> examples = Arrays.asList(
             "\"What's to-do?\"",
-            "; . ... U.S.!");
+            "; . ... U.S.!",
+            "Yearbook, Vol. 18: 1993");
     List<List<TokenLabel>> expected = Arrays.asList(
             toLabels(Arrays.asList("", "", " ", "", "", "")),
-            toLabels(Arrays.asList(" ", " ", " ", "", "")));
+            toLabels(Arrays.asList(" ", " ", " ", "", "")),
+            toLabels(Arrays.asList("", " ", "", " ", "", " ", "")));
     Preprocessor preprocessor = new EnglishPreprocessor(true);
     Labeler labeler = new Labeler();
     for (int i = 0; i < examples.size(); i++) {

@@ -71,6 +71,13 @@ public class Detokenizer {
     return new Detokenizer(classifier);
   }
 
+  public double evaluate(Preprocessor preprocessor, Iterator<String> testExamples) {
+    InstanceList instances = new InstanceList(classifier.getInstancePipe());
+    Iterator<Instance> labeled = toLabeledInstances(testExamples, preprocessor);
+    instances.addThruPipe(labeled);
+    return classifier.getAccuracy(instances);
+  }
+
   /*
    * Label a list of tokens that has been tokenized using the preprocessor.
    */
@@ -117,4 +124,5 @@ public class Detokenizer {
     tokenSequence.forEach(t -> tokens.add(t.toString()));
     return tokens;
   }
+
 }
