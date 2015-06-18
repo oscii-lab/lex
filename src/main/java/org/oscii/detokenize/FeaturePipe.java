@@ -29,10 +29,10 @@ public class FeaturePipe extends Pipe {
   }
 
   private String normalize(String word) {
-    if (word.length() <= AFFIX_LENGTH*2) {
+    if (word.length() <= AFFIX_LENGTH * 2) {
       return word;
     } else {
-      return word.substring(0, AFFIX_LENGTH) + "_" + word.substring(word.length()-AFFIX_LENGTH);
+      return word.substring(0, AFFIX_LENGTH) + "_" + word.substring(word.length() - AFFIX_LENGTH);
     }
   }
 }

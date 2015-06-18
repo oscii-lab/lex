@@ -1,6 +1,5 @@
 package org.oscii.detokenize;
 
-import cc.mallet.types.Labeling;
 import com.google.gson.Gson;
 import com.ibm.icu.lang.UCharacter;
 

@@ -2,7 +2,6 @@ package org.oscii.detokenize;
 
 import com.google.common.collect.Iterators;
 import com.google.common.collect.PeekingIterator;
-import edu.stanford.nlp.mt.process.Preprocessor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,7 +9,7 @@ import java.util.PrimitiveIterator;
 
 /**
  * Infer label sequence from a preprocessor applied to a string.
- *
+ * <p>
  * TODO(denero) Infer capitalization and replacement
  */
 public class Labeler {

@@ -38,6 +38,6 @@ public class Token {
   }
 
   public String next() {
-    return (index + 1 == tokens.size()) ? END : tokens.get(index+1);
+    return (index + 1 == tokens.size()) ? END : tokens.get(index + 1);
   }
 }

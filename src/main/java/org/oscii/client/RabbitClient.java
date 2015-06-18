@@ -12,28 +12,28 @@ import java.util.UUID;
  */
 public class RabbitClient {
 
-    public static void main(String[] args)
-            throws java.io.IOException,
-            java.lang.InterruptedException {
-        ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost("localhost");
-        Connection connection = factory.newConnection();
-        Channel channel = connection.createChannel();
+  public static void main(String[] args)
+          throws java.io.IOException,
+          java.lang.InterruptedException {
+    ConnectionFactory factory = new ConnectionFactory();
+    factory.setHost("localhost");
+    Connection connection = factory.newConnection();
+    Channel channel = connection.createChannel();
 
-        String replyQueueName = channel.queueDeclare().getQueue();
-        String corrId = UUID.randomUUID().toString();
+    String replyQueueName = channel.queueDeclare().getQueue();
+    String corrId = UUID.randomUUID().toString();
 
-        AMQP.BasicProperties props = new AMQP.BasicProperties.Builder()
-                .correlationId(corrId)
-                .replyTo(replyQueueName)
-                .build();
+    AMQP.BasicProperties props = new AMQP.BasicProperties.Builder()
+            .correlationId(corrId)
+            .replyTo(replyQueueName)
+            .build();
 
-        channel.queueDeclare("lexicon", false, false, false, null);
-        String message = "{ query: \"adult\", source: \"en\", target: \"es\", translate: true, context: \"I am an adult.\" }";
-        channel.basicPublish("", "lexicon", props, message.getBytes());
-        System.out.println(" [x] Sent '" + message + "'");
+    channel.queueDeclare("lexicon", false, false, false, null);
+    String message = "{ query: \"adult\", source: \"en\", target: \"es\", translate: true, context: \"I am an adult.\" }";
+    channel.basicPublish("", "lexicon", props, message.getBytes());
+    System.out.println(" [x] Sent '" + message + "'");
 
-        channel.close();
-        connection.close();
-    }
+    channel.close();
+    connection.close();
+  }
 }
