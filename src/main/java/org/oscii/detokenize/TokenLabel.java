@@ -6,7 +6,7 @@ import com.ibm.icu.lang.UCharacter;
 import java.util.List;
 
 /**
- * A label sequence parameterizes rendering a token sequence as a string.
+ * Labels describes how to render a token sequence as a string.
  */
 public class TokenLabel {
   boolean capitalize = false;
@@ -53,6 +53,27 @@ public class TokenLabel {
       sb.append(label.following);
     }
     return sb.toString();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+
+    TokenLabel that = (TokenLabel) o;
+
+    if (capitalize != that.capitalize) return false;
+    if (!following.equals(that.following)) return false;
+    return replace.equals(that.replace);
+
+  }
+
+  @Override
+  public int hashCode() {
+    int result = (capitalize ? 1 : 0);
+    result = 31 * result + following.hashCode();
+    result = 31 * result + replace.hashCode();
+    return result;
   }
 }
 

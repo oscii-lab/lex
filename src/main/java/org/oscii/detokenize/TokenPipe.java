@@ -2,6 +2,8 @@ package org.oscii.detokenize;
 
 import cc.mallet.pipe.Pipe;
 import cc.mallet.types.Instance;
+import com.google.common.collect.Interner;
+import com.google.common.collect.Interners;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.PeekingIterator;
 import edu.stanford.nlp.mt.process.Preprocessor;
@@ -19,6 +21,7 @@ import java.util.stream.StreamSupport;
 public class TokenPipe extends Pipe {
 
   private final Preprocessor preprocessor;
+  Interner<TokenLabel> labels = Interners.newWeakInterner();
 
   public TokenPipe(Preprocessor preprocessor) {
     this.preprocessor = preprocessor;
@@ -36,6 +39,7 @@ public class TokenPipe extends Pipe {
       return range.map(i -> {
         // TODO(denero) Infer capitalization and replacement
         TokenLabel label = new TokenLabel(false, separators.get(i), "");
+        label = labels.intern(label);
         return Token.labeledInstance(i, tokens, label);
       });
     }).iterator();
@@ -79,11 +83,11 @@ public class TokenPipe extends Pipe {
     return separators;
   }
 
-  public List<String> tokenize(String sentence) {
+  private List<String> tokenize(String sentence) {
     Sequence<IString> tokenSequence = preprocessor.process(sentence);
     List<String> tokens = new ArrayList<>(tokenSequence.size());
     for (int i = 0; i < tokenSequence.size(); i++) {
-      tokens.set(i, tokenSequence.get(i).toString());
+      tokens.add(tokenSequence.get(i).toString());
     }
     return tokens;
   }
