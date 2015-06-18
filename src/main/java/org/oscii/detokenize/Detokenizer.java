@@ -56,7 +56,7 @@ public class Detokenizer {
   /*
    * Train a detokenizer for a preprocessor by inspecting its behavior on examples.
    */
-  public static Detokenizer train(Preprocessor preprocessor, List<String> examples) {
+  public static Detokenizer train(Preprocessor preprocessor, Iterator<String> examples) {
     Pipe pipe = new SerialPipes(new Pipe[]{
             new FeaturePipe(),
             new TokenSequence2FeatureSequence(),
@@ -87,10 +87,10 @@ public class Detokenizer {
   /*
    * Generate labeled training data from a preprocessor.
    */
-  private static Iterator<Instance> toLabeledInstances(List<String> examples, Preprocessor preprocessor) {
+  private static Iterator<Instance> toLabeledInstances(Iterator<String> examples, Preprocessor preprocessor) {
     Labeler labeler = new Labeler();
     List<Instance> instances = new ArrayList<>();
-    examples.forEach(ex -> {
+    examples.forEachRemaining(ex -> {
       List<String> tokens = tokenize(preprocessor, ex);
       List<TokenLabel> labels = labeler.getLabels(ex, tokens);
       for (int i = 0; i < tokens.size(); i++) {
