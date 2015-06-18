@@ -20,11 +20,11 @@ public class LabelerTest {
     List<String> examples = Arrays.asList(
             "\"What's to-do?\"",
             "; . ... U.S.!",
-            "Yearbook, Vol. 18: 1993");
+            "Yearbook 18"); // Example with non-standard space character
     List<List<TokenLabel>> expected = Arrays.asList(
             toLabels(Arrays.asList("", "", " ", "", "", "")),
             toLabels(Arrays.asList(" ", " ", " ", "", "")),
-            toLabels(Arrays.asList("", " ", "", " ", "", " ", "")));
+            toLabels(Arrays.asList(" ", "")));
     Preprocessor preprocessor = new EnglishPreprocessor(true);
     Labeler labeler = new Labeler();
     for (int i = 0; i < examples.size(); i++) {

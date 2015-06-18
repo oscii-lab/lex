@@ -29,17 +29,15 @@ public class Labeler {
         continue;
       }
 
-      // Check tokenization consistency
-      int nextChars = chars.next();
-      int nextToken = token.next();
-      if (nextChars != nextToken) {
-        throw new RuntimeException("Invalid tokenization AT " + tokens.get(t) + " OF " + tokens + " FROM " + sentence);
+      // Advance both and check tokenization consistency
+      if (chars.next() != token.next()) {
+        throw new RuntimeException("Invalid tokenization AT \"" + tokens.get(t) + "\" OF " + tokens + " FROM " + sentence);
       }
 
       // Add separator
       if (!token.hasNext()) {
         boolean hasSpace = false;
-        while (chars.hasNext() && chars.peek() == ' ') {
+        while (chars.hasNext() && (Character.isWhitespace(chars.peek()) || Character.isSpaceChar(chars.peek()))) {
           chars.next();
           hasSpace = true;
         }
