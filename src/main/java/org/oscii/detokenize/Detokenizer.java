@@ -26,106 +26,106 @@ import static java.util.stream.Collectors.toList;
  * Please make sure that edu.stanford.nlp.* imports are isolated to this file.
  */
 public class Detokenizer {
-  Classifier classifier; // Weights
+    Classifier classifier; // Weights
 
-  private Detokenizer(Classifier classifier) {
-    this.classifier = classifier;
-  }
+    private Detokenizer(Classifier classifier) {
+        this.classifier = classifier;
+    }
 
-  /*
-   * Save to a file.
-   */
-  public void save(File file) throws IOException {
-    ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file));
-    oos.writeObject(classifier);
-    oos.close();
-  }
+    /*
+     * Save to a file.
+     */
+    public void save(File file) throws IOException {
+        ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file));
+        oos.writeObject(classifier);
+        oos.close();
+    }
 
-  /*
-   * Load from a file.
-   */
-  public static Detokenizer load(File file) throws IOException, ClassNotFoundException {
-    ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file));
-    Classifier classifier = (Classifier) ois.readObject();
-    ois.close();
-    return new Detokenizer(classifier);
-  }
+    /*
+     * Load from a file.
+     */
+    public static Detokenizer load(File file) throws IOException, ClassNotFoundException {
+        ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file));
+        Classifier classifier = (Classifier) ois.readObject();
+        ois.close();
+        return new Detokenizer(classifier);
+    }
 
-  /*
-   * Train a detokenizer for a preprocessor by inspecting its behavior on examples.
-   */
-  public static Detokenizer train(Preprocessor preprocessor, double regularization, Iterator<String> examples) {
-    Pipe pipe = new SerialPipes(new Pipe[]{
-            new FeaturePipe(),
-            new TokenSequence2FeatureSequence(),
-            new FeatureSequence2FeatureVector(false),
-            new Target2Label()
-    });
-    InstanceList instances = new InstanceList(pipe);
-    Iterator<Instance> labeled = toLabeledInstances(examples, preprocessor);
-    instances.addThruPipe(labeled);
-    ClassifierTrainer trainer = new MaxEntL1Trainer(regularization);
-    Classifier classifier = trainer.train(instances);
-    return new Detokenizer(classifier);
-  }
+    /*
+     * Train a detokenizer for a preprocessor by inspecting its behavior on examples.
+     */
+    public static Detokenizer train(Preprocessor preprocessor, double regularization, Iterator<String> examples) {
+        Pipe pipe = new SerialPipes(new Pipe[]{
+                new FeaturePipe(),
+                new TokenSequence2FeatureSequence(),
+                new FeatureSequence2FeatureVector(false),
+                new Target2Label()
+        });
+        InstanceList instances = new InstanceList(pipe);
+        Iterator<Instance> labeled = toLabeledInstances(examples, preprocessor);
+        instances.addThruPipe(labeled);
+        ClassifierTrainer trainer = new MaxEntL1Trainer(regularization);
+        Classifier classifier = trainer.train(instances);
+        return new Detokenizer(classifier);
+    }
 
-  public double evaluate(Preprocessor preprocessor, Iterator<String> testExamples) {
-    InstanceList instances = new InstanceList(classifier.getInstancePipe());
-    Iterator<Instance> labeled = toLabeledInstances(testExamples, preprocessor);
-    instances.addThruPipe(labeled);
-    return classifier.getAccuracy(instances);
-  }
+    public double evaluate(Preprocessor preprocessor, Iterator<String> testExamples) {
+        InstanceList instances = new InstanceList(classifier.getInstancePipe());
+        Iterator<Instance> labeled = toLabeledInstances(testExamples, preprocessor);
+        instances.addThruPipe(labeled);
+        return classifier.getAccuracy(instances);
+    }
 
-  /*
-   * Label a list of tokens that has been tokenized using the preprocessor.
-   */
-  public List<TokenLabel> predictLabels(List<String> tokens) {
-    InstanceList instances = new InstanceList(classifier.getInstancePipe());
-    Stream<Integer> range = IntStream.range(0, tokens.size()).boxed();
-    Iterator<Instance> unlabeled = range.map(i -> Token.unlabeledInstance(i, tokens)).iterator();
-    instances.addThruPipe(unlabeled);
-    List<Classification> predictions = classifier.classify(instances);
-    List<TokenLabel> labels = predictions.stream().map(Detokenizer::getLabel).collect(toList());
-    return labels;
-  }
+    /*
+     * Label a list of tokens that has been tokenized using the preprocessor.
+     */
+    public List<TokenLabel> predictLabels(List<String> tokens) {
+        InstanceList instances = new InstanceList(classifier.getInstancePipe());
+        Stream<Integer> range = IntStream.range(0, tokens.size()).boxed();
+        Iterator<Instance> unlabeled = range.map(i -> Token.unlabeledInstance(i, tokens)).iterator();
+        instances.addThruPipe(unlabeled);
+        List<Classification> predictions = classifier.classify(instances);
+        List<TokenLabel> labels = predictions.stream().map(Detokenizer::getLabel).collect(toList());
+        return labels;
+    }
 
-  /*
-   * Generate labeled training data from a preprocessor.
-   */
-  private static Iterator<Instance> toLabeledInstances(Iterator<String> examples, Preprocessor preprocessor) {
-    Labeler labeler = new Labeler();
-    List<Instance> instances = new ArrayList<>();
-    examples.forEachRemaining(ex -> {
-      List<String> tokens = tokenize(preprocessor, ex);
-      List<TokenLabel> labels = null;
-      try {
-        labels = labeler.getLabels(ex, tokens);
-      } catch (Labeler.LabelException e) {
-        return;
-      }
-      for (int i = 0; i < tokens.size(); i++) {
-        TokenLabel label = labels.get(i);
-        instances.add(Token.labeledInstance(i, tokens, label));
-      }
-    });
-    return instances.iterator();
-  }
+    /*
+     * Generate labeled training data from a preprocessor.
+     */
+    private static Iterator<Instance> toLabeledInstances(Iterator<String> examples, Preprocessor preprocessor) {
+        Labeler labeler = new Labeler();
+        List<Instance> instances = new ArrayList<>();
+        examples.forEachRemaining(ex -> {
+            List<String> tokens = tokenize(preprocessor, ex);
+            List<TokenLabel> labels = null;
+            try {
+                labels = labeler.getLabels(ex, tokens);
+            } catch (Labeler.LabelException e) {
+                return;
+            }
+            for (int i = 0; i < tokens.size(); i++) {
+                TokenLabel label = labels.get(i);
+                instances.add(Token.labeledInstance(i, tokens, label));
+            }
+        });
+        return instances.iterator();
+    }
 
-  /*
-   * Extract the best label from a classifier prediction.
-   */
-  private static TokenLabel getLabel(Classification c) {
-    return (TokenLabel) c.getLabeling().getBestLabel().getEntry();
-  }
+    /*
+     * Extract the best label from a classifier prediction.
+     */
+    private static TokenLabel getLabel(Classification c) {
+        return (TokenLabel) c.getLabeling().getBestLabel().getEntry();
+    }
 
-  /*
-   * Convenience method for converting from CoreNLP proprietary data structures.
-   */
-  public static List<String> tokenize(Preprocessor preprocessor, String sentence) {
-    Sequence<IString> tokenSequence = preprocessor.process(sentence);
-    List<String> tokens = new ArrayList<>(tokenSequence.size());
-    tokenSequence.forEach(t -> tokens.add(t.toString()));
-    return tokens;
-  }
+    /*
+     * Convenience method for converting from CoreNLP proprietary data structures.
+     */
+    public static List<String> tokenize(Preprocessor preprocessor, String sentence) {
+        Sequence<IString> tokenSequence = preprocessor.process(sentence);
+        List<String> tokens = new ArrayList<>(tokenSequence.size());
+        tokenSequence.forEach(t -> tokens.add(t.toString()));
+        return tokens;
+    }
 
 }
