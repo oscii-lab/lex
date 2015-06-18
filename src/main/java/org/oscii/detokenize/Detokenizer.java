@@ -27,11 +27,9 @@ public class Detokenizer {
 
   private static final double L1_WEIGHT = 0.1;
   Classifier classifier; // Weights
-  Pipe pipe; // Feature extractor
 
-  private Detokenizer(Classifier classifier, Pipe pipe) {
+  private Detokenizer(Classifier classifier) {
     this.classifier = classifier;
-    this.pipe = pipe;
   }
 
   /*
@@ -49,14 +47,14 @@ public class Detokenizer {
     instances.addThruPipe(labeled);
     ClassifierTrainer trainer = new MaxEntL1Trainer(L1_WEIGHT);
     Classifier classifier = trainer.train(instances);
-    return new Detokenizer(classifier, pipe);
+    return new Detokenizer(classifier);
   }
 
   /*
    * Label a list of tokens that has been tokenized using the preprocessor.
    */
   public List<TokenLabel> predictLabels(List<String> tokens) {
-    InstanceList instances = new InstanceList(pipe);
+    InstanceList instances = new InstanceList(classifier.getInstancePipe());
     Stream<Integer> range = IntStream.range(0, tokens.size()).boxed();
     Iterator<Instance> unlabeled = range.map(i -> Token.unlabeledInstance(i, tokens)).iterator();
     instances.addThruPipe(unlabeled);
