@@ -1,6 +1,6 @@
 package org.oscii.concordance;
 
-import gnu.trove.map.hash.THashMap;
+import gnu.trove.THashMap;
 import org.oscii.lex.Expression;
 
 import java.io.IOException;

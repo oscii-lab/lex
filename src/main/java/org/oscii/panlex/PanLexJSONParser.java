@@ -2,7 +2,7 @@ package org.oscii.panlex;
 
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
-import gnu.trove.map.hash.THashMap;
+import gnu.trove.THashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.oscii.lex.Definition;

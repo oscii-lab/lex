@@ -5,7 +5,7 @@ import edu.stanford.nlp.mt.tm.SampledRule;
 import edu.stanford.nlp.mt.util.ParallelCorpus;
 import edu.stanford.nlp.mt.util.ParallelSuffixArray;
 import edu.stanford.nlp.mt.util.Vocabulary;
-import gnu.trove.map.hash.THashMap;
+import gnu.trove.THashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.oscii.lex.Expression;
