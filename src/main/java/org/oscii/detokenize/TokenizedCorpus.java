@@ -67,7 +67,7 @@ public interface TokenizedCorpus {
 
         @Override
         public Stream<Entry> stream() {
-            return StreamUtils.zip(rawCorpus,tokenizedCorpus,
+            return StreamUtils.zip(rawCorpus, tokenizedCorpus,
                     (raw, t) -> new Entry(raw, Arrays.asList(t.split("\\s+"))));
         }
     }

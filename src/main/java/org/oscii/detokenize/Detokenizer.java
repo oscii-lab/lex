@@ -8,7 +8,6 @@ import cc.mallet.pipe.*;
 import cc.mallet.types.Instance;
 import cc.mallet.types.InstanceList;
 import com.google.common.collect.Iterators;
-import com.google.gson.Gson;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -25,8 +24,16 @@ import static java.util.stream.Collectors.toList;
  * A classification-based detokenizer.
  */
 public class Detokenizer {
-    Classifier classifier;
+    private Classifier classifier;
+    private int accepted = 0;
+    private int skipped = 0;
     private final static Logger log = LogManager.getLogger(Detokenizer.class);
+
+    /*
+     * Use Detokenizer.train or Detokenizer.load for construction.
+     */
+    private Detokenizer() {
+    }
 
     private Detokenizer(Classifier classifier) {
         this.classifier = classifier;
@@ -62,11 +69,12 @@ public class Detokenizer {
                 new Target2Label()
         });
         InstanceList instances = new InstanceList(pipe);
-        Iterator<Instance> labeled = toLabeledInstances(examples);
+        Detokenizer detokenizer = new Detokenizer();
+        Iterator<Instance> labeled = detokenizer.toLabeledInstances(examples);
         instances.addThruPipe(labeled);
         ClassifierTrainer trainer = new MaxEntL1Trainer(regularization);
-        Classifier classifier = trainer.train(instances);
-        return new Detokenizer(classifier);
+        detokenizer.classifier = trainer.train(instances);
+        return detokenizer;
     }
 
     /*
@@ -95,7 +103,7 @@ public class Detokenizer {
     /*
      * Generate labeled training data from a preprocessor.
      */
-    private static Iterator<Instance> toLabeledInstances(Iterator<TokenizedCorpus.Entry> examples) {
+    private Iterator<Instance> toLabeledInstances(Iterator<TokenizedCorpus.Entry> examples) {
         Labeler labeler = new Labeler();
         return Iterators.concat(Iterators.transform(examples, s -> {
             List<String> tokens = s.getTokens();
@@ -105,17 +113,32 @@ public class Detokenizer {
                     throw new Labeler.LabelException("Label count mismatch: " + labels.size() + " not " + tokens.size());
                 }
                 Stream<Integer> range = IntStream.range(0, tokens.size()).boxed();
+                accepted++;
                 return range.map(i -> Token.labeledInstance(i, tokens, labels.get(i))).iterator();
             } catch (Labeler.LabelException e) {
                 log.debug("Skipping: " + e);
+                skipped++;
                 return emptyIterator();
             }
         }));
     }
 
+    public int getAccepted() {
+        return accepted;
+    }
+
+    public int getSkipped() {
+        return skipped;
+    }
+
+    public void resetCounts() {
+        accepted = 0;
+        skipped = 0;
+    }
+
     /*
-     * Extract the best label from a classifier prediction.
-     */
+         * Extract the best label from a classifier prediction.
+         */
     private static TokenLabel getLabel(Classification c) {
         String json = (String) c.getLabeling().getBestLabel().getEntry();
         return TokenLabel.interpret(json);

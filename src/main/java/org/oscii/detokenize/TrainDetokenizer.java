@@ -1,5 +1,7 @@
 package org.oscii.detokenize;
 
+import cc.mallet.util.MalletLogger;
+import cc.mallet.util.MalletProgressMessageLogger;
 import com.google.common.collect.Iterators;
 import edu.stanford.nlp.mt.process.Preprocessor;
 import edu.stanford.nlp.mt.process.de.GermanPreprocessor;
@@ -13,8 +15,10 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 
@@ -30,7 +34,7 @@ public class TrainDetokenizer {
         Stream<String> rawCorpus = getLines(options, "raw");
         TokenizedCorpus corpus;
         if (options.has("tokenized")) {
-            corpus = new TokenizedCorpus.ParallelCorpus(rawCorpus,  getLines(options, "tokenized"));
+            corpus = new TokenizedCorpus.ParallelCorpus(rawCorpus, getLines(options, "tokenized"));
         } else {
             Preprocessor preprocessor = getPreprocessor(options);
             corpus = new TokenizedCorpus.PreprocessorCorpus(preprocessor, rawCorpus);
@@ -48,13 +52,16 @@ public class TrainDetokenizer {
 
         double regularization = (double) options.valueOf("regularization");
         Detokenizer detokenizer = Detokenizer.train(regularization, training);
+        logCounts("Trained", detokenizer);
 
+        detokenizer.resetCounts();
         long start = System.currentTimeMillis();
         double accuracy = detokenizer.evaluate(test.iterator());
         double duration = .001 * (System.currentTimeMillis() - start);
-
+        logCounts("Tested", detokenizer);
         log.info("Test accuracy: " + accuracy);
         log.info("Test segments/second: " + (test.size() / duration));
+
         if (options.has("errors")) {
             test.forEach(ex -> {
                 List<String> tokens = ex.getTokens();
@@ -70,6 +77,14 @@ public class TrainDetokenizer {
             File outFile = (File) options.valueOf("out");
             detokenizer.save(outFile);
         }
+    }
+
+    private static void logCounts(String set, Detokenizer detokenizer) {
+        int a = detokenizer.getAccepted();
+        int s = detokenizer.getSkipped();
+        int t = a + s;
+        double ap = 100.0 * a / t;
+        log.info(String.format("%s on %d (%.2f%%) of %d examples", set, a, ap, t));
     }
 
     /*

@@ -3,7 +3,6 @@ package org.oscii.detokenize;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.PeekingIterator;
 
-import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,7 +17,6 @@ import java.util.List;
  */
 public class Labeler {
     public List<TokenLabel> getLabels(String sentence, List<String> tokens) throws LabelException {
-        sentence = Normalizer.normalize(sentence, Normalizer.Form.NFC);
         List<TokenLabel> labels = new ArrayList<>(tokens.size());
         int t = 0; // token number
         PeekingIterator<Integer> chars = Iterators.peekingIterator(sentence.codePoints().iterator());
