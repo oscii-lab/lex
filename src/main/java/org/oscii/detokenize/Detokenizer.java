@@ -107,7 +107,7 @@ public class Detokenizer {
                 Stream<Integer> range = IntStream.range(0, tokens.size()).boxed();
                 return range.map(i -> Token.labeledInstance(i, tokens, labels.get(i))).iterator();
             } catch (Labeler.LabelException e) {
-                log.warn("Skipping: " + e);
+                log.debug("Skipping: " + e);
                 return emptyIterator();
             }
         }));

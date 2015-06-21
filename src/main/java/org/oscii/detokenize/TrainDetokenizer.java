@@ -8,6 +8,8 @@ import edu.stanford.nlp.mt.process.es.SpanishPreprocessor;
 import edu.stanford.nlp.mt.process.fr.FrenchPreprocessor;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -20,6 +22,8 @@ import java.util.zip.GZIPInputStream;
  * Command-line utility to train a detokenizer.
  */
 public class TrainDetokenizer {
+    private final static Logger log = LogManager.getLogger(TrainDetokenizer.class);
+
     public static void main(String[] args) throws IOException {
         OptionSet options = parse(args);
 
@@ -45,14 +49,19 @@ public class TrainDetokenizer {
         double regularization = (double) options.valueOf("regularization");
         Detokenizer detokenizer = Detokenizer.train(regularization, training);
 
-        System.out.println("Test accuracy: " + detokenizer.evaluate(test.iterator()));
+        long start = System.currentTimeMillis();
+        double accuracy = detokenizer.evaluate(test.iterator());
+        double duration = .001 * (System.currentTimeMillis() - start);
+
+        log.info("Test accuracy: " + accuracy);
+        log.info("Test segments/second: " + (test.size() / duration));
         if (options.has("errors")) {
             test.forEach(ex -> {
                 List<String> tokens = ex.getTokens();
                 String roundTrip = TokenLabel.render(tokens, detokenizer.predictLabels(tokens));
                 if (!ex.getRaw().equals(roundTrip)) {
-                    System.out.println("Original:  " + ex);
-                    System.out.println("Detoken'd: " + roundTrip);
+                    log.info("Original:  " + ex);
+                    log.info("Detoken'd: " + roundTrip);
                 }
             });
         }
