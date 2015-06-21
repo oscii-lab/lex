@@ -35,7 +35,6 @@ public class TokenLabel {
             token = replace;
         }
         if (capitalize) {
-            // TODO(denero) Casing should require a locale.
             token = UCharacter.toTitleCase(token, null);
         }
         return token;

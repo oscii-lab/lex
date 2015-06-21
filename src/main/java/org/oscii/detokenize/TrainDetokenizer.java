@@ -1,7 +1,5 @@
 package org.oscii.detokenize;
 
-import cc.mallet.util.MalletLogger;
-import cc.mallet.util.MalletProgressMessageLogger;
 import com.google.common.collect.Iterators;
 import edu.stanford.nlp.mt.process.Preprocessor;
 import edu.stanford.nlp.mt.process.de.GermanPreprocessor;
@@ -15,10 +13,8 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 
