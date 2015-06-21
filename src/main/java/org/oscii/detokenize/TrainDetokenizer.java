@@ -13,6 +13,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -22,57 +23,77 @@ public class TrainDetokenizer {
     public static void main(String[] args) throws IOException {
         OptionSet options = parse(args);
 
-        File trainFile = (File) options.valueOf("data");
-        InputStream trainStream = new FileInputStream(trainFile);
-        if (trainFile.getName().endsWith(".gz")) {
-            trainStream = new GZIPInputStream(trainStream);
+        Stream<String> rawCorpus = getLines(options, "raw");
+        TokenizedCorpus corpus;
+        if (options.has("tokenized")) {
+            corpus = new TokenizedCorpus.ParallelCorpus(rawCorpus,  getLines(options, "tokenized"));
+        } else {
+            Preprocessor preprocessor = getPreprocessor(options);
+            corpus = new TokenizedCorpus.PreprocessorCorpus(preprocessor, rawCorpus);
         }
-        BufferedReader buffered = new BufferedReader(new InputStreamReader(trainStream, "utf-8"));
-        Iterator<String> trainExamples = buffered.lines().iterator();
 
+        // Split corpus into test and trainining
+        Iterator<TokenizedCorpus.Entry> all = corpus.stream().iterator();
         int testSize = (Integer) options.valueOf("testsize");
-        List<String> testExamples = new ArrayList<>(testSize);
+        List<TokenizedCorpus.Entry> test = new ArrayList<>(testSize);
         for (int i = 0; i < testSize; i++) {
-            testExamples.add(trainExamples.next());
+            test.add(all.next());
         }
-
         int trainSize = (Integer) options.valueOf("trainsize");
-        trainExamples = Iterators.limit(trainExamples, trainSize);
+        Iterator<TokenizedCorpus.Entry> training = trainSize == 0 ? all : Iterators.limit(all, trainSize);
 
-        Preprocessor preprocessor = getPreprocessor(options);
         double regularization = (double) options.valueOf("regularization");
-        Detokenizer detokenizer = Detokenizer.train(preprocessor, regularization, trainExamples);
+        Detokenizer detokenizer = Detokenizer.train(regularization, training);
 
-        System.out.println("Test accuracy: " + detokenizer.evaluate(preprocessor, testExamples.iterator()));
+        System.out.println("Test accuracy: " + detokenizer.evaluate(test.iterator()));
         if (options.has("errors")) {
-            testExamples.forEach(ex -> {
-                List<String> tokens = Detokenizer.tokenize(preprocessor, ex);
+            test.forEach(ex -> {
+                List<String> tokens = ex.getTokens();
                 String roundTrip = TokenLabel.render(tokens, detokenizer.predictLabels(tokens));
-                if (!ex.equals(roundTrip)) {
+                if (!ex.getRaw().equals(roundTrip)) {
                     System.out.println("Original:  " + ex);
                     System.out.println("Detoken'd: " + roundTrip);
                 }
             });
         }
 
-        File outFile = (File) options.valueOf("out");
-        detokenizer.save(outFile);
+        if (options.has("out")) {
+            File outFile = (File) options.valueOf("out");
+            detokenizer.save(outFile);
+        }
+    }
+
+    /*
+     * Get lines of a file (maybe gzipped) from a command line option.
+     */
+    private static Stream<String> getLines(OptionSet options, String option) throws IOException {
+        File trainFile = (File) options.valueOf(option);
+        InputStream trainStream = new FileInputStream(trainFile);
+        if (trainFile.getName().endsWith(".gz")) {
+            trainStream = new GZIPInputStream(trainStream);
+        }
+        BufferedReader buffered = new BufferedReader(new InputStreamReader(trainStream, "utf-8"));
+        return buffered.lines();
     }
 
     private static Preprocessor getPreprocessor(OptionSet options) {
         Preprocessor preprocessor = null;
         boolean cased = true;
-        switch ((String) options.valueOf("language")) {
+        switch (((String) options.valueOf("language")).toLowerCase()) {
             case "de":
+            case "german":
                 preprocessor = new GermanPreprocessor(cased);
                 break;
             case "en":
+            case "english":
                 preprocessor = new EnglishPreprocessor(cased);
                 break;
             case "es":
+            case "spanish":
                 preprocessor = new SpanishPreprocessor(cased);
                 break;
             case "fr":
+            case "french":
                 preprocessor = new FrenchPreprocessor(cased);
                 break;
         }
@@ -81,12 +102,11 @@ public class TrainDetokenizer {
 
     private static OptionSet parse(String[] args) throws IOException {
         OptionParser parser = new OptionParser();
-        File deTestData = new File("data/detok/detok_sample_1M_de_raw.clean.gz");
-        File deTokenizer = new File("data/detok/detok_sample_1M_de_raw.detokenizer");
         parser.accepts("language").withRequiredArg().defaultsTo("de");
-        parser.accepts("data").withRequiredArg().ofType(File.class).defaultsTo(deTestData);
-        parser.accepts("out").withRequiredArg().ofType(File.class).defaultsTo(deTokenizer);
-        parser.accepts("trainsize").withRequiredArg().ofType(Integer.class).defaultsTo(100000);
+        parser.accepts("raw").withRequiredArg().ofType(File.class);
+        parser.accepts("tokenized").withRequiredArg().ofType(File.class);
+        parser.accepts("out").withRequiredArg().ofType(File.class);
+        parser.accepts("trainsize").withRequiredArg().ofType(Integer.class).defaultsTo(0); // Unlimited
         parser.accepts("testsize").withRequiredArg().ofType(Integer.class).defaultsTo(10000);
         parser.accepts("regularization").withRequiredArg().ofType(Double.class).defaultsTo(10.0);
         parser.accepts("errors");

@@ -66,7 +66,7 @@ public class Labeler {
         return labels;
     }
 
-    public class LabelException extends Exception {
+    public static class LabelException extends Exception {
         public LabelException(String s) {
             super(s);
         }

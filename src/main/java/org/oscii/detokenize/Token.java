@@ -25,12 +25,12 @@ public class Token {
 
     public static Instance labeledInstance(int index, List<String> tokens, TokenLabel label) {
         Token token = new Token(index, tokens, label);
-        return new Instance(token, label, null, null);
+        return new Instance(token, label.toString(), null, null);
     }
 
     public static Instance unlabeledInstance(int index, List<String> tokens) {
         Token token = new Token(index, tokens, null);
-        return new Instance(token, DUMMY_LABEL, null, null);
+        return new Instance(token, DUMMY_LABEL.toString(), null, null);
     }
 
     public String current() {
