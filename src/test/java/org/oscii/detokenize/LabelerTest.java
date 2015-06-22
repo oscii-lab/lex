@@ -39,7 +39,7 @@ public class LabelerTest {
     Preprocessor preprocessor = new EnglishPreprocessor(true);
     Labeler labeler = new Labeler();
     for (int i = 0; i < examples.size(); i++) {
-      List<String> tokens = Detokenizer.tokenize(preprocessor, examples.get(i));
+      List<String> tokens = TokenizedCorpus.tokenize(preprocessor, examples.get(i));
       List<TokenLabel> labels = labeler.getLabels(examples.get(i), tokens);
       assertEquals(labels, expected.get(i));
     }

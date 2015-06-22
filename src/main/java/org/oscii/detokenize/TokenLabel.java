@@ -54,6 +54,14 @@ public class TokenLabel {
         return sb.toString();
     }
 
+    public static void setTokensAndDelimiters(List<String> tokens, List<TokenLabel> labels, List<String> delimiters) {
+        assert (tokens.size() == labels.size());
+        assert (delimiters.isEmpty());
+        for (int i = 0; i < tokens.size(); i++){
+            // TODO(denero) transform tokens and populate delimiters
+        }
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -74,5 +82,6 @@ public class TokenLabel {
         result = 31 * result + (replace != null ? replace.hashCode() : 0);
         return result;
     }
+
 }
 

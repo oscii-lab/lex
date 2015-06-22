@@ -8,6 +8,8 @@ import cc.mallet.pipe.*;
 import cc.mallet.types.Instance;
 import cc.mallet.types.InstanceList;
 import com.google.common.collect.Iterators;
+import edu.stanford.nlp.mt.util.IString;
+import edu.stanford.nlp.mt.util.Sequence;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
