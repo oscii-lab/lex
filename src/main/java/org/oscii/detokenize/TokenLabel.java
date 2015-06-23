@@ -26,7 +26,6 @@ public class TokenLabel {
     public static TokenLabel interpret(String json) {
         TokenLabel label = new Gson().fromJson(json, TokenLabel.class);
         assert label.following != null;
-        assert label.replace != null;
         return label;
     }
 
