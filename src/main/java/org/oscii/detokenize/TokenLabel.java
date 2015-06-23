@@ -82,5 +82,8 @@ public class TokenLabel {
         return result;
     }
 
+    public String getFollowing() {
+        return following;
+    }
 }
 
