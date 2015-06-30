@@ -25,6 +25,8 @@ import static java.util.stream.Collectors.*;
 
 /**
  * Corpus backed by a suffix array.
+ *
+ * TODO(denero) WARNING: Currently broken b/c of changes to phrasal.
  */
 public class SuffixArrayCorpus extends AlignedCorpus {
     // source language -> target language -> suffix array
@@ -42,7 +44,8 @@ public class SuffixArrayCorpus extends AlignedCorpus {
         corpus = null;  // Drop reference to corpus for possible garbage collection
         suffixArray.build();
         registerSuffixArray(suffixArray, sourceLanguage, targetLanguage);
-        registerSuffixArray(suffixArray.swapLanguages(), targetLanguage, sourceLanguage);
+        // TODO(denero) Remove local suffix array support.
+        // registerSuffixArray(suffixArray.swapLanguages(), targetLanguage, sourceLanguage);
     }
 
     /*

@@ -13,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Stream;
@@ -50,23 +51,26 @@ public class TrainDetokenizer {
         Detokenizer detokenizer = Detokenizer.train(regularization, training);
         logCounts("Trained", detokenizer);
 
-        detokenizer.resetCounts();
-        long start = System.currentTimeMillis();
-        double accuracy = detokenizer.evaluate(test.iterator());
-        double duration = .001 * (System.currentTimeMillis() - start);
-        logCounts("Tested", detokenizer);
-        log.info("Test accuracy: " + accuracy);
-        log.info("Test segments/second: " + (test.size() / duration));
+        if (testSize > 0) {
+            detokenizer.resetCounts();
+            long start = System.currentTimeMillis();
+            double accuracy = detokenizer.evaluate(test.iterator());
+            double duration = .001 * (System.currentTimeMillis() - start);
+            logCounts("Tested", detokenizer);
+            log.info("Test accuracy: " + accuracy);
+            log.info("Test segments/second: " + (test.size() / duration));
 
-        if (options.has("errors")) {
-            test.forEach(ex -> {
-                List<String> tokens = ex.getTokens();
-                String roundTrip = TokenLabel.render(tokens, detokenizer.predictLabels(tokens));
-                if (!ex.getRaw().equals(roundTrip)) {
-                    log.info("Original:  " + ex);
-                    log.info("Detoken'd: " + roundTrip);
-                }
-            });
+            if (options.has("errors")) {
+                test.forEach(ex -> {
+                    List<String> tokens = ex.getTokens();
+                    List<TokenLabel> labels = detokenizer.predictLabels(tokens);
+                    String roundTrip = TokenLabel.render(tokens, labels);
+                    if (!ex.getRaw().equals(roundTrip)) {
+                        log.info("Original:  " + ex);
+                        log.info("Detoken'd: " + roundTrip);
+                    }
+                });
+            }
         }
 
         if (options.has("out")) {
@@ -122,18 +126,18 @@ public class TrainDetokenizer {
 
     private static OptionSet parse(String[] args) throws IOException {
         OptionParser parser = new OptionParser();
-        parser.accepts("language").withRequiredArg().defaultsTo("de");
-        parser.accepts("raw").withRequiredArg().ofType(File.class);
-        parser.accepts("tokenized").withRequiredArg().ofType(File.class);
-        parser.accepts("out").withRequiredArg().ofType(File.class);
-        parser.accepts("trainsize").withRequiredArg().ofType(Integer.class).defaultsTo(0); // Unlimited
-        parser.accepts("testsize").withRequiredArg().ofType(Integer.class).defaultsTo(10000);
+        parser.accepts("language", "Language").withRequiredArg().defaultsTo("de");
+        parser.accepts("raw", "Path to raw segments file").withRequiredArg().ofType(File.class);
+        parser.accepts("tokenized", "Path to tokenized segments file").withRequiredArg().ofType(File.class);
+        parser.accepts("out", "Path to serialized detokenizer").withRequiredArg().ofType(File.class);
+        parser.accepts("trainsize", "Max training size (0 for unlimited)").withRequiredArg().ofType(Integer.class).defaultsTo(0); // Unlimited
+        parser.accepts("testsize", "Max test size (0 to skip testing)").withRequiredArg().ofType(Integer.class).defaultsTo(10000);
         parser.accepts("regularization").withRequiredArg().ofType(Double.class).defaultsTo(10.0);
         parser.accepts("errors");
-        parser.accepts("help").forHelp();
+        parser.acceptsAll(Arrays.asList("h", "help")).forHelp();
 
         OptionSet options = parser.parse(args);
-        if (options.has("help")) {
+        if (options.has("help") || options.has("h")) {
             parser.printHelpOn(System.out);
             System.exit(0);
         }
