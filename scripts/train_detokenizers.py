@@ -10,7 +10,7 @@ tok = 'data/detok/detok_sample_1M_{}_raw.clean.tok.gz'
 out = 'data/detok/detok_sample_1M_{}_raw.clean.detokenizer'
 java = 'java -cp build/install/lex/lib/*'.split()
 mem =  '-Xmx4g -XX:+UseG1GC -XX:+UseStringDeduplication'.split()
-cls = ['org.oscii.detokenize.TrainDetokenizer']
+cls = ['com.lilt.detokenize.TrainDetokenizer']
 
 if __name__ == '__main__':
     #subprocess.check_call(['gradle', 'installDist'])
