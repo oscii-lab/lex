@@ -26,7 +26,7 @@ import static java.util.stream.Collectors.*;
 /**
  * Corpus backed by a suffix array.
  *
- * TODO(denero) WARNING: Currently broken b/c of changes to phrasal.
+ * TODO(denero) Delete after moving all the count logic to RemoteAlignedCorpus
  */
 public class SuffixArrayCorpus extends AlignedCorpus {
     // source language -> target language -> suffix array

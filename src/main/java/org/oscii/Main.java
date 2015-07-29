@@ -21,9 +21,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
-public class LexService {
+public class Main {
 
-    private final static Logger log = LogManager.getLogger(LexService.class);
+    private final static Logger log = LogManager.getLogger(Main.class);
     private static final Integer DEFAULT_API_PORT = 8090;
     private static final Integer DEFAULT_MAX_SENTENCE_PAIRS = 100;
     private static final String DEFAULT_LANGUAGES = "en,es,de,fr";
