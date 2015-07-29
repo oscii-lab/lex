@@ -82,7 +82,6 @@ public class Protocol {
             ResponseExample example = new ResponseExample(r.tokens, r.aligned.tokens, r.getAlignment(), span);
             response.examples.add(example);
         });
-
     }
 
     private void addExtensions(Request request, Response response) {
