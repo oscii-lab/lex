@@ -10,7 +10,7 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.oscii.api.Protocol;
 import org.oscii.api.Servlet;
 import org.oscii.concordance.AlignedCorpus;
-import org.oscii.concordance.SuffixArrayCorpus;
+import org.oscii.concordance.IndexedAlignedCorpus;
 import org.oscii.lex.Lexicon;
 import org.oscii.panlex.PanLexDir;
 import org.oscii.panlex.PanLexJSONParser;
@@ -30,10 +30,9 @@ public class Main {
     private static final String DEFAULT_PATTERN = "(?U)\\p{Lower}*";
 
     public static void main(String[] args) throws Exception {
-        OptionSet options = parse(args);
-        Lexicon lexicon = new Lexicon();
-        final AlignedCorpus corpus = new SuffixArrayCorpus();
-
+        final OptionSet options = parse(args);
+        final Lexicon lexicon = new Lexicon();
+        final AlignedCorpus corpus = new IndexedAlignedCorpus();
         final List<String> languages = Arrays.asList(((String) options.valueOf("languages")).split(","));
 
         // Parse PanLex
