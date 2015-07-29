@@ -79,7 +79,7 @@ public class Protocol {
         results.forEach(r -> {
             // TODO(denero) Encode and set span correctly
             Span span = new Span(0, 1);
-            ResponseExample example = new ResponseExample(r.tokens, r.aligned.tokens, r.alignment, span);
+            ResponseExample example = new ResponseExample(r.tokens, r.aligned.tokens, r.getAlignment(), span);
             response.examples.add(example);
         });
 

@@ -14,7 +14,7 @@ import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
 
 /**
- * A corpus hosted remotely and accessed through an AlignedCorpusClient.
+ * A template for a remotely hosted corpus. Override methods to supply a connection.
  */
 public abstract class RemoteAlignedCorpus extends AlignedCorpus {
 
