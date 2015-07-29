@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * A corpus hosted remotely and accessed through a rabbitmq.
+ * A corpus hosted remotely and accessed through an AlignedCorpusClient.
  */
 public class RemoteAlignedCorpus extends AlignedCorpus {
 
