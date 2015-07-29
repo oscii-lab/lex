@@ -140,6 +140,7 @@ public class Protocol {
         boolean synonym = false;
         double minFrequency = 1e-4;
         int maxCount = 10;
+        int memory = 0;
     }
 
     public static class Response extends Jsonable {
