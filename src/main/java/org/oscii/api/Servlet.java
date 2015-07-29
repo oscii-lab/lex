@@ -20,7 +20,7 @@ public class Servlet extends HttpServlet {
 
     private final Protocol protocol;
 
-    private final static Logger log = LogManager.getLogger(RabbitHandler.class);
+    private final static Logger log = LogManager.getLogger(Servlet.class);
 
     public Servlet(Protocol protocol) {
         this.protocol = protocol;

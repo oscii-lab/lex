@@ -2,7 +2,6 @@ package org.oscii.concordance;
 
 import org.apache.commons.collections4.map.LRUMap;
 import org.oscii.lex.Expression;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.IOException;
 import java.util.List;
@@ -24,7 +23,7 @@ public class RemoteAlignedCorpus extends AlignedCorpus {
 
   @Override
   public void read(String path, String sourceLanguage, String targetLanguage, int max) throws IOException {
-    throw new NotImplementedException();
+    throw new UnsupportedOperationException();
   }
 
   @Override
