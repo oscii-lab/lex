@@ -20,7 +20,7 @@ public class Servlet extends HttpServlet {
 
     private final Protocol protocol;
 
-    private final static Logger log = LogManager.getLogger(Servlet.class);
+    private final static Logger logger = LogManager.getLogger(Servlet.class);
 
     public Servlet(Protocol protocol) {
         this.protocol = protocol;
@@ -30,10 +30,10 @@ public class Servlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.setCharacterEncoding("UTF8");
         Protocol.Request req = parse(request);
-        log.info("Message received: " + req);
+        logger.info("Message received: " + req);
 
         Protocol.Response resp = protocol.respond(parse(request));
-        log.info("Message response: " + resp);
+        logger.info("Message response: " + resp);
 
         response.setContentType("text/json");
         response.setStatus(HttpServletResponse.SC_OK);

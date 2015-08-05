@@ -90,7 +90,7 @@ public class Main {
     /*
      * Parse command-line arguments.
      */
-    private static OptionSet parse(String[] args) {
+    private static OptionSet parse(String[] args) throws IOException {
         OptionParser parser = new OptionParser();
 
         // Vanilla I/O
@@ -98,7 +98,7 @@ public class Main {
         parser.accepts("write", "write JSON file").withRequiredArg().ofType(File.class);
 
         // HTTP Rest API
-        parser.accepts("api", "Whether to serve API over HTTP" );
+        parser.accepts("api", "Whether to serve API over HTTP");
         parser.accepts("port", "API port").withRequiredArg().ofType(Integer.class).defaultsTo(DEFAULT_API_PORT);
 
         // Parsing PanLex
@@ -116,18 +116,17 @@ public class Main {
         boolean printHelp = false;
         try {
             options = parser.parse(args);
-            if (options.has("h") || options.has("help")) {
+            if (options.has("help")) {
                 printHelp = true;
             }
         } catch (Exception e) {
             printHelp = true;
         }
-        try {
-            if (printHelp) {
-                parser.printHelpOn( System.out );
-                options = null;
-            }
-        } catch (IOException e1) {}
+        if (printHelp) {
+            parser.printHelpOn(System.out);
+            options = null;
+            System.exit(0);
+        }
         return options;
     }
 }
