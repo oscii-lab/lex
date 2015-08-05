@@ -107,7 +107,7 @@ public class IndexedAlignedCorpus extends AlignedCorpus {
 
 
     @Override
-    public List<AlignedSentence> examples(String query, String source, String target, int max) {
+    public List<SentenceExample> examples(String query, String source, String target, int max) {
         if (!index.containsKey(source)) {
             return Collections.EMPTY_LIST;
         }
@@ -120,7 +120,7 @@ public class IndexedAlignedCorpus extends AlignedCorpus {
         if (max > 0) {
             forQuery = forQuery.limit(max);
         }
-        return forQuery.map(loc -> loc.sentence).collect(toList());
+        return forQuery.map(loc -> new SentenceExample(loc.sentence, loc.tokenIndex, 1, 0, 0)).collect(toList());
     }
 
     /* Map utilities */

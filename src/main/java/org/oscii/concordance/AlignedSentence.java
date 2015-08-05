@@ -13,14 +13,15 @@ import static java.util.stream.Collectors.toList;
  */
 public class AlignedSentence {
     public final String[] tokens;
-
+    public final String[] delimiters;
 
     private int[][] alignment;
     public final String language;
     public AlignedSentence aligned;
 
-    private AlignedSentence(String[] tokens, int[][] alignment, String language) {
+    private AlignedSentence(String[] tokens, String[] delimiters, int[][] alignment, String language) {
         this.tokens = tokens;
+        this.delimiters = delimiters;
         this.alignment = alignment;
         this.language = language;
         for (int i = 0; i < tokens.length; i++) {
@@ -47,20 +48,36 @@ public class AlignedSentence {
                                               String sourceLanguage, String targetLanguage) {
         List<Link> links = asList(alignment).stream().map(Link::parse).collect(toList());
         int sl = sourceTokens.length, tl = targetTokens.length;
-        AlignedSentence sourceToTarget = new AlignedSentence(sourceTokens, collectLinks(links, sl, false), sourceLanguage);
-        AlignedSentence targetToSource = new AlignedSentence(targetTokens, collectLinks(links, tl, true), targetLanguage);
+        AlignedSentence sourceToTarget = new AlignedSentence(sourceTokens, defaultDelimiters(sourceTokens.length), collectLinks(links, sl, false), sourceLanguage);
+        AlignedSentence targetToSource = new AlignedSentence(targetTokens, defaultDelimiters(sourceTokens.length), collectLinks(links, tl, true), targetLanguage);
         sourceToTarget.aligned = targetToSource;
         targetToSource.aligned = sourceToTarget;
         return asList(new AlignedSentence[]{sourceToTarget, targetToSource});
     }
 
+    private static String[] defaultDelimiters(int length) {
+        String[] delimiters = new String[length+1];
+        delimiters[0] = ""; // No space before first word
+        delimiters[length] = ""; // No space after last word
+        for (int i = 1; i < length; i++) {
+            delimiters[i] = " "; // Spaces everywhere else
+        }
+        return delimiters;
+    }
+
     /**
      * Create an aligned sentence from tokens and an alignment matrix.
      */
-    public static AlignedSentence create(String[] sourceTokens, String[] targetTokens, int[][] sourceToTargetLinks,
-                                         String sourceLanguage, String targetLanguage) {
-        AlignedSentence sourceToTarget = new AlignedSentence(sourceTokens, sourceToTargetLinks, sourceLanguage);
-        AlignedSentence targetToSource = new AlignedSentence(targetTokens, null, targetLanguage);
+    public static AlignedSentence create(
+            String[] sourceTokens,
+            String[] sourceDelimiters,
+            String[] targetTokens,
+            String[] targetDelimiters,
+            int[][] sourceToTargetLinks,
+            String sourceLanguage,
+            String targetLanguage) {
+        AlignedSentence sourceToTarget = new AlignedSentence(sourceTokens, sourceDelimiters, sourceToTargetLinks, sourceLanguage);
+        AlignedSentence targetToSource = new AlignedSentence(targetTokens, targetDelimiters, null, targetLanguage);
         sourceToTarget.aligned = targetToSource;
         targetToSource.aligned = sourceToTarget;
         return sourceToTarget;

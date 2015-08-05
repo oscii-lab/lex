@@ -7,7 +7,7 @@ import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import org.oscii.api.Protocol;
+import org.oscii.api.LexiconProtocol;
 import org.oscii.api.Servlet;
 import org.oscii.concordance.AlignedCorpus;
 import org.oscii.concordance.IndexedAlignedCorpus;
@@ -71,7 +71,7 @@ public class Main {
             lexicon.write((File) options.valueOf("write"));
         }
 
-        final Protocol protocol = new Protocol(lexicon, corpus);
+        final LexiconProtocol protocol = new LexiconProtocol(lexicon, corpus);
 
         // Serve lexicon (http API)
         Server server = null;
