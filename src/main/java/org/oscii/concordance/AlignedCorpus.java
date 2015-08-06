@@ -80,7 +80,7 @@ public abstract class AlignedCorpus {
     /*
      * Return examples for a phrase translated into a target language.
      */
-    public abstract List<AlignedSentence> examples(String query, String source, String target, int max);
+    public abstract List<SentenceExample> examples(String query, String source, String target, int max, int memoryId);
 
     public void tally() {
     }

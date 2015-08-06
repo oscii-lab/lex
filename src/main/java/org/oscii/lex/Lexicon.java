@@ -61,15 +61,15 @@ public class Lexicon {
     public void addFrequencies(AlignedCorpus corpus) {
         log.info("Computing translation frequencies");
         forEachMeanings(ms -> {
-            ms.meanings.parallelStream().forEach(m -> {
-                Function<Expression, Double> getFrequency = corpus.translationFrequencies(m.expression);
-                m.translations.parallelStream().forEach(translation -> {
-                    translation.frequency = getFrequency.apply(translation.translation);
-                });
-                m.translations.sort(Order.byFrequency);
-            });
+            ms.meanings.parallelStream().forEach(m -> setTranslationFrequencies(m, corpus));
             ms.meanings.sort(Order.byMaxTranslationFrequency);
         });
+    }
+
+    private void setTranslationFrequencies(Meaning m, AlignedCorpus corpus) {
+        Function<Expression, Double> getFrequency = corpus.translationFrequencies(m.expression);
+        m.translations.parallelStream().forEach(t -> t.frequency = getFrequency.apply(t.translation));
+        m.translations.sort(Order.byFrequency);
     }
 
     /* Lexicon access methods */
@@ -109,7 +109,14 @@ public class Lexicon {
     }
 
     public List<Translation> translate(String query, String source, String target) {
+        return translate(query, source, target, null);
+    }
+
+    public List<Translation> translate(String query, String source, String target, AlignedCorpus corpus) {
         List<Meaning> all = lookup(query, source);
+        if (corpus != null) {
+            all.forEach(m -> setTranslationFrequencies(m, corpus));
+        }
         List<Translation> translations = all.stream()
                 // Aggregate and filter by target language
                 .flatMap(m -> m.translations.stream()

@@ -3,6 +3,7 @@ package org.oscii.api;
 import com.google.gson.Gson;
 import org.oscii.concordance.AlignedCorpus;
 import org.oscii.concordance.AlignedSentence;
+import org.oscii.concordance.SentenceExample;
 import org.oscii.lex.*;
 
 import java.util.ArrayList;
@@ -13,11 +14,11 @@ import static java.util.stream.Collectors.toList;
 /**
  * Transmission protocol for Lexicon API
  */
-public class Protocol {
+public class LexiconProtocol {
     final Lexicon lexicon;
     final AlignedCorpus corpus;
 
-    public Protocol(Lexicon lexicon, AlignedCorpus corpus) {
+    public LexiconProtocol(Lexicon lexicon, AlignedCorpus corpus) {
         this.lexicon = lexicon;
         this.corpus = corpus;
     }
@@ -74,15 +75,15 @@ public class Protocol {
     }
 
     private void addExamples(Request request, Response response) {
-        List<AlignedSentence> results =
-                corpus.examples(request.query, request.source, request.target, request.maxCount);
-        results.forEach(r -> {
-            // TODO(denero) Encode and set span correctly
-            Span span = new Span(0, 1);
-            ResponseExample example = new ResponseExample(r.tokens, r.aligned.tokens, r.alignment, span);
+        List<SentenceExample> results = corpus.examples(request.query, request.source, request.target, request.maxCount, request.memory);
+        results.forEach(ex -> {
+            AlignedSentence source = ex.sentence;
+            AlignedSentence target = source.aligned;
+            Span sourceSpan = new Span(ex.sourceStart, ex.sourceLength);
+            Span targetSpan = new Span(ex.targetStart, ex.targetLength);
+            ResponseExample example = new ResponseExample(source.tokens, source.delimiters, target.tokens, target.delimiters, source.getAlignment(), sourceSpan, targetSpan);
             response.examples.add(example);
         });
-
     }
 
     private void addExtensions(Request request, Response response) {
@@ -140,6 +141,7 @@ public class Protocol {
         boolean synonym = false;
         double minFrequency = 1e-4;
         int maxCount = 10;
+        int memory = 0;
     }
 
     public static class Response extends Jsonable {
@@ -238,21 +240,21 @@ public class Protocol {
     }
 
     /*
-     * A span of a sequence; start is inclusive and end is exclusive.
+     * A span of a sequence
      */
     private static class Span {
         int start;
-        int end;
+        int length;
 
-        public Span(int start, int end) {
-            assert end > start;
+        public Span(int start, int length) {
+            assert length >= 0;
             this.start = start;
-            this.end = end;
+            this.length = length;
         }
 
         public String[] Slice(String[] sequence) {
-            String[] slice = new String[end - start];
-            for (int i = start; i < end; i++) {
+            String[] slice = new String[length];
+            for (int i = start; i < start + length; i++) {
                 slice[i - start] = sequence[i];
             }
             return slice;
@@ -261,15 +263,21 @@ public class Protocol {
 
     private static class ResponseExample {
         String[] source;
+        String[] sourceDelimiters;
         String[] target;
+        String[] targetDelimiters;
         int[][] sourceToTarget;
         Span sourceSpan;
+        Span targetSpan;
 
-        public ResponseExample(String[] source, String[] target, int[][] sourceToTarget, Span sourceSpan) {
+        public ResponseExample(String[] source, String[] sourceDelimiters, String[] target, String[] targetDelimiters, int[][] sourceToTarget, Span sourceSpan, Span targetSpan) {
             this.source = source;
+            this.sourceDelimiters = sourceDelimiters;
             this.target = target;
+            this.targetDelimiters = targetDelimiters;
             this.sourceToTarget = sourceToTarget;
             this.sourceSpan = sourceSpan;
+            this.targetSpan = targetSpan;
         }
     }
 }

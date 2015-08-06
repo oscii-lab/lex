@@ -9,10 +9,10 @@ import org.oscii.lex.Translation;
 import java.util.Arrays;
 import java.util.List;
 
-public class ProtocolTest extends TestCase {
+public class LexiconProtocolTest extends TestCase {
 
-    public static Protocol.Request translation(String query, String source, String target) {
-        Protocol.Request r = new Protocol.Request();
+    public static LexiconProtocol.Request translation(String query, String source, String target) {
+        LexiconProtocol.Request r = new LexiconProtocol.Request();
         r.query = query;
         r.source = source;
         r.target = target;
@@ -33,11 +33,11 @@ public class ProtocolTest extends TestCase {
                 return Arrays.asList(new Translation[]{translation});
             }
         };
-        Protocol protocol = new Protocol(lexicon, null);
-        Protocol.Request request = translation("dog", "en", "es");
+        LexiconProtocol protocol = new LexiconProtocol(lexicon, null);
+        LexiconProtocol.Request request = translation("dog", "en", "es");
         request.minFrequency = 0.0;
         request.translate = true;
-        Protocol.Response response = protocol.respond(request);
+        LexiconProtocol.Response response = protocol.respond(request);
         assertEquals("perro", response.translations.get(0).target);
     }
 }
