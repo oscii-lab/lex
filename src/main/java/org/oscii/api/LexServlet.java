@@ -16,13 +16,13 @@ import static java.util.stream.Collectors.toMap;
 /**
  * Serve API
  */
-public class Servlet extends HttpServlet {
+public class LexServlet extends HttpServlet {
 
     private final LexiconProtocol protocol;
 
-    private final static Logger logger = LogManager.getLogger(Servlet.class);
+    private final static Logger logger = LogManager.getLogger(LexServlet.class);
 
-    public Servlet(LexiconProtocol protocol) {
+    public LexServlet(LexiconProtocol protocol) {
         this.protocol = protocol;
     }
 

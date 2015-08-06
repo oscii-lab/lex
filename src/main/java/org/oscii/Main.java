@@ -8,7 +8,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.oscii.api.LexiconProtocol;
-import org.oscii.api.Servlet;
+import org.oscii.api.LexServlet;
 import org.oscii.concordance.AlignedCorpus;
 import org.oscii.concordance.IndexedAlignedCorpus;
 import org.oscii.lex.Lexicon;
@@ -79,7 +79,7 @@ public class Main {
             final int port = (Integer) options.valueOf("port");
             server = new Server(port);
             final ServletHandler handler = new ServletHandler();
-            final ServletHolder holder = new ServletHolder(new Servlet(protocol));
+            final ServletHolder holder = new ServletHolder(new LexServlet(protocol));
             handler.addServletWithMapping(holder, "/translate/lexicon");
             server.setHandler(handler);
             server.start();
