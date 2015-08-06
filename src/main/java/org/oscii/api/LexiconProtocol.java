@@ -51,7 +51,7 @@ public class LexiconProtocol {
         results.stream().limit(request.maxCount).forEach(t -> {
             // TODO(denero) Add formatted source?
             String pos = t.pos.stream().findFirst().orElse("");
-            if (t.frequency >= request.minFrequency) {
+            if (t.frequency >= request.minFrequency || response.translations.isEmpty()) {
                 response.translations.add(new ResponseTranslation(
                         request.query, pos, t.translation.text, t.frequency));
             }
