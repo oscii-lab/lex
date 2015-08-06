@@ -104,12 +104,12 @@ public class LexiconProtocol {
     private void addSynonyms(Request request, Response response) {
         List<Meaning> results = lexicon.lookup(request.query, request.source);
         results.stream().forEach(r -> {
+            if (r.synonyms.isEmpty()) return;
             if (r.pos.isEmpty()) {
                 response.synonyms.add(new ResponseSynonymSet("", listSynonyms(r)));
             } else {
-                r.pos.stream().distinct().forEach(pos -> {
-                    response.synonyms.add(new ResponseSynonymSet("", listSynonyms(r)));
-                });
+                r.pos.stream().distinct().forEach(pos ->
+                    response.synonyms.add(new ResponseSynonymSet(pos, listSynonyms(r))));
             }
         });
         response.synonyms = response.synonyms.stream().distinct().collect(toList());
