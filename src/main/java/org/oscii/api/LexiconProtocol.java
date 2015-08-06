@@ -75,7 +75,7 @@ public class LexiconProtocol {
     }
 
     private void addExamples(Request request, Response response) {
-        List<SentenceExample> results = corpus.examples(request.query, request.source, request.target, request.maxCount);
+        List<SentenceExample> results = corpus.examples(request.query, request.source, request.target, request.maxCount, request.memory);
         results.forEach(ex -> {
             AlignedSentence source = ex.sentence;
             AlignedSentence target = source.aligned;

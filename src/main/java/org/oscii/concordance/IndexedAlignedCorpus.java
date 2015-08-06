@@ -107,7 +107,7 @@ public class IndexedAlignedCorpus extends AlignedCorpus {
 
 
     @Override
-    public List<SentenceExample> examples(String query, String source, String target, int max) {
+    public List<SentenceExample> examples(String query, String source, String target, int max, int memoryId) {
         if (!index.containsKey(source)) {
             return Collections.EMPTY_LIST;
         }
