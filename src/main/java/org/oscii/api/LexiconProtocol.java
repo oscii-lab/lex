@@ -87,28 +87,25 @@ public class LexiconProtocol {
 
     private void addExtensions(Request request, Response response) {
         List<Expression> results =
-                lexicon.extend(request.query, request.source, request.target, request.maxCount);
+                lexicon.extend(request.query, request.source, request.target, 20 * request.maxCount + 20);
         results.forEach(ex -> {
+            if (response.extensions.size() >= request.maxCount) return;
             List<Translation> translations =
                     lexicon.translate(ex.text, request.source, request.target);
             if (translations.isEmpty()) return;
             Translation first = translations.get(0);
             if (first.frequency < request.minFrequency) return;
-            response.extensions.add(makeResponseTranslation(ex, first));
+            response.extensions.add(ResponseTranslation.create(ex, first));
         });
         if (response.extensions.isEmpty()) {
             results.forEach(ex -> {
+                if (response.extensions.size() >= request.maxCount) return;
                 List<Translation> translations =
                         lexicon.translate(ex.text, request.source, request.target);
                 if (translations.isEmpty()) return;
-                response.extensions.add(makeResponseTranslation(ex, translations.get(0)));
+                response.extensions.add(ResponseTranslation.create(ex, translations.get(0)));
             });
         }
-    }
-
-    private ResponseTranslation makeResponseTranslation(Expression ex, Translation first) {
-        String pos = first.pos.stream().findFirst().orElse("");
-        return new ResponseTranslation(ex.text, pos, first.translation.text, first.frequency);
     }
 
     private void addSynonyms(Request request, Response response) {
@@ -179,6 +176,11 @@ public class LexiconProtocol {
             this.pos = pos;
             this.target = target;
             this.frequency = frequency;
+        }
+
+        public static ResponseTranslation create(Expression ex, Translation first) {
+            String pos = first.pos.stream().findFirst().orElse("");
+            return new ResponseTranslation(ex.text, pos, first.translation.text, first.frequency);
         }
     }
 
