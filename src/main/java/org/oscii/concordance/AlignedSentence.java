@@ -18,12 +18,18 @@ public class AlignedSentence {
     private int[][] alignment;
     public final String language;
     public AlignedSentence aligned;
+    String source;
 
     private AlignedSentence(String[] tokens, String[] delimiters, int[][] alignment, String language) {
+        this(tokens, delimiters, alignment, language, "");
+    }
+
+    private AlignedSentence(String[] tokens, String[] delimiters, int[][] alignment, String language, String source) {
         this.tokens = tokens;
         this.delimiters = delimiters;
         this.alignment = alignment;
         this.language = language;
+        this.source = source;
         for (int i = 0; i < tokens.length; i++) {
             tokens[i] = tokens[i].intern();
         }

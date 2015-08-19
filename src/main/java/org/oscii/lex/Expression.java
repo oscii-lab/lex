@@ -9,13 +9,19 @@ public class Expression {
     public final String language; // ISO-639-1 code (2-letter), e.g., "zh"
     // Tag inventory: http://www.iana.org/assignments/language-subtag-registry/language-subtag-registry
     public String languageTag; // RFC5654 language tag, e.g., "zh-cmn-Hans-CN"
+    public final String source;
 
     public Expression(String text, String degraded_text, String languageTag) {
+        this(text, degraded_text, languageTag, "");
+    }
+
+    public Expression(String text, String degraded_text, String languageTag, String source) {
         this.text = text;
         this.degraded_text = degraded_text == null ? Lexicon.degrade(text) : degraded_text;
         this.languageTag = languageTag;
         // TODO(denero) Split language tag to open language
         this.language = languageTag;
+        this.source = source;
     }
 
     public Expression(String text, String languageTag) {
@@ -27,6 +33,7 @@ public class Expression {
         return "Expression{" +
                 "text='" + text + '\'' +
                 "language='" + language + '\'' +
+                "source='" + source + '\'' +
                 '}';
     }
 

@@ -62,8 +62,7 @@ public class LexiconProtocol {
      * Add distinct definitions.
      */
     private void addDefinitions(Request request, Response response) {
-        List<Definition> results =
-                lexicon.define(request.query, request.source);
+        List<Definition> results = lexicon.define(request.query, request.source);
         results.stream()
                 .limit(request.maxCount)
                 .map(d -> {
@@ -95,10 +94,21 @@ public class LexiconProtocol {
             if (translations.isEmpty()) return;
             Translation first = translations.get(0);
             if (first.frequency < request.minFrequency) return;
-            String pos = first.pos.stream().findFirst().orElse("");
-            ResponseTranslation entry = new ResponseTranslation(ex.text, pos, first.translation.text, first.frequency);
-            response.extensions.add(entry);
+            response.extensions.add(makeResponseTranslation(ex, first));
         });
+        if (response.extensions.isEmpty()) {
+            results.forEach(ex -> {
+                List<Translation> translations =
+                        lexicon.translate(ex.text, request.source, request.target);
+                if (translations.isEmpty()) return;
+                response.extensions.add(makeResponseTranslation(ex, translations.get(0)));
+            });
+        }
+    }
+
+    private ResponseTranslation makeResponseTranslation(Expression ex, Translation first) {
+        String pos = first.pos.stream().findFirst().orElse("");
+        return new ResponseTranslation(ex.text, pos, first.translation.text, first.frequency);
     }
 
     private void addSynonyms(Request request, Response response) {
@@ -118,7 +128,6 @@ public class LexiconProtocol {
     private List<String> listSynonyms(Meaning r) {
         return r.synonyms.stream().map(e -> e.text).collect(toList());
     }
-
 
     /* API classes to define JSON serialization */
 
