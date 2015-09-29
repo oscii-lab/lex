@@ -1,6 +1,7 @@
 package org.oscii.concordance;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -136,6 +137,31 @@ public class AlignedSentence {
             }
         }
         return null;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        AlignedSentence that = (AlignedSentence) o;
+
+        if (!Arrays.deepEquals(alignment, that.alignment)) return false;
+        if (!language.equals(that.language)) return false;
+        if (!source.equals(that.source)) return false;
+        if (!aligned.language.equals(that.aligned.language)) return false;
+        if (!aligned.source.equals(that.aligned.source)) return false;
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Arrays.deepHashCode(alignment);
+        result = 31 * result + language.hashCode();
+        result = 31 * result + source.hashCode();
+        result = 31 * result + aligned.language.hashCode();
+        result = 31 * result + aligned.source.hashCode();
+        return result;
     }
 
     /*
