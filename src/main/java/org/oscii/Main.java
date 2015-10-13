@@ -11,9 +11,12 @@ import org.oscii.api.LexiconProtocol;
 import org.oscii.api.LexServlet;
 import org.oscii.concordance.AlignedCorpus;
 import org.oscii.concordance.IndexedAlignedCorpus;
+import org.oscii.concordance.RemoteAlignedCorpus;
+import org.oscii.concordance.SentenceExample;
 import org.oscii.lex.Lexicon;
 import org.oscii.panlex.PanLexDir;
 import org.oscii.panlex.PanLexJSONParser;
+import org.oscii.rank.RankingCSVParser;
 
 import java.io.File;
 import java.io.IOException;
@@ -47,7 +50,7 @@ public class Main {
             lexicon.read((File) options.valueOf("read"));
         }
 
-        // Index corpus
+        // Index corpus (assumes a non-remote corpus; deprecated)
         if (options.has("corpus")) {
             final String corpusPath = (String) options.valueOf("corpus");
             final int max = (Integer) options.valueOf("max");
@@ -65,6 +68,12 @@ public class Main {
             }
             corpus.tally();
             lexicon.addFrequencies(corpus);
+        }
+
+        // Parse ranking
+        if (options.has("rank")) {
+            final String path = (String) options.valueOf("panlex");
+            final RankingCSVParser ranking = new RankingCSVParser(path);
         }
 
         if (options.has("write")) {

@@ -75,6 +75,8 @@ public class LexiconProtocol {
 
     private void addExamples(Request request, Response response) {
         List<SentenceExample> results = corpus.examples(request.query, request.source, request.target, request.maxCount, request.memory);
+        // TODO Rank examples (e.g., based on request.context)
+        //  - https://github.com/lilt/core/issues/97
         results.forEach(ex -> {
             AlignedSentence source = ex.sentence;
             AlignedSentence target = source.aligned;
