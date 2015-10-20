@@ -6,6 +6,9 @@ import org.oscii.lex.Expression;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -67,9 +70,36 @@ public abstract class RemoteAlignedCorpus extends AlignedCorpus {
   public static class PhrasalRule {
     List<String> sourceWords;
     List<String> targetWords;
+    double score = 0.0;
+
+    public PhrasalRule(String sourcePhrase, String targetPhrase, double score) {
+      if (sourcePhrase != null && targetPhrase != null) {
+        sourceWords = Arrays.asList(sourcePhrase.split("\\s+"));
+        targetWords = Arrays.asList(targetPhrase.split("\\s+"));
+      } else {
+        sourceWords = Collections.emptyList();
+        targetWords = Collections.emptyList();
+      }
+      this.score = score;
+    }
 
     public String getTarget() {
       return String.join(" ", targetWords);
+    }
+
+    public double getScore() {
+      return score;
+    }
+  }
+
+  public class PhrasalRuleComparer implements Comparator<PhrasalRule> {
+    @Override
+    public int compare(PhrasalRule x, PhrasalRule y) {
+      if (x != null && y != null) {
+        return Double.compare(y.score, x.score);
+      } else {
+        return 0;
+      }
     }
   }
 }

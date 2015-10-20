@@ -66,6 +66,13 @@ public class Lexicon {
         });
     }
 
+    public void addScores(AlignedCorpus corpus) {
+        log.info("Computing translation scores");
+        forEachMeanings(ms -> {
+            ms.meanings.stream().forEach(m -> corpus.scoreMeaning(m));
+        });
+    }
+
     private void setTranslationFrequencies(Meaning m, AlignedCorpus corpus) {
         Function<Expression, Double> getFrequency = corpus.translationFrequencies(m.expression);
         m.translations.parallelStream().forEach(t -> t.frequency = getFrequency.apply(t.translation));
@@ -96,7 +103,7 @@ public class Lexicon {
         return index.get(language).get(expression.degraded_text).get(expression).meanings;
     }
 
-    static String degrade(String query) {
+    public static String degrade(String query) {
         // TODO(denero) Unicode normalize, remove non-alpha, & normalize diacritics
         return query.toLowerCase();
     }

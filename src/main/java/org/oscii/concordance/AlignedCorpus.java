@@ -2,6 +2,7 @@ package org.oscii.concordance;
 
 import gnu.trove.THashMap;
 import org.oscii.lex.Expression;
+import org.oscii.lex.Meaning;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -37,6 +38,11 @@ public abstract class AlignedCorpus {
      * Return a function that takes phrases in another language and returns translation frequencies.
      */
     public abstract Function<Expression, Double> translationFrequencies(Expression source);
+
+    /*
+     * Score a meaning based on TM rules.
+     */
+    public abstract void scoreMeaning(Meaning m);
 
     // Always return 0.0
     static Double zeroFrequency(Expression e) {
