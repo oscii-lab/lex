@@ -15,8 +15,8 @@ import static java.util.stream.Collectors.toList;
  * Transmission protocol for Lexicon API
  */
 public class LexiconProtocol {
-    final Lexicon lexicon;
-    final AlignedCorpus corpus;
+    protected final Lexicon lexicon;
+    protected final AlignedCorpus corpus;
 
     public LexiconProtocol(Lexicon lexicon, AlignedCorpus corpus) {
         this.lexicon = lexicon;
@@ -45,7 +45,7 @@ public class LexiconProtocol {
     /*
      * Add translations filtered by frequency.
      */
-    private void addTranslations(Request request, Response response) {
+    protected void addTranslations(Request request, Response response) {
         List<Translation> results =
                 lexicon.translate(request.query, request.source, request.target);
         results.stream().limit(request.maxCount).forEach(t -> {
@@ -61,7 +61,7 @@ public class LexiconProtocol {
     /*
      * Add distinct definitions.
      */
-    private void addDefinitions(Request request, Response response) {
+    protected void addDefinitions(Request request, Response response) {
         List<Definition> results = lexicon.define(request.query, request.source);
         results.stream()
                 .limit(request.maxCount)
@@ -73,7 +73,7 @@ public class LexiconProtocol {
                 .forEach(response.definitions::add);
     }
 
-    private void addExamples(Request request, Response response) {
+    protected void addExamples(Request request, Response response) {
         List<SentenceExample> results = corpus.examples(request.query, request.source, request.target, request.maxCount, request.memory);
         // TODO Rank examples (e.g., based on request.context)
         //  - https://github.com/lilt/core/issues/97
@@ -87,7 +87,7 @@ public class LexiconProtocol {
         });
     }
 
-    private void addExtensions(Request request, Response response) {
+    protected void addExtensions(Request request, Response response) {
         List<Expression> results =
                 lexicon.extend(request.query, request.source, request.target, 20 * request.maxCount + 20);
         results.forEach(ex -> {
@@ -110,7 +110,7 @@ public class LexiconProtocol {
         }
     }
 
-    private void addSynonyms(Request request, Response response) {
+    protected void addSynonyms(Request request, Response response) {
         List<Meaning> results = lexicon.lookup(request.query, request.source);
         results.stream().forEach(r -> {
             if (r.synonyms.isEmpty()) return;
@@ -124,7 +124,7 @@ public class LexiconProtocol {
         response.synonyms = response.synonyms.stream().distinct().collect(toList());
     }
 
-    private List<String> listSynonyms(Meaning r) {
+    protected List<String> listSynonyms(Meaning r) {
         return r.synonyms.stream().map(e -> e.text).collect(toList());
     }
 
@@ -138,27 +138,27 @@ public class LexiconProtocol {
     }
 
     public static class Request extends Jsonable {
-        String query = "";
-        String source = "";
-        String target = "";
-        String context = "";
-        boolean translate = false;
-        boolean define = false;
-        boolean example = false;
-        boolean extend = false;
-        boolean synonym = false;
-        double minFrequency = 1e-4;
-        int maxCount = 10;
-        int memory = 0;
+        public String query = "";
+        public String source = "";
+        public String target = "";
+        public String context = "";
+        public boolean translate = false;
+        public boolean define = false;
+        public boolean example = false;
+        public boolean extend = false;
+        public boolean synonym = false;
+        public double minFrequency = 1e-4;
+        public int maxCount = 10;
+        public int memory = 0;
     }
 
     public static class Response extends Jsonable {
-        List<ResponseTranslation> translations = new ArrayList<>();
-        List<ResponseDefinition> definitions = new ArrayList<>();
-        List<ResponseExample> examples = new ArrayList();
-        List<ResponseTranslation> extensions = new ArrayList<>();
-        List<ResponseSynonymSet> synonyms = new ArrayList<>();
-        String error;
+        public List<ResponseTranslation> translations = new ArrayList<>();
+        public List<ResponseDefinition> definitions = new ArrayList<>();
+        public List<ResponseExample> examples = new ArrayList();
+        public List<ResponseTranslation> extensions = new ArrayList<>();
+        public List<ResponseSynonymSet> synonyms = new ArrayList<>();
+        public String error;
 
         public static Response error(String message) {
             Response response = new Response();
@@ -167,7 +167,7 @@ public class LexiconProtocol {
         }
     }
 
-    static class ResponseTranslation extends Jsonable {
+    public static class ResponseTranslation extends Jsonable {
         String source;
         String pos;
         String target;
