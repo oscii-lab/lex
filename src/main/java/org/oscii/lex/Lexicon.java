@@ -25,7 +25,7 @@ public class Lexicon {
     // language -> degraded text -> matching expressions -> meanings
     Map<String, PatriciaTrie<Map<Expression, Meanings>>> index = new PatriciaTrie<>();
 
-    private final static Logger log = LogManager.getLogger(Lexicon.class);
+    protected final static Logger log = LogManager.getLogger(Lexicon.class);
 
     /* Construction */
 
