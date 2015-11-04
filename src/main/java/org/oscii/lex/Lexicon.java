@@ -23,7 +23,7 @@ import static java.util.stream.Collectors.toList;
  */
 public class Lexicon {
     // language -> degraded text -> matching expressions -> meanings
-    Map<String, PatriciaTrie<Map<Expression, Meanings>>> index = new PatriciaTrie<>();
+    protected Map<String, PatriciaTrie<Map<Expression, Meanings>>> index = new PatriciaTrie<>();
 
     protected final static Logger log = LogManager.getLogger(Lexicon.class);
 
@@ -190,11 +190,11 @@ public class Lexicon {
     }
 
     // What is known about the meanings of an expression.
-    private static class Meanings {
-        Expression expression;
-        List<Meaning> meanings = new ArrayList<>(1);
-        boolean hasDefinition;
-        Set<String> translationLanguages = new HashSet<>();
+    protected static class Meanings {
+        public Expression expression;
+        public List<Meaning> meanings = new ArrayList<>(1);
+        public boolean hasDefinition;
+        public Set<String> translationLanguages = new HashSet<>();
 
         public Meanings(Expression expression) {
             this.expression = expression;
