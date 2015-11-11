@@ -40,9 +40,9 @@ public abstract class AlignedCorpus {
     public abstract Function<Expression, Double> translationFrequencies(Expression source);
 
     /*
-     * Score a meaning based on TM rules.
+     * Score a meaning for the purpose of ranking.
      */
-    public abstract void scoreMeaning(Meaning m);
+    public void scoreMeaning(Meaning m) {};
 
     // Always return 0.0
     static Double zeroFrequency(Expression e) {

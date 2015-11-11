@@ -67,7 +67,7 @@ public class Lexicon {
     }
 
     public void addScores(AlignedCorpus corpus) {
-        log.info("Computing translation scores");
+        log.info("Computing meaning scores");
         forEachMeanings(ms -> {
             ms.meanings.stream().forEach(m -> corpus.scoreMeaning(m));
         });
@@ -190,7 +190,7 @@ public class Lexicon {
     }
 
     // What is known about the meanings of an expression.
-    protected static class Meanings {
+    public static class Meanings {
         public Expression expression;
         public List<Meaning> meanings = new ArrayList<>(1);
         public boolean hasDefinition;

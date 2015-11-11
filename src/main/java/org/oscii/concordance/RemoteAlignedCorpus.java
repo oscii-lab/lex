@@ -17,7 +17,8 @@ import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
 
 /**
- * A template for a remotely hosted corpus. Override methods to supply a connection.
+ * A template for a remotely hosted corpus.
+ * Override methods to supply a connection.
  */
 public abstract class RemoteAlignedCorpus extends AlignedCorpus {
 
@@ -65,7 +66,7 @@ public abstract class RemoteAlignedCorpus extends AlignedCorpus {
   public abstract List<PhrasalRule> getRules(String query, String source, String target);
 
   /**
-   * An extracted phrase pair.
+   * An extracted phrase pair. Words are always separated by spaces.
    */
   public static class PhrasalRule {
     List<String> sourceWords;
@@ -73,14 +74,13 @@ public abstract class RemoteAlignedCorpus extends AlignedCorpus {
     double score = 0.0;
 
     public PhrasalRule(String sourcePhrase, String targetPhrase, double score) {
-      if (sourcePhrase != null && targetPhrase != null) {
-        sourceWords = Arrays.asList(sourcePhrase.split("\\s+"));
-        targetWords = Arrays.asList(targetPhrase.split("\\s+"));
-      } else {
-        sourceWords = Collections.emptyList();
-        targetWords = Collections.emptyList();
-      }
+      this.sourceWords = splitPhrase(sourcePhrase);
+      this.targetWords = splitPhrase(targetPhrase);
       this.score = score;
+    }
+
+    public String getSource() {
+      return String.join(" ", sourceWords);
     }
 
     public String getTarget() {
@@ -90,9 +90,17 @@ public abstract class RemoteAlignedCorpus extends AlignedCorpus {
     public double getScore() {
       return score;
     }
+
+    private static List<String> splitPhrase(String phrase) {
+      if (phrase == null) {
+        return Collections.emptyList();
+      } else {
+        return Arrays.asList(phrase.split("\\s+"));
+      }
+    }
   }
 
-  public class PhrasalRuleComparer implements Comparator<PhrasalRule> {
+  public static Comparator<? super PhrasalRule> byScore = new Comparator<PhrasalRule>() {
     @Override
     public int compare(PhrasalRule x, PhrasalRule y) {
       if (x != null && y != null) {
@@ -101,5 +109,5 @@ public abstract class RemoteAlignedCorpus extends AlignedCorpus {
         return 0;
       }
     }
-  }
+  };
 }

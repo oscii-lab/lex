@@ -124,13 +124,6 @@ public class IndexedAlignedCorpus extends AlignedCorpus {
         return forQuery.map(loc -> new SentenceExample(loc.sentence, loc.tokenIndex, 1, 0, 0)).collect(toList());
     }
 
-    @Override
-    public void scoreMeaning(Meaning m) {}
-
-    /* Map utilities */
-
-
-
     /* Support classes */
 
     /*

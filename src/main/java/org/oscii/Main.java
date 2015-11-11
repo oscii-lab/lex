@@ -16,7 +16,6 @@ import org.oscii.concordance.SentenceExample;
 import org.oscii.lex.Lexicon;
 import org.oscii.panlex.PanLexDir;
 import org.oscii.panlex.PanLexJSONParser;
-import org.oscii.rank.RankingCSVParser;
 
 import java.io.File;
 import java.io.IOException;
@@ -68,12 +67,6 @@ public class Main {
             }
             corpus.tally();
             lexicon.addFrequencies(corpus);
-        }
-
-        // Parse ranking
-        if (options.has("rank")) {
-            final String path = (String) options.valueOf("panlex");
-            final RankingCSVParser ranking = new RankingCSVParser(path);
         }
 
         if (options.has("write")) {
