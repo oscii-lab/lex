@@ -6,9 +6,6 @@ import org.oscii.lex.Expression;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -65,49 +62,5 @@ public abstract class RemoteAlignedCorpus extends AlignedCorpus {
    */
   public abstract List<PhrasalRule> getRules(String query, String source, String target);
 
-  /**
-   * An extracted phrase pair. Words are always separated by spaces.
-   */
-  public static class PhrasalRule {
-    List<String> sourceWords;
-    List<String> targetWords;
-    double score = 0.0;
 
-    public PhrasalRule(String sourcePhrase, String targetPhrase, double score) {
-      this.sourceWords = splitPhrase(sourcePhrase);
-      this.targetWords = splitPhrase(targetPhrase);
-      this.score = score;
-    }
-
-    public String getSource() {
-      return String.join(" ", sourceWords);
-    }
-
-    public String getTarget() {
-      return String.join(" ", targetWords);
-    }
-
-    public double getScore() {
-      return score;
-    }
-
-    private static List<String> splitPhrase(String phrase) {
-      if (phrase == null) {
-        return Collections.emptyList();
-      } else {
-        return Arrays.asList(phrase.split("\\s+"));
-      }
-    }
-  }
-
-  public static Comparator<? super PhrasalRule> byScore = new Comparator<PhrasalRule>() {
-    @Override
-    public int compare(PhrasalRule x, PhrasalRule y) {
-      if (x != null && y != null) {
-        return Double.compare(y.score, x.score);
-      } else {
-        return 0;
-      }
-    }
-  };
 }
