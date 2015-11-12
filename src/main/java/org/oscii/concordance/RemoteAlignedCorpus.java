@@ -14,7 +14,8 @@ import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
 
 /**
- * A template for a remotely hosted corpus. Override methods to supply a connection.
+ * A template for a remotely hosted corpus.
+ * Override methods to supply a connection.
  */
 public abstract class RemoteAlignedCorpus extends AlignedCorpus {
 
@@ -61,15 +62,5 @@ public abstract class RemoteAlignedCorpus extends AlignedCorpus {
    */
   public abstract List<PhrasalRule> getRules(String query, String source, String target);
 
-  /**
-   * An extracted phrase pair.
-   */
-  public static class PhrasalRule {
-    List<String> sourceWords;
-    List<String> targetWords;
 
-    public String getTarget() {
-      return String.join(" ", targetWords);
-    }
-  }
 }

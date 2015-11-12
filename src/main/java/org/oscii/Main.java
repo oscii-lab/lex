@@ -11,7 +11,10 @@ import org.oscii.api.LexiconProtocol;
 import org.oscii.api.LexServlet;
 import org.oscii.concordance.AlignedCorpus;
 import org.oscii.concordance.IndexedAlignedCorpus;
+import org.oscii.concordance.RemoteAlignedCorpus;
+import org.oscii.concordance.SentenceExample;
 import org.oscii.lex.Lexicon;
+import org.oscii.lex.Ranker;
 import org.oscii.panlex.PanLexDir;
 import org.oscii.panlex.PanLexJSONParser;
 
@@ -47,7 +50,7 @@ public class Main {
             lexicon.read((File) options.valueOf("read"));
         }
 
-        // Index corpus
+        // Index corpus (assumes a non-remote corpus; deprecated)
         if (options.has("corpus")) {
             final String corpusPath = (String) options.valueOf("corpus");
             final int max = (Integer) options.valueOf("max");
@@ -71,7 +74,12 @@ public class Main {
             lexicon.write((File) options.valueOf("write"));
         }
 
-        final LexiconProtocol protocol = new LexiconProtocol(lexicon, corpus);
+        Ranker ranker = null;
+        if (options.has("rank")) {
+            ranker = new Ranker((File) options.valueOf("rank"));
+        }
+        
+        final LexiconProtocol protocol = new LexiconProtocol(lexicon, corpus, ranker);
 
         // Serve lexicon (http API)
         Server server = null;
@@ -110,6 +118,9 @@ public class Main {
         parser.accepts("corpus", "path to corpus (no suffixes)").withRequiredArg();
         parser.accepts("max", "maximum number of sentence pairs").withRequiredArg().ofType(Integer.class).defaultsTo(DEFAULT_MAX_SENTENCE_PAIRS);
 
+        // Ranker
+        parser.accepts("rank", "path to CSV file with rankings").withRequiredArg().ofType(File.class);
+        
         OptionSet options = null;
         parser.acceptsAll(Arrays.asList("h", "help"), "show help").forHelp();
 

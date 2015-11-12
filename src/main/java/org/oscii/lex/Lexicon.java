@@ -23,9 +23,19 @@ import static java.util.stream.Collectors.toList;
  */
 public class Lexicon {
     // language -> degraded text -> matching expressions -> meanings
-    Map<String, PatriciaTrie<Map<Expression, Meanings>>> index = new PatriciaTrie<>();
+    private Map<String, PatriciaTrie<Map<Expression, Meanings>>> index = new PatriciaTrie<>();
+    private final boolean skipIdentity;
+    private int numRemoved = 0;
 
     private final static Logger log = LogManager.getLogger(Lexicon.class);
+
+    public Lexicon() {
+        this.skipIdentity = false;
+    }
+
+    public Lexicon(boolean skipIdentity) {
+        this.skipIdentity = skipIdentity;
+    }
 
     /* Construction */
 
@@ -33,6 +43,18 @@ public class Lexicon {
         if (meaning.translations.size() == 0 && meaning.definitions.size() == 0) {
             return;
         }
+
+        if (skipIdentity) {
+            // remove identity translations
+            for (Iterator<Translation> iterator = meaning.translations.iterator(); iterator.hasNext(); ) {
+                Translation t = iterator.next();
+                if (t.translation.text.equals(meaning.expression.text)) {
+                    iterator.remove();
+                    ++numRemoved;
+                }
+            }
+        }
+
         Expression expression = meaning.expression;
         if (!index.containsKey(expression.language)) {
             index.put(expression.language, new PatriciaTrie<>());
@@ -66,6 +88,13 @@ public class Lexicon {
         });
     }
 
+    public void addScores(AlignedCorpus corpus) {
+        log.info("Computing meaning scores");
+        forEachMeanings(ms -> {
+            ms.meanings.stream().forEach(m -> corpus.scoreMeaning(m));
+        });
+    }
+
     private void setTranslationFrequencies(Meaning m, AlignedCorpus corpus) {
         Function<Expression, Double> getFrequency = corpus.translationFrequencies(m.expression);
         m.translations.parallelStream().forEach(t -> t.frequency = getFrequency.apply(t.translation));
@@ -96,7 +125,7 @@ public class Lexicon {
         return index.get(language).get(expression.degraded_text).get(expression).meanings;
     }
 
-    static String degrade(String query) {
+    public static String degrade(String query) {
         // TODO(denero) Unicode normalize, remove non-alpha, & normalize diacritics
         return query.toLowerCase();
     }
@@ -143,6 +172,17 @@ public class Lexicon {
         if (translationLanguage != null) {
             meanings = meanings.filter(ms -> ms.translationLanguages.contains(translationLanguage));
         }
+
+        // filter meanings to exactly match case of query
+        List<Meanings> meaningsList = meanings.collect(toList());
+        Stream<Meanings> meaningsFilt = meaningsList.stream().filter(ms -> ms.expression.text.startsWith(query));
+        List<Meanings> exactCasePrefixMatches = meaningsFilt.collect(toList());
+        if (!exactCasePrefixMatches.isEmpty()) {
+            meanings = exactCasePrefixMatches.stream();
+        } else {
+            meanings = meaningsList.stream();
+        }
+
         Stream<Expression> expressions = meanings.map(ms -> ms.expression).sorted(Order.byLength);
         if (max > 0) {
             expressions = expressions.limit(max);
@@ -180,14 +220,15 @@ public class Lexicon {
             add(gson.fromJson(reader, Meaning.class));
         }
         reader.close();
+        log.info("Total removed due to identity: {}", numRemoved);
     }
 
     // What is known about the meanings of an expression.
-    private static class Meanings {
-        Expression expression;
-        List<Meaning> meanings = new ArrayList<>(1);
-        boolean hasDefinition;
-        Set<String> translationLanguages = new HashSet<>();
+    public static class Meanings {
+        public Expression expression;
+        public List<Meaning> meanings = new ArrayList<>(1);
+        public boolean hasDefinition;
+        public Set<String> translationLanguages = new HashSet<>();
 
         public Meanings(Expression expression) {
             this.expression = expression;

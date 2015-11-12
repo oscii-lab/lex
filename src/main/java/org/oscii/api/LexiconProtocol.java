@@ -1,6 +1,8 @@
 package org.oscii.api;
 
 import com.google.gson.Gson;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.oscii.concordance.AlignedCorpus;
 import org.oscii.concordance.AlignedSentence;
 import org.oscii.concordance.SentenceExample;
@@ -15,17 +17,21 @@ import static java.util.stream.Collectors.toList;
  * Transmission protocol for Lexicon API
  */
 public class LexiconProtocol {
-    final Lexicon lexicon;
-    final AlignedCorpus corpus;
+    private final Lexicon lexicon;
+    private final AlignedCorpus corpus;
+    private final Ranker ranker;
 
-    public LexiconProtocol(Lexicon lexicon, AlignedCorpus corpus) {
+    private final static Logger logger = LogManager.getLogger(LexiconProtocol.class);
+
+    public LexiconProtocol(Lexicon lexicon, AlignedCorpus corpus, Ranker ranker) {
         this.lexicon = lexicon;
         this.corpus = corpus;
+        this.ranker = ranker;
     }
 
     /*
-         * Generate a response to a request parsed from requestString.
-         */
+     * Generate a response to a request parsed from requestString.
+     */
     public Response respond(Request request) {
         if (request.query == null || request.source == null || request.target == null) {
             return Response.error("Invalid request");
@@ -75,6 +81,8 @@ public class LexiconProtocol {
 
     private void addExamples(Request request, Response response) {
         List<SentenceExample> results = corpus.examples(request.query, request.source, request.target, request.maxCount, request.memory);
+        // TODO Rank examples (e.g., based on request.context)
+        //  - https://github.com/lilt/core/issues/97
         results.forEach(ex -> {
             AlignedSentence source = ex.sentence;
             AlignedSentence target = source.aligned;
@@ -88,15 +96,23 @@ public class LexiconProtocol {
     private void addExtensions(Request request, Response response) {
         List<Expression> results =
                 lexicon.extend(request.query, request.source, request.target, 20 * request.maxCount + 20);
+        // rank results through ranker
+        if (ranker != null) {
+            ranker.rerank(results, request.source, request.target);
+        }
+
         results.forEach(ex -> {
             if (response.extensions.size() >= request.maxCount) return;
             List<Translation> translations =
                     lexicon.translate(ex.text, request.source, request.target);
             if (translations.isEmpty()) return;
             Translation first = translations.get(0);
+            logger.debug("ex.text={} first={}", ex.text, first);
             if (first.frequency < request.minFrequency) return;
             response.extensions.add(ResponseTranslation.create(ex, first));
         });
+        logger.debug("extensions 1st: {}", response.extensions);
+
         if (response.extensions.isEmpty()) {
             results.forEach(ex -> {
                 if (response.extensions.size() >= request.maxCount) return;
@@ -105,6 +121,7 @@ public class LexiconProtocol {
                 if (translations.isEmpty()) return;
                 response.extensions.add(ResponseTranslation.create(ex, translations.get(0)));
             });
+            logger.debug("extensions 2nd: {}", response.extensions);
         }
     }
 
@@ -136,27 +153,27 @@ public class LexiconProtocol {
     }
 
     public static class Request extends Jsonable {
-        String query = "";
-        String source = "";
-        String target = "";
-        String context = "";
-        boolean translate = false;
-        boolean define = false;
-        boolean example = false;
-        boolean extend = false;
-        boolean synonym = false;
-        double minFrequency = 1e-4;
-        int maxCount = 10;
-        int memory = 0;
+        public String query = "";
+        public String source = "";
+        public String target = "";
+        public String context = "";
+        public boolean translate = false;
+        public boolean define = false;
+        public boolean example = false;
+        public boolean extend = false;
+        public boolean synonym = false;
+        public double minFrequency = 1e-4;
+        public int maxCount = 10;
+        public int memory = 0;
     }
 
     public static class Response extends Jsonable {
-        List<ResponseTranslation> translations = new ArrayList<>();
-        List<ResponseDefinition> definitions = new ArrayList<>();
-        List<ResponseExample> examples = new ArrayList();
-        List<ResponseTranslation> extensions = new ArrayList<>();
-        List<ResponseSynonymSet> synonyms = new ArrayList<>();
-        String error;
+        public List<ResponseTranslation> translations = new ArrayList<>();
+        public List<ResponseDefinition> definitions = new ArrayList<>();
+        public List<ResponseExample> examples = new ArrayList();
+        public List<ResponseTranslation> extensions = new ArrayList<>();
+        public List<ResponseSynonymSet> synonyms = new ArrayList<>();
+        public String error;
 
         public static Response error(String message) {
             Response response = new Response();
@@ -165,7 +182,7 @@ public class LexiconProtocol {
         }
     }
 
-    static class ResponseTranslation extends Jsonable {
+    public static class ResponseTranslation extends Jsonable {
         String source;
         String pos;
         String target;
