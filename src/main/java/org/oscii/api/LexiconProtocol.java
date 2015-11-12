@@ -1,6 +1,8 @@
 package org.oscii.api;
 
 import com.google.gson.Gson;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.oscii.concordance.AlignedCorpus;
 import org.oscii.concordance.AlignedSentence;
 import org.oscii.concordance.SentenceExample;
@@ -15,17 +17,21 @@ import static java.util.stream.Collectors.toList;
  * Transmission protocol for Lexicon API
  */
 public class LexiconProtocol {
-    protected final Lexicon lexicon;
-    protected final AlignedCorpus corpus;
+    private final Lexicon lexicon;
+    private final AlignedCorpus corpus;
+    private final Ranker ranker;
 
-    public LexiconProtocol(Lexicon lexicon, AlignedCorpus corpus) {
+    private final static Logger logger = LogManager.getLogger(LexiconProtocol.class);
+
+    public LexiconProtocol(Lexicon lexicon, AlignedCorpus corpus, Ranker ranker) {
         this.lexicon = lexicon;
         this.corpus = corpus;
+        this.ranker = ranker;
     }
 
     /*
-         * Generate a response to a request parsed from requestString.
-         */
+     * Generate a response to a request parsed from requestString.
+     */
     public Response respond(Request request) {
         if (request.query == null || request.source == null || request.target == null) {
             return Response.error("Invalid request");
@@ -45,7 +51,7 @@ public class LexiconProtocol {
     /*
      * Add translations filtered by frequency.
      */
-    protected void addTranslations(Request request, Response response) {
+    private void addTranslations(Request request, Response response) {
         List<Translation> results =
                 lexicon.translate(request.query, request.source, request.target);
         results.stream().limit(request.maxCount).forEach(t -> {
@@ -61,7 +67,7 @@ public class LexiconProtocol {
     /*
      * Add distinct definitions.
      */
-    protected void addDefinitions(Request request, Response response) {
+    private void addDefinitions(Request request, Response response) {
         List<Definition> results = lexicon.define(request.query, request.source);
         results.stream()
                 .limit(request.maxCount)
@@ -73,7 +79,7 @@ public class LexiconProtocol {
                 .forEach(response.definitions::add);
     }
 
-    protected void addExamples(Request request, Response response) {
+    private void addExamples(Request request, Response response) {
         List<SentenceExample> results = corpus.examples(request.query, request.source, request.target, request.maxCount, request.memory);
         // TODO Rank examples (e.g., based on request.context)
         //  - https://github.com/lilt/core/issues/97
@@ -87,18 +93,26 @@ public class LexiconProtocol {
         });
     }
 
-    protected void addExtensions(Request request, Response response) {
+    private void addExtensions(Request request, Response response) {
         List<Expression> results =
                 lexicon.extend(request.query, request.source, request.target, 20 * request.maxCount + 20);
+        // rank results through ranker
+        if (ranker != null) {
+            ranker.rerank(results, request.source, request.target);
+        }
+
         results.forEach(ex -> {
             if (response.extensions.size() >= request.maxCount) return;
             List<Translation> translations =
                     lexicon.translate(ex.text, request.source, request.target);
             if (translations.isEmpty()) return;
             Translation first = translations.get(0);
+            logger.debug("ex.text={} first={}", ex.text, first);
             if (first.frequency < request.minFrequency) return;
             response.extensions.add(ResponseTranslation.create(ex, first));
         });
+        logger.debug("extensions 1st: {}", response.extensions);
+
         if (response.extensions.isEmpty()) {
             results.forEach(ex -> {
                 if (response.extensions.size() >= request.maxCount) return;
@@ -107,10 +121,11 @@ public class LexiconProtocol {
                 if (translations.isEmpty()) return;
                 response.extensions.add(ResponseTranslation.create(ex, translations.get(0)));
             });
+            logger.debug("extensions 2nd: {}", response.extensions);
         }
     }
 
-    protected void addSynonyms(Request request, Response response) {
+    private void addSynonyms(Request request, Response response) {
         List<Meaning> results = lexicon.lookup(request.query, request.source);
         results.stream().forEach(r -> {
             if (r.synonyms.isEmpty()) return;
@@ -124,7 +139,7 @@ public class LexiconProtocol {
         response.synonyms = response.synonyms.stream().distinct().collect(toList());
     }
 
-    protected List<String> listSynonyms(Meaning r) {
+    private List<String> listSynonyms(Meaning r) {
         return r.synonyms.stream().map(e -> e.text).collect(toList());
     }
 

@@ -23,9 +23,19 @@ import static java.util.stream.Collectors.toList;
  */
 public class Lexicon {
     // language -> degraded text -> matching expressions -> meanings
-    protected Map<String, PatriciaTrie<Map<Expression, Meanings>>> index = new PatriciaTrie<>();
+    private Map<String, PatriciaTrie<Map<Expression, Meanings>>> index = new PatriciaTrie<>();
+    private final boolean skipIdentity;
+    private int numRemoved = 0;
 
-    protected final static Logger log = LogManager.getLogger(Lexicon.class);
+    private final static Logger log = LogManager.getLogger(Lexicon.class);
+
+    public Lexicon() {
+        this.skipIdentity = false;
+    }
+
+    public Lexicon(boolean skipIdentity) {
+        this.skipIdentity = skipIdentity;
+    }
 
     /* Construction */
 
@@ -33,6 +43,18 @@ public class Lexicon {
         if (meaning.translations.size() == 0 && meaning.definitions.size() == 0) {
             return;
         }
+
+        if (skipIdentity) {
+            // remove identity translations
+            for (Iterator<Translation> iterator = meaning.translations.iterator(); iterator.hasNext(); ) {
+                Translation t = iterator.next();
+                if (t.translation.text.equals(meaning.expression.text)) {
+                    iterator.remove();
+                    ++numRemoved;
+                }
+            }
+        }
+
         Expression expression = meaning.expression;
         if (!index.containsKey(expression.language)) {
             index.put(expression.language, new PatriciaTrie<>());
@@ -150,6 +172,17 @@ public class Lexicon {
         if (translationLanguage != null) {
             meanings = meanings.filter(ms -> ms.translationLanguages.contains(translationLanguage));
         }
+
+        // filter meanings to exactly match case of query
+        List<Meanings> meaningsList = meanings.collect(toList());
+        Stream<Meanings> meaningsFilt = meaningsList.stream().filter(ms -> ms.expression.text.startsWith(query));
+        List<Meanings> exactCasePrefixMatches = meaningsFilt.collect(toList());
+        if (!exactCasePrefixMatches.isEmpty()) {
+            meanings = exactCasePrefixMatches.stream();
+        } else {
+            meanings = meaningsList.stream();
+        }
+
         Stream<Expression> expressions = meanings.map(ms -> ms.expression).sorted(Order.byLength);
         if (max > 0) {
             expressions = expressions.limit(max);
@@ -187,6 +220,7 @@ public class Lexicon {
             add(gson.fromJson(reader, Meaning.class));
         }
         reader.close();
+        log.info("Total removed due to identity: {}", numRemoved);
     }
 
     // What is known about the meanings of an expression.

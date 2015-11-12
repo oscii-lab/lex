@@ -33,7 +33,7 @@ public class LexiconProtocolTest extends TestCase {
                 return Arrays.asList(new Translation[]{translation});
             }
         };
-        LexiconProtocol protocol = new LexiconProtocol(lexicon, null);
+        LexiconProtocol protocol = new LexiconProtocol(lexicon, null, null);
         LexiconProtocol.Request request = translation("dog", "en", "es");
         request.minFrequency = 0.0;
         request.translate = true;
