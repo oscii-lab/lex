@@ -12,6 +12,7 @@ public class Meaning {
     public final List<Definition> definitions = new ArrayList<>();
     public final List<Translation> translations = new ArrayList<>();
     public final List<Expression> synonyms = new ArrayList<>();
+    public final String dataSource;
 
     @Override
     public String toString() {
@@ -22,7 +23,8 @@ public class Meaning {
                 '}';
     }
 
-    public Meaning(Expression expression) {
+    public Meaning(Expression expression, String dataSource) {
         this.expression = expression;
+        this.dataSource = dataSource;
     }
 }
