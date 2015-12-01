@@ -1,6 +1,10 @@
 package org.oscii.api;
 
+import com.google.common.primitives.Doubles;
 import com.google.gson.Gson;
+import com.medallia.word2vec.Searcher;
+import com.medallia.word2vec.Searcher.UnknownWordException;
+import com.medallia.word2vec.Word2VecModel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.oscii.concordance.AlignedCorpus;
@@ -20,13 +24,15 @@ public class LexiconProtocol {
     private final Lexicon lexicon;
     private final AlignedCorpus corpus;
     private final Ranker ranker;
+    private final Word2VecModel word2vec;
 
     private final static Logger logger = LogManager.getLogger(LexiconProtocol.class);
 
-    public LexiconProtocol(Lexicon lexicon, AlignedCorpus corpus, Ranker ranker) {
+    public LexiconProtocol(Lexicon lexicon, AlignedCorpus corpus, Ranker ranker, Word2VecModel word2vec) {
         this.lexicon = lexicon;
         this.corpus = corpus;
         this.ranker = ranker;
+        this.word2vec = word2vec;
     }
 
     /*
@@ -42,6 +48,8 @@ public class LexiconProtocol {
         if (request.example) addExamples(request, response);
         if (request.extend) addExtensions(request, response);
         if (request.synonym) addSynonyms(request, response);
+        if (request.wordvec) addWordVector(request, response);
+        if (request.similar) addSimilarity(request, response);
         return response;
     }
 
@@ -139,6 +147,32 @@ public class LexiconProtocol {
         response.synonyms = response.synonyms.stream().distinct().collect(toList());
     }
 
+    private void addWordVector(Request request, Response response) {
+        if (word2vec == null) {
+            response.error = "no word2vec model available";
+            return;
+        }
+        Searcher searcher = word2vec.forSearch();
+        try {
+            response.wordVector = searcher.getRawVector(request.query).asList();
+        } catch (UnknownWordException e) {
+            response.error = e.getMessage();
+        }
+    }
+
+    private void addSimilarity(Request request, Response response) {
+        if (word2vec == null) {
+            response.error = "no word2vec model available";
+            return;
+        }
+        Searcher searcher = word2vec.forSearch();
+        try {
+            response.similarity = searcher.cosineDistance(request.source, request.target);
+        } catch (UnknownWordException e) {
+            response.error = e.getMessage();
+        }
+    }
+
     private List<String> listSynonyms(Meaning r) {
         return r.synonyms.stream().map(e -> e.text).collect(toList());
     }
@@ -162,6 +196,8 @@ public class LexiconProtocol {
         public boolean example = false;
         public boolean extend = false;
         public boolean synonym = false;
+        public boolean wordvec = false;
+        public boolean similar = false;
         public double minFrequency = 1e-4;
         public int maxCount = 10;
         public int memory = 0;
@@ -173,6 +209,8 @@ public class LexiconProtocol {
         public List<ResponseExample> examples = new ArrayList();
         public List<ResponseTranslation> extensions = new ArrayList<>();
         public List<ResponseSynonymSet> synonyms = new ArrayList<>();
+        public List<Double> wordVector = new ArrayList<>();
+        public double similarity = 0.0;
         public String error;
 
         public static Response error(String message) {

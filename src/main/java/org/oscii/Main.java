@@ -1,5 +1,6 @@
 package org.oscii;
 
+import com.medallia.word2vec.Word2VecModel;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import org.apache.logging.log4j.LogManager;
@@ -78,8 +79,13 @@ public class Main {
         if (options.has("rank")) {
             ranker = new Ranker((File) options.valueOf("rank"));
         }
-        
-        final LexiconProtocol protocol = new LexiconProtocol(lexicon, corpus, ranker);
+
+        Word2VecModel word2vec = null;
+        if (options.has("word2vec")) {
+            word2vec = Word2VecModel.fromBinFile((File) options.valueOf("word2vec"));
+        }
+
+        final LexiconProtocol protocol = new LexiconProtocol(lexicon, corpus, ranker, word2vec);
 
         // Serve lexicon (http API)
         Server server = null;
