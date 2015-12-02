@@ -3,6 +3,7 @@ package org.oscii.api;
 import com.google.common.primitives.Doubles;
 import com.google.gson.Gson;
 import com.medallia.word2vec.Searcher;
+import com.medallia.word2vec.Searcher.Match;
 import com.medallia.word2vec.Searcher.UnknownWordException;
 import com.medallia.word2vec.Word2VecModel;
 import org.apache.logging.log4j.LogManager;
@@ -49,7 +50,8 @@ public class LexiconProtocol {
         if (request.extend) addExtensions(request, response);
         if (request.synonym) addSynonyms(request, response);
         if (request.wordvec) addWordVector(request, response);
-        if (request.similar) addSimilarity(request, response);
+        if (request.distance) addDistance(request, response);
+        if (request.similar) addMatches(request, response);
         return response;
     }
 
@@ -147,27 +149,103 @@ public class LexiconProtocol {
         response.synonyms = response.synonyms.stream().distinct().collect(toList());
     }
 
+    /**
+     * Adds the raw word vector for a query to the response.
+     *
+     * Example:
+     * http://localhost:8090/translate/lexicon?query=explain&wordvec=true
+     * =>
+     * {...,"wordVector":[-0.07444860785060135,8.24243638592437E-4,0.03639942629448272,
+     *     0.08149381270654195,-0.15073516043655721,...],...}
+     */
     private void addWordVector(Request request, Response response) {
         if (word2vec == null) {
             response.error = "no word2vec model available";
             return;
         }
+        String query = request.query;
         Searcher searcher = word2vec.forSearch();
+        if (!searcher.contains(query)) {
+            query = Lexicon.degrade(query);
+        }
         try {
-            response.wordVector = searcher.getRawVector(request.query).asList();
+            response.wordVector = searcher.getRawVector(query).asList();
         } catch (UnknownWordException e) {
             response.error = e.getMessage();
         }
     }
 
-    private void addSimilarity(Request request, Response response) {
+    /**
+     * Adds cosine distance of two terms in the given request to
+     * response.  The field 'query' either takes both terms separated
+     * by '|||', or fields 'query' and 'context' are used.
+     *
+     * Examples:
+     * http://localhost:8090/translate/lexicon?query=explain|||tell&distance=true
+     * http://localhost:8090/translate/lexicon?query=explain&context=tell&distance=true
+     * =>
+     * {...,"distance":0.347985021280413}
+     */
+    private void addDistance(Request request, Response response) {
         if (word2vec == null) {
             response.error = "no word2vec model available";
             return;
         }
         Searcher searcher = word2vec.forSearch();
         try {
-            response.similarity = searcher.cosineDistance(request.source, request.target);
+            String query1 = request.query;
+            String query2 = request.context;
+            if (query2.length() == 0) {
+                String[] splitQuery = request.query.split("\\|\\|\\|");
+                if (splitQuery.length >= 2) {
+                    query1 = splitQuery[0];
+                    query2 = splitQuery[1];
+                } else {
+                    response.error = "malformed query";
+                    return;
+                }
+            }
+            if (!searcher.contains(query1)) {
+                query1 = Lexicon.degrade(query1);
+            }
+            if (!searcher.contains(query2)) {
+                query2 = Lexicon.degrade(query2);
+            }
+            response.distance = searcher.cosineDistance(query1, query2);
+        } catch (UnknownWordException e) {
+            response.error = e.getMessage();
+        }
+    }
+
+    /**
+     * Adds similar terms for given request to response.
+     *
+     * Example:
+     * http://localhost:8090/translate/lexicon?query=explain&similar=true
+     * =>
+     * {...,"matches":[
+     *    {"match":"explain","distance":1.0000000000000002},
+     *    {"match":"predict","distance":0.6387358641143756},
+     *    {"match":"understand","distance":0.6370402633877622},
+     *    {"match":"relate","distance":0.602837642683336},
+     *    {"match":"discern","distance":0.5984616315627042},
+     * ...}
+     */
+    private void addMatches(Request request, Response response) {
+        if (word2vec == null) {
+            response.error = "no word2vec model available";
+            return;
+        }
+        String query = request.query;
+        Searcher searcher = word2vec.forSearch();
+        if (!searcher.contains(query)) {
+            query = Lexicon.degrade(query);
+        }
+        try {
+            List<Match> matches = searcher.getMatches(query, request.maxCount);
+            matches.stream().forEach(
+                m -> response.matches.add(new ResponseMatch(m.match(), m.distance()))
+            );
         } catch (UnknownWordException e) {
             response.error = e.getMessage();
         }
@@ -198,6 +276,7 @@ public class LexiconProtocol {
         public boolean synonym = false;
         public boolean wordvec = false;
         public boolean similar = false;
+        public boolean distance = false;
         public double minFrequency = 1e-4;
         public int maxCount = 10;
         public int memory = 0;
@@ -209,8 +288,9 @@ public class LexiconProtocol {
         public List<ResponseExample> examples = new ArrayList();
         public List<ResponseTranslation> extensions = new ArrayList<>();
         public List<ResponseSynonymSet> synonyms = new ArrayList<>();
+        public List<ResponseMatch> matches = new ArrayList<>();
         public List<Double> wordVector = new ArrayList<>();
-        public double similarity = 0.0;
+        public double distance = 0.0;
         public String error;
 
         public static Response error(String message) {
@@ -302,6 +382,19 @@ public class LexiconProtocol {
             int result = pos.hashCode();
             result = 31 * result + synonyms.hashCode();
             return result;
+        }
+    }
+
+    /**
+     * A similar match based on Word2Vec.
+     */
+    static class ResponseMatch extends Jsonable {
+        String match;
+        double distance;
+
+        public ResponseMatch(String match, double distance) {
+            this.match = match;
+            this.distance = distance;
         }
     }
 
