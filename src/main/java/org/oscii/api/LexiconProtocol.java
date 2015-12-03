@@ -14,6 +14,7 @@ import org.oscii.concordance.SentenceExample;
 import org.oscii.lex.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static java.util.stream.Collectors.toList;
@@ -91,14 +92,35 @@ public class LexiconProtocol {
 
     private void addExamples(Request request, Response response) {
         List<SentenceExample> results = corpus.examples(request.query, request.source, request.target, request.maxCount, request.memory);
-        // TODO Rank examples (e.g., based on request.context)
-        //  - https://github.com/lilt/core/issues/97
+        if (word2vec != null) {
+            // rerank according to word2vec
+            Searcher searcher = word2vec.forSearch();
+            results.forEach(ex -> {
+                    String[] tokens = null;
+                    if (request.source.equals("en")) {
+                        tokens = ex.sentence.tokens;
+                    } else {
+                        tokens = ex.sentence.aligned.tokens;
+                    }
+                    double[] tokensMean = searcher.getMean(tokens);
+                    String[] context = request.context.split("\\s+");
+                    double[] contextMean = searcher.getMean(context);
+                    logger.debug("tokens={} context={} ({})", tokens, context, context.length);
+                    logger.debug("means: tokens=[{},{},{},...] context=[{},{},{},...]",
+                                 tokensMean[0], tokensMean[1], tokensMean[2],
+                                 contextMean[0], contextMean[1], contextMean[2]);
+                    double dist = searcher.cosineDistance(tokensMean, contextMean);
+                    ex.similarity = dist;
+                    logger.debug("distance: {}", dist);
+            });
+            Collections.sort(results, Order.bySimilarity);
+        }
         results.forEach(ex -> {
             AlignedSentence source = ex.sentence;
             AlignedSentence target = source.aligned;
             Span sourceSpan = new Span(ex.sourceStart, ex.sourceLength);
             Span targetSpan = new Span(ex.targetStart, ex.targetLength);
-            ResponseExample example = new ResponseExample(source.tokens, source.delimiters, target.tokens, target.delimiters, source.getAlignment(), sourceSpan, targetSpan);
+            ResponseExample example = new ResponseExample(source.tokens, source.delimiters, target.tokens, target.delimiters, source.getAlignment(), sourceSpan, targetSpan, ex.similarity);
             response.examples.add(example);
         });
     }
@@ -428,8 +450,9 @@ public class LexiconProtocol {
         int[][] sourceToTarget;
         Span sourceSpan;
         Span targetSpan;
+        double similarity;
 
-        public ResponseExample(String[] source, String[] sourceDelimiters, String[] target, String[] targetDelimiters, int[][] sourceToTarget, Span sourceSpan, Span targetSpan) {
+        public ResponseExample(String[] source, String[] sourceDelimiters, String[] target, String[] targetDelimiters, int[][] sourceToTarget, Span sourceSpan, Span targetSpan, double similarity) {
             this.source = source;
             this.sourceDelimiters = sourceDelimiters;
             this.target = target;
@@ -437,6 +460,7 @@ public class LexiconProtocol {
             this.sourceToTarget = sourceToTarget;
             this.sourceSpan = sourceSpan;
             this.targetSpan = targetSpan;
+            this.similarity = similarity;
         }
     }
 }

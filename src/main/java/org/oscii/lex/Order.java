@@ -1,6 +1,7 @@
 package org.oscii.lex;
 
 import org.oscii.concordance.PhrasalRule;
+import org.oscii.concordance.SentenceExample;
 
 import java.util.Comparator;
 
@@ -45,6 +46,13 @@ public class Order {
             } else {
                 return 0;
             }
+        }
+    };
+
+    public static final Comparator<? super SentenceExample> bySimilarity = new Comparator<SentenceExample>() {
+        @Override
+        public int compare(SentenceExample o1, SentenceExample o2) {
+          return Double.compare(o2.similarity, o1.similarity);
         }
     };
 }

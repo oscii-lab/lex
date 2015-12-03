@@ -10,3 +10,6 @@ project(":CoreNLP").projectDir = new File("$System.env.CORENLP_HOME")
 include "phrasal"
 project(":phrasal").projectDir = new File("$System.env.PHRASAL_HOME")
 
+// Word2VecJava, note this has to be in the same parent directory as lex
+include "Word2VecJava"
+project(":Word2VecJava").projectDir = new File(System.getProperty("user.dir") + "/../Word2VecJava")
