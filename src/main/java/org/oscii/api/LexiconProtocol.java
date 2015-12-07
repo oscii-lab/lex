@@ -93,10 +93,10 @@ public class LexiconProtocol {
     private void addExamples(Request request, Response response) {
         List<SentenceExample> results = corpus.examples(request.query, request.source, request.target, request.maxCount, request.memory);
         if (word2vec != null) {
+            Searcher searcher = word2vec.forSearch();
             // retrieve and score context
             String[] context = request.context.split("\\s+");
             double[] contextMean = searcher.getMean(context);
-            Searcher searcher = word2vec.forSearch();
             // iterate over concordance results
             results.forEach(ex -> {
                     String[] tokens = null;
