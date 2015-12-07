@@ -93,18 +93,20 @@ public class LexiconProtocol {
     private void addExamples(Request request, Response response) {
         List<SentenceExample> results = corpus.examples(request.query, request.source, request.target, request.maxCount, request.memory);
         if (word2vec != null) {
-            // rerank according to word2vec
+            // retrieve and score context
+            String[] context = request.context.split("\\s+");
+            double[] contextMean = searcher.getMean(context);
             Searcher searcher = word2vec.forSearch();
+            // iterate over concordance results
             results.forEach(ex -> {
                     String[] tokens = null;
+                    // hard-coded to "en" for now, TODO(sasa): support several word2vec models
                     if (request.source.equals("en")) {
                         tokens = ex.sentence.tokens;
                     } else {
                         tokens = ex.sentence.aligned.tokens;
                     }
                     double[] tokensMean = searcher.getMean(tokens);
-                    String[] context = request.context.split("\\s+");
-                    double[] contextMean = searcher.getMean(context);
                     logger.debug("tokens={} context={} ({})", tokens, context, context.length);
                     logger.debug("means: tokens=[{},{},{},...] context=[{},{},{},...]",
                                  tokensMean[0], tokensMean[1], tokensMean[2],
@@ -113,6 +115,7 @@ public class LexiconProtocol {
                     ex.similarity = (Double.isNaN(dist) ? -1.0 : dist);
                     logger.debug("distance: {}", ex.similarity);
             });
+            // rerank according to word2vec similarities
             Collections.sort(results, Order.bySimilarity);
         }
         results.forEach(ex -> {
