@@ -110,8 +110,8 @@ public class LexiconProtocol {
                                  tokensMean[0], tokensMean[1], tokensMean[2],
                                  contextMean[0], contextMean[1], contextMean[2]);
                     double dist = searcher.cosineDistance(tokensMean, contextMean);
-                    ex.similarity = dist;
-                    logger.debug("distance: {}", dist);
+                    ex.similarity = (Double.isNaN(dist) ? -1.0 : dist);
+                    logger.debug("distance: {}", ex.similarity);
             });
             Collections.sort(results, Order.bySimilarity);
         }
