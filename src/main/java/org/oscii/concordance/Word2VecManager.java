@@ -23,9 +23,9 @@ import java.util.Set;
  * Class that manages a collection of language-specific word2vec models.
  */
 public class Word2VecManager {
-  private static final int MIN_SEG_LEN = 5; // minimum segment length to activate reduction
+  private static final int MIN_SEG_LEN = 25; // minimum segment length to activate reduction
   private static final int MIN_TOK_LEN = 5; // minimum token length to denote a candidate
-  private static final int MAX_RES_LEN = 8; // maximum length of resulting reduced output
+  private static final int MAX_RES_LEN = 50; // maximum length of resulting reduced output
   private Map<String, Searcher> models;
 
   private final static Logger logger = LogManager.getLogger(Word2VecManager.class);

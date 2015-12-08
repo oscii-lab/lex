@@ -108,7 +108,7 @@ public class IndexedAlignedCorpus extends AlignedCorpus {
 
 
     @Override
-    public List<SentenceExample> examples(String query, String source, String target, int max, int memoryId) {
+    public List<SentenceExample> examples(String query, String source, String target, int max, int memoryId, boolean bLimit) {
         if (!index.containsKey(source)) {
             return Collections.EMPTY_LIST;
         }
@@ -118,7 +118,7 @@ public class IndexedAlignedCorpus extends AlignedCorpus {
         }
         Stream<Location> forQuery = locations.get(query).stream()
                 .filter(loc -> loc.sentence.aligned.language.equals(target));
-        if (max > 0) {
+        if (bLimit) {
             forQuery = forQuery.limit(max);
         }
         return forQuery.map(loc -> new SentenceExample(loc.sentence, loc.tokenIndex, 1, 0, 0)).collect(toList());

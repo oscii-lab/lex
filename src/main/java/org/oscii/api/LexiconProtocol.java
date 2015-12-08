@@ -94,10 +94,11 @@ public class LexiconProtocol {
 
     private void addExamples(Request request, Response response) {
         long startTime = System.nanoTime(); // - startTime) / 1e9;
-        List<SentenceExample> results = corpus.examples(request.query, request.source, request.target, request.maxCount, request.memory);
+        boolean bHasWord2Vec = word2vecManager.hasModels();
+        List<SentenceExample> results = corpus.examples(request.query, request.source, request.target, request.maxCount, request.memory, !bHasWord2Vec);
         long endTime = System.nanoTime();
         logger.debug("TIMING examples: {}", (endTime - startTime) / 1e9);
-        if (word2vecManager.hasModels()) {
+        if (bHasWord2Vec) {
             startTime = endTime;
             boolean bSuccess = word2vecManager.rankConcordances(request.source, request.context, results);
             endTime = System.nanoTime();
