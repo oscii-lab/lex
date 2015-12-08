@@ -49,10 +49,7 @@ public class Order {
         }
     };
 
-    public static final Comparator<? super SentenceExample> bySimilarity = new Comparator<SentenceExample>() {
-        @Override
-        public int compare(SentenceExample o1, SentenceExample o2) {
-          return Double.compare(o2.similarity, o1.similarity);
-        }
-    };
+    public static final Comparator<? super SentenceExample> bySimilarity =
+            (o1, o2) -> Double.compare(o2.similarity, o1.similarity);
+
 }

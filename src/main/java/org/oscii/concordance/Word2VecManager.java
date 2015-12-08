@@ -26,8 +26,8 @@ public class Word2VecManager {
   private static final int MIN_SEG_LEN = 5; // minimum segment length to activate reduction
   private static final int MIN_TOK_LEN = 5; // minimum token length to denote a candidate
   private static final int MAX_RES_LEN = 8; // maximum length of resulting reduced output
-  private Map<String, Word2VecModel> models;
-  
+  private Map<String, Searcher> models;
+
   private final static Logger logger = LogManager.getLogger(Word2VecManager.class);
 
   public Word2VecManager() {
@@ -46,7 +46,7 @@ public class Word2VecManager {
 
   public boolean add(String lang, Word2VecModel word2vec) {
     if (!supports(lang)) {
-      models.put(lang, word2vec);
+      put(lang, word2vec);
       return true;
     } else {
       return false;
@@ -63,12 +63,16 @@ public class Word2VecManager {
   public boolean add(String lang, File file) {
     try {
       Word2VecModel model = Word2VecModel.fromBinFile(file);
-      models.put(lang, model);
+      put(lang, model);
       return true;
     } catch (IOException e) {
       logger.warn(e.getMessage());
     }
     return false;
+  }
+
+  private void put(String lang, Word2VecModel model) {
+    models.put(lang, model.forSearch());
   }
 
   public boolean hasModels() {
@@ -86,7 +90,7 @@ public class Word2VecManager {
    * @param query
    */
   public boolean containsQuery(String lang, String query) {
-    return supports(lang) && models.get(lang).forSearch().contains(query);
+    return supports(lang) && models.get(lang).contains(query);
   }
 
   /**
@@ -97,7 +101,7 @@ public class Word2VecManager {
    * @param query
    */
   public boolean containsDegradedQuery(String lang, String query) {
-    return supports(lang) && models.get(lang).forSearch().contains(Lexicon.degrade(query));
+    return supports(lang) && models.get(lang).contains(Lexicon.degrade(query));
   }
 
   /**
@@ -133,7 +137,7 @@ public class Word2VecManager {
     if (!supports(lang) || context.length() == 0) {
       return false;
     }
-    Searcher searcher = models.get(lang).forSearch();
+    Searcher searcher = models.get(lang);
     // retrieve and score context
     String[] contextTokens = reduceTokens(context.split("\\s+"), MIN_SEG_LEN, MIN_TOK_LEN, MAX_RES_LEN);
     double[] contextMean = searcher.getMean(contextTokens);
@@ -165,7 +169,7 @@ public class Word2VecManager {
     List<Double> result = new ArrayList<>();
     query = getMatchingQuery(lang, query);
     if (query != null) {
-      result = models.get(lang).forSearch().getRawVector(query).asList();
+      result = models.get(lang).getRawVector(query).asList();
     }
     return result;
   }
@@ -184,7 +188,7 @@ public class Word2VecManager {
     if (!supports(lang)) {
       throw new UnsupportedLanguageException(lang);
     }
-    Searcher searcher = models.get(lang).forSearch();
+    Searcher searcher = models.get(lang);
     if (query2.length() == 0) {
       String[] splitQuery = query1.split("\\|\\|\\|");
       if (splitQuery.length >= 2) {
@@ -205,7 +209,7 @@ public class Word2VecManager {
     if (query == null) {
       throw new MalformedQueryException(query);
     }
-    return models.get(lang).forSearch().getMatches(query, maxCount);
+    return models.get(lang).getMatches(query, maxCount);
   }
 
   /**
@@ -241,22 +245,22 @@ public class Word2VecManager {
     }
   }
 
-	/**
+  /**
    * Exception when a language is not supported.
    */
-	public static class UnsupportedLanguageException extends Exception {
-		UnsupportedLanguageException(String lang) {
-			super(String.format("Unsupported language '%s'", lang));
-		}
-	}
+  public static class UnsupportedLanguageException extends Exception {
+    UnsupportedLanguageException(String lang) {
+      super(String.format("Unsupported language '%s'", lang));
+    }
+  }
 
-	/**
+  /**
    * Exception when a query is malformed.
    */
-	public static class MalformedQueryException extends Exception {
-		MalformedQueryException(String query) {
-			super(String.format("Malformed query '%s'", query));
-		}
-	}
+  public static class MalformedQueryException extends Exception {
+    MalformedQueryException(String query) {
+      super(String.format("Malformed query '%s'", query));
+    }
+  }
 
 }
