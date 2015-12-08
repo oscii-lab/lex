@@ -11,10 +11,12 @@ import org.apache.logging.log4j.Logger;
 import org.oscii.concordance.AlignedCorpus;
 import org.oscii.concordance.AlignedSentence;
 import org.oscii.concordance.SentenceExample;
+import org.oscii.concordance.Word2VecManager;
+import org.oscii.concordance.Word2VecManager.UnsupportedLanguageException;
+import org.oscii.concordance.Word2VecManager.MalformedQueryException;
 import org.oscii.lex.*;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static java.util.stream.Collectors.toList;
@@ -26,15 +28,15 @@ public class LexiconProtocol {
     private final Lexicon lexicon;
     private final AlignedCorpus corpus;
     private final Ranker ranker;
-    private final Word2VecModel word2vec;
+    private final Word2VecManager word2vecManager;
 
     private final static Logger logger = LogManager.getLogger(LexiconProtocol.class);
 
-    public LexiconProtocol(Lexicon lexicon, AlignedCorpus corpus, Ranker ranker, Word2VecModel word2vec) {
+    public LexiconProtocol(Lexicon lexicon, AlignedCorpus corpus, Ranker ranker, Word2VecManager word2vecManager) {
         this.lexicon = lexicon;
         this.corpus = corpus;
         this.ranker = ranker;
-        this.word2vec = word2vec;
+        this.word2vecManager = word2vecManager;
     }
 
     /*
@@ -91,33 +93,19 @@ public class LexiconProtocol {
     }
 
     private void addExamples(Request request, Response response) {
+        long startTime = System.nanoTime(); // - startTime) / 1e9;
         List<SentenceExample> results = corpus.examples(request.query, request.source, request.target, request.maxCount, request.memory);
-        if (word2vec != null) {
-            Searcher searcher = word2vec.forSearch();
-            // retrieve and score context
-            String[] context = request.context.split("\\s+");
-            double[] contextMean = searcher.getMean(context);
-            // iterate over concordance results
-            results.forEach(ex -> {
-                    String[] tokens = null;
-                    // hard-coded to "en" for now, TODO(sasa): support several word2vec models
-                    if (request.source.equals("en")) {
-                        tokens = ex.sentence.tokens;
-                    } else {
-                        tokens = ex.sentence.aligned.tokens;
-                    }
-                    double[] tokensMean = searcher.getMean(tokens);
-                    logger.debug("tokens={} context={} ({})", tokens, context, context.length);
-                    logger.debug("means: tokens=[{},{},{},...] context=[{},{},{},...]",
-                                 tokensMean[0], tokensMean[1], tokensMean[2],
-                                 contextMean[0], contextMean[1], contextMean[2]);
-                    double dist = searcher.cosineDistance(tokensMean, contextMean);
-                    ex.similarity = (Double.isNaN(dist) ? -1.0 : dist);
-                    logger.debug("distance: {}", ex.similarity);
-            });
-            // rerank according to word2vec similarities
-            Collections.sort(results, Order.bySimilarity);
+        long endTime = System.nanoTime();
+        logger.debug("TIMING examples: {}", (endTime - startTime) / 1e9);
+        startTime = endTime;
+        if (word2vecManager.hasModels()) {
+            boolean bSuccess = word2vecManager.rankConcordances(request.source, request.context, results);
+            if (!bSuccess) {
+                logger.warn("word2vec does not support source/target language");
+            }
         }
+        endTime = System.nanoTime();
+        logger.debug("TIMING word2vec: {} {} ({} sec/item)", (endTime - startTime) / 1e9, results.size(), (endTime - startTime) / 1e9 / results.size());
         results.forEach(ex -> {
             AlignedSentence source = ex.sentence;
             AlignedSentence target = source.aligned;
@@ -184,17 +172,12 @@ public class LexiconProtocol {
      *     0.08149381270654195,-0.15073516043655721,...],...}
      */
     private void addWordVector(Request request, Response response) {
-        if (word2vec == null) {
-            response.error = "no word2vec model available";
+        if (!word2vecManager.supports(request.source)) {
+            response.error = "no word2vec model available for '" + request.source + "'";
             return;
         }
-        String query = request.query;
-        Searcher searcher = word2vec.forSearch();
-        if (!searcher.contains(query)) {
-            query = Lexicon.degrade(query);
-        }
         try {
-            response.wordVector = searcher.getRawVector(query).asList();
+            response.wordVector = word2vecManager.getRawVector(request.source, request.query);
         } catch (UnknownWordException e) {
             response.error = e.getMessage();
         }
@@ -212,32 +195,9 @@ public class LexiconProtocol {
      * {...,"distance":0.347985021280413}
      */
     private void addDistance(Request request, Response response) {
-        if (word2vec == null) {
-            response.error = "no word2vec model available";
-            return;
-        }
-        Searcher searcher = word2vec.forSearch();
         try {
-            String query1 = request.query;
-            String query2 = request.context;
-            if (query2.length() == 0) {
-                String[] splitQuery = request.query.split("\\|\\|\\|");
-                if (splitQuery.length >= 2) {
-                    query1 = splitQuery[0];
-                    query2 = splitQuery[1];
-                } else {
-                    response.error = "malformed query";
-                    return;
-                }
-            }
-            if (!searcher.contains(query1)) {
-                query1 = Lexicon.degrade(query1);
-            }
-            if (!searcher.contains(query2)) {
-                query2 = Lexicon.degrade(query2);
-            }
-            response.distance = searcher.cosineDistance(query1, query2);
-        } catch (UnknownWordException e) {
+            response.distance = word2vecManager.getSimilarity(request.source, request.query, request.context);
+        } catch (UnsupportedLanguageException | MalformedQueryException | UnknownWordException e) {
             response.error = e.getMessage();
         }
     }
@@ -257,21 +217,12 @@ public class LexiconProtocol {
      * ...}
      */
     private void addMatches(Request request, Response response) {
-        if (word2vec == null) {
-            response.error = "no word2vec model available";
-            return;
-        }
-        String query = request.query;
-        Searcher searcher = word2vec.forSearch();
-        if (!searcher.contains(query)) {
-            query = Lexicon.degrade(query);
-        }
         try {
-            List<Match> matches = searcher.getMatches(query, request.maxCount);
+            List<Match> matches = word2vecManager.getMatches(request.source, request.query, request.maxCount);
             matches.stream().forEach(
                 m -> response.matches.add(new ResponseMatch(m.match(), m.distance()))
             );
-        } catch (UnknownWordException e) {
+        } catch (UnsupportedLanguageException | MalformedQueryException | UnknownWordException e) {
             response.error = e.getMessage();
         }
     }

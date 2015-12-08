@@ -1,6 +1,5 @@
 package org.oscii;
 
-import com.medallia.word2vec.Word2VecModel;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import org.apache.logging.log4j.LogManager;
@@ -14,6 +13,7 @@ import org.oscii.concordance.AlignedCorpus;
 import org.oscii.concordance.IndexedAlignedCorpus;
 import org.oscii.concordance.RemoteAlignedCorpus;
 import org.oscii.concordance.SentenceExample;
+import org.oscii.concordance.Word2VecManager;
 import org.oscii.lex.Lexicon;
 import org.oscii.lex.Ranker;
 import org.oscii.panlex.PanLexDir;
@@ -80,12 +80,13 @@ public class Main {
             ranker = new Ranker((File) options.valueOf("rank"));
         }
 
-        Word2VecModel word2vec = null;
+        Word2VecManager word2vecMan = null;
         if (options.has("word2vec")) {
-            word2vec = Word2VecModel.fromBinFile((File) options.valueOf("word2vec"));
+            word2vecMan = new Word2VecManager((String) options.valueOf("srclang"),
+                                              (File) options.valueOf("word2vec"));
         }
 
-        final LexiconProtocol protocol = new LexiconProtocol(lexicon, corpus, ranker, word2vec);
+        final LexiconProtocol protocol = new LexiconProtocol(lexicon, corpus, ranker, word2vecMan);
 
         // Serve lexicon (http API)
         Server server = null;
@@ -126,7 +127,11 @@ public class Main {
 
         // Ranker
         parser.accepts("rank", "path to CSV file with rankings").withRequiredArg().ofType(File.class);
-        
+
+        // Word2Vec
+        parser.accepts("word2vec", "path to binary Word2Vec model file").withRequiredArg().ofType(File.class);
+        parser.accepts("srclang", "language of binary Word2Vec model (default: en)").withRequiredArg().defaultsTo("en");
+
         OptionSet options = null;
         parser.acceptsAll(Arrays.asList("h", "help"), "show help").forHelp();
 
