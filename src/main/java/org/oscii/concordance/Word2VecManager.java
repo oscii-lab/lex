@@ -130,7 +130,7 @@ public class Word2VecManager {
    * @param concordances
    */
   public boolean rankConcordances(String lang, String context, List<SentenceExample> concordances) {
-    if (!supports(lang)) {
+    if (!supports(lang) || context.length() == 0) {
       return false;
     }
     Searcher searcher = models.get(lang).forSearch();

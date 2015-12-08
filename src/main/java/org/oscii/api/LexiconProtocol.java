@@ -97,15 +97,15 @@ public class LexiconProtocol {
         List<SentenceExample> results = corpus.examples(request.query, request.source, request.target, request.maxCount, request.memory);
         long endTime = System.nanoTime();
         logger.debug("TIMING examples: {}", (endTime - startTime) / 1e9);
-        startTime = endTime;
         if (word2vecManager.hasModels()) {
+            startTime = endTime;
             boolean bSuccess = word2vecManager.rankConcordances(request.source, request.context, results);
+            endTime = System.nanoTime();
+            logger.debug("TIMING word2vec: {} {} ({} sec/item)", (endTime - startTime) / 1e9, results.size(), (endTime - startTime) / 1e9 / results.size());
             if (!bSuccess) {
-                logger.warn("word2vec does not support source/target language");
+                logger.warn("word2vec does not support language or no context given");
             }
         }
-        endTime = System.nanoTime();
-        logger.debug("TIMING word2vec: {} {} ({} sec/item)", (endTime - startTime) / 1e9, results.size(), (endTime - startTime) / 1e9 / results.size());
         results.forEach(ex -> {
             AlignedSentence source = ex.sentence;
             AlignedSentence target = source.aligned;
