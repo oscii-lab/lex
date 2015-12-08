@@ -237,7 +237,7 @@ public class Word2VecManager {
     if (tokset.size() == 0) {
       return tokens.clone();
     } else {
-      return (String[]) tokset.toArray();
+      return tokset.toArray(new String[tokset.size()]);
     }
   }
 
