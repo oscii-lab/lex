@@ -24,8 +24,8 @@ import java.util.Set;
  */
 public class Word2VecManager {
   private static final int MIN_SEG_LEN = 5; // minimum segment length to activate reduction
-  private static final int MIN_TOK_LEN = 4; // minimum token length to denote a candidate
-  private static final int MAX_RES_LEN = 10; // maximum length of resulting reduced output
+  private static final int MIN_TOK_LEN = 5; // minimum token length to denote a candidate
+  private static final int MAX_RES_LEN = 8; // maximum length of resulting reduced output
   private Map<String, Word2VecModel> models;
   
   private final static Logger logger = LogManager.getLogger(Word2VecManager.class);
