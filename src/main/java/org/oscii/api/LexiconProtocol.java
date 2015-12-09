@@ -104,7 +104,7 @@ public class LexiconProtocol {
             endTime = System.nanoTime();
             logger.debug("TIMING word2vec: {} {} ({} sec/item)", (endTime - startTime) / 1e9, results.size(), (endTime - startTime) / 1e9 / results.size());
             if (!bSuccess) {
-                logger.warn("word2vec does not support language or no context given");
+                logger.warn("word2vec found no matches");
             }
         }
         results.forEach(ex -> {
