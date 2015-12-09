@@ -138,8 +138,8 @@ public class Word2VecManager {
       return false;
     }
     Searcher searcher = models.get(lang);
-    // retrieve and score context
-    String[] contextTokens = reduceTokens(context.split("\\s+"), MIN_SEG_LEN, MIN_TOK_LEN, MAX_RES_LEN);
+    // retrieve and score context; replaceAll() strips all punctuation
+    String[] contextTokens = reduceTokens(context.replaceAll("\\p{P}", "").split("\\s+"), MIN_SEG_LEN, MIN_TOK_LEN, MAX_RES_LEN);
     double[] contextMean = searcher.getMean(contextTokens);
     logger.info("context={} ({})", contextTokens, contextTokens.length);
     // iterate over concordance results
