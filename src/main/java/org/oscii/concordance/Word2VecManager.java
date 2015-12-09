@@ -134,18 +134,19 @@ public class Word2VecManager {
    * @param concordances
    */
   public boolean rankConcordances(String lang, String context, List<SentenceExample> concordances) {
-    if (!supports(lang) || context.length() == 0) {
+    if (!supports(lang) || context.length() == 0 || concordances.size() == 0) {
       return false;
     }
     Searcher searcher = models.get(lang);
     // retrieve and score context
     String[] contextTokens = reduceTokens(context.split("\\s+"), MIN_SEG_LEN, MIN_TOK_LEN, MAX_RES_LEN);
     double[] contextMean = searcher.getMean(contextTokens);
+    logger.info("context={} ({})", contextTokens, contextTokens.length);
     // iterate over concordance results
     concordances.forEach(ex -> {
         String[] tokens = reduceTokens(ex.sentence.tokens, MIN_SEG_LEN, MIN_TOK_LEN, MAX_RES_LEN);
         double[] tokensMean = searcher.getMean(tokens);
-        logger.debug("tokens={} context={} ({})", tokens, contextTokens, contextTokens.length);
+        logger.debug("tokens=" + tokens);
         logger.debug("means: tokens=[{},{},{},...] context=[{},{},{},...]",
                      tokensMean[0], tokensMean[1], tokensMean[2],
                      contextMean[0], contextMean[1], contextMean[2]);
@@ -155,6 +156,7 @@ public class Word2VecManager {
       });
     // rerank according to word2vec similarities
     Collections.sort(concordances, Order.bySimilarity);
+    logger.info("top similarity: {}", concordances.get(0).similarity);
     return true;
   }
 
