@@ -28,15 +28,15 @@ public class LexiconProtocol {
     private final Lexicon lexicon;
     private final AlignedCorpus corpus;
     private final Ranker ranker;
-    private final Word2VecManager word2vecManager;
+    private final Word2VecManager embeddings;
 
     private final static Logger logger = LogManager.getLogger(LexiconProtocol.class);
 
-    public LexiconProtocol(Lexicon lexicon, AlignedCorpus corpus, Ranker ranker, Word2VecManager word2vecManager) {
+    public LexiconProtocol(Lexicon lexicon, AlignedCorpus corpus, Ranker ranker, Word2VecManager embeddings) {
         this.lexicon = lexicon;
         this.corpus = corpus;
         this.ranker = ranker;
-        this.word2vecManager = word2vecManager;
+        this.embeddings = embeddings;
     }
 
     /*
@@ -52,7 +52,7 @@ public class LexiconProtocol {
         if (request.example) addExamples(request, response);
         if (request.extend) addExtensions(request, response);
         if (request.synonym) addSynonyms(request, response);
-        if (request.wordvec) addWordVector(request, response);
+        if (request.embedding) addEmbedding(request, response);
         if (request.distance) addDistance(request, response);
         if (request.similar) addMatches(request, response);
         return response;
@@ -94,15 +94,15 @@ public class LexiconProtocol {
 
     private void addExamples(Request request, Response response) {
         long startTime = System.nanoTime(); // - startTime) / 1e9;
-        boolean bHasWord2Vec = word2vecManager.hasModels();
-        List<SentenceExample> results = corpus.examples(request.query, request.source, request.target, request.maxCount, request.memory, !bHasWord2Vec);
+        boolean bHasEmbeddings = (embeddings != null && embeddings.hasModels());
+        List<SentenceExample> results = corpus.examples(request.query, request.source, request.target, request.maxCount, request.memory, !bHasEmbeddings);
         long endTime = System.nanoTime();
         logger.debug("TIMING examples: {}", (endTime - startTime) / 1e9);
-        if (bHasWord2Vec) {
+        if (bHasEmbeddings) {
             startTime = endTime;
-            boolean bSuccess = word2vecManager.rankConcordances(request.source, request.context, results);
+            boolean bSuccess = embeddings.rankConcordances(request.source, request.context, results);
             endTime = System.nanoTime();
-            logger.debug("TIMING word2vec: {} {} ({} sec/item)", (endTime - startTime) / 1e9, results.size(), (endTime - startTime) / 1e9 / results.size());
+            logger.debug("TIMING embeddings: {} ({})", (endTime - startTime) / 1e9, results.size());
             if (!bSuccess) {
                 logger.warn("word2vec found no matches");
             }
@@ -167,19 +167,15 @@ public class LexiconProtocol {
      * Adds the raw word vector for a query to the response.
      *
      * Example:
-     * http://localhost:8090/translate/lexicon?query=explain&wordvec=true
+     * http://localhost:8090/translate/lexicon?query=explain&embedding=true
      * =>
-     * {...,"wordVector":[-0.07444860785060135,8.24243638592437E-4,0.03639942629448272,
+     * {...,"embedding":[-0.07444860785060135,8.24243638592437E-4,0.03639942629448272,
      *     0.08149381270654195,-0.15073516043655721,...],...}
      */
-    private void addWordVector(Request request, Response response) {
-        if (!word2vecManager.supports(request.source)) {
-            response.error = "no word2vec model available for '" + request.source + "'";
-            return;
-        }
+    private void addEmbedding(Request request, Response response) {
         try {
-            response.wordVector = word2vecManager.getRawVector(request.source, request.query);
-        } catch (UnknownWordException e) {
+            response.embedding = embeddings.getRawVector(request.source, request.query);
+        } catch (UnknownWordException | UnsupportedLanguageException e) {
             response.error = e.getMessage();
         }
     }
@@ -197,7 +193,7 @@ public class LexiconProtocol {
      */
     private void addDistance(Request request, Response response) {
         try {
-            response.distance = word2vecManager.getSimilarity(request.source, request.query, request.context);
+            response.distance = embeddings.getSimilarity(request.source, request.query, request.context);
         } catch (UnsupportedLanguageException | MalformedQueryException | UnknownWordException e) {
             response.error = e.getMessage();
         }
@@ -219,7 +215,7 @@ public class LexiconProtocol {
      */
     private void addMatches(Request request, Response response) {
         try {
-            List<Match> matches = word2vecManager.getMatches(request.source, request.query, request.maxCount);
+            List<Match> matches = embeddings.getMatches(request.source, request.query, request.maxCount);
             matches.stream().forEach(
                 m -> response.matches.add(new ResponseMatch(m.match(), m.distance()))
             );
@@ -251,7 +247,7 @@ public class LexiconProtocol {
         public boolean example = false;
         public boolean extend = false;
         public boolean synonym = false;
-        public boolean wordvec = false;
+        public boolean embedding = false;
         public boolean similar = false;
         public boolean distance = false;
         public double minFrequency = 1e-4;
@@ -266,7 +262,7 @@ public class LexiconProtocol {
         public List<ResponseTranslation> extensions = new ArrayList<>();
         public List<ResponseSynonymSet> synonyms = new ArrayList<>();
         public List<ResponseMatch> matches = new ArrayList<>();
-        public List<Double> wordVector = new ArrayList<>();
+        public List<Double> embedding = new ArrayList<>();
         public double distance = 0.0;
         public String error;
 
