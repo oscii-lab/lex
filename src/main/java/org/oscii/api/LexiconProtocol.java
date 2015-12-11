@@ -1,11 +1,19 @@
 package org.oscii.api;
 
+import com.google.common.primitives.Doubles;
 import com.google.gson.Gson;
+import com.medallia.word2vec.Searcher;
+import com.medallia.word2vec.Searcher.Match;
+import com.medallia.word2vec.Searcher.UnknownWordException;
+import com.medallia.word2vec.Word2VecModel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.oscii.concordance.AlignedCorpus;
 import org.oscii.concordance.AlignedSentence;
 import org.oscii.concordance.SentenceExample;
+import org.oscii.concordance.Word2VecManager;
+import org.oscii.concordance.Word2VecManager.UnsupportedLanguageException;
+import org.oscii.concordance.Word2VecManager.MalformedQueryException;
 import org.oscii.lex.*;
 
 import java.util.ArrayList;
@@ -20,13 +28,15 @@ public class LexiconProtocol {
     private final Lexicon lexicon;
     private final AlignedCorpus corpus;
     private final Ranker ranker;
+    private final Word2VecManager embeddings;
 
     private final static Logger logger = LogManager.getLogger(LexiconProtocol.class);
 
-    public LexiconProtocol(Lexicon lexicon, AlignedCorpus corpus, Ranker ranker) {
+    public LexiconProtocol(Lexicon lexicon, AlignedCorpus corpus, Ranker ranker, Word2VecManager embeddings) {
         this.lexicon = lexicon;
         this.corpus = corpus;
         this.ranker = ranker;
+        this.embeddings = embeddings;
     }
 
     /*
@@ -42,6 +52,9 @@ public class LexiconProtocol {
         if (request.example) addExamples(request, response);
         if (request.extend) addExtensions(request, response);
         if (request.synonym) addSynonyms(request, response);
+        if (request.embedding) addEmbedding(request, response);
+        if (request.distance) addDistance(request, response);
+        if (request.similar) addMatches(request, response);
         return response;
     }
 
@@ -80,15 +93,26 @@ public class LexiconProtocol {
     }
 
     private void addExamples(Request request, Response response) {
-        List<SentenceExample> results = corpus.examples(request.query, request.source, request.target, request.maxCount, request.memory);
-        // TODO Rank examples (e.g., based on request.context)
-        //  - https://github.com/lilt/core/issues/97
+        long startTime = System.nanoTime(); // - startTime) / 1e9;
+        boolean bHasEmbeddings = (embeddings != null && embeddings.hasModels());
+        List<SentenceExample> results = corpus.examples(request.query, request.source, request.target, request.maxCount, request.memory, !bHasEmbeddings);
+        long endTime = System.nanoTime();
+        logger.debug("TIMING examples: {}", (endTime - startTime) / 1e9);
+        if (bHasEmbeddings) {
+            startTime = endTime;
+            boolean bSuccess = embeddings.rankConcordances(request.source, request.context, results);
+            endTime = System.nanoTime();
+            logger.debug("TIMING embeddings: {} ({})", (endTime - startTime) / 1e9, results.size());
+            if (!bSuccess) {
+                logger.warn("word2vec found no matches");
+            }
+        }
         results.forEach(ex -> {
             AlignedSentence source = ex.sentence;
             AlignedSentence target = source.aligned;
             Span sourceSpan = new Span(ex.sourceStart, ex.sourceLength);
             Span targetSpan = new Span(ex.targetStart, ex.targetLength);
-            ResponseExample example = new ResponseExample(source.tokens, source.delimiters, target.tokens, target.delimiters, source.getAlignment(), sourceSpan, targetSpan);
+            ResponseExample example = new ResponseExample(source.tokens, source.delimiters, target.tokens, target.delimiters, source.getAlignment(), sourceSpan, targetSpan, ex.similarity);
             response.examples.add(example);
         });
     }
@@ -139,6 +163,67 @@ public class LexiconProtocol {
         response.synonyms = response.synonyms.stream().distinct().collect(toList());
     }
 
+    /**
+     * Adds the raw word vector for a query to the response.
+     *
+     * Example:
+     * http://localhost:8090/translate/lexicon?query=explain&embedding=true
+     * =>
+     * {...,"embedding":[-0.07444860785060135,8.24243638592437E-4,0.03639942629448272,
+     *     0.08149381270654195,-0.15073516043655721,...],...}
+     */
+    private void addEmbedding(Request request, Response response) {
+        try {
+            response.embedding = embeddings.getRawVector(request.source, request.query);
+        } catch (UnknownWordException | UnsupportedLanguageException e) {
+            response.error = e.getMessage();
+        }
+    }
+
+    /**
+     * Adds cosine distance of two terms in the given request to
+     * response.  The field 'query' either takes both terms separated
+     * by '|||', or fields 'query' and 'context' are used.
+     *
+     * Examples:
+     * http://localhost:8090/translate/lexicon?query=explain|||tell&distance=true
+     * http://localhost:8090/translate/lexicon?query=explain&context=tell&distance=true
+     * =>
+     * {...,"distance":0.347985021280413}
+     */
+    private void addDistance(Request request, Response response) {
+        try {
+            response.distance = embeddings.getSimilarity(request.source, request.query, request.context);
+        } catch (UnsupportedLanguageException | MalformedQueryException | UnknownWordException e) {
+            response.error = e.getMessage();
+        }
+    }
+
+    /**
+     * Adds similar terms for given request to response.
+     *
+     * Example:
+     * http://localhost:8090/translate/lexicon?query=explain&similar=true
+     * =>
+     * {...,"matches":[
+     *    {"match":"explain","distance":1.0000000000000002},
+     *    {"match":"predict","distance":0.6387358641143756},
+     *    {"match":"understand","distance":0.6370402633877622},
+     *    {"match":"relate","distance":0.602837642683336},
+     *    {"match":"discern","distance":0.5984616315627042},
+     * ...}
+     */
+    private void addMatches(Request request, Response response) {
+        try {
+            List<Match> matches = embeddings.getMatches(request.source, request.query, request.maxCount);
+            matches.stream().forEach(
+                m -> response.matches.add(new ResponseMatch(m.match(), m.distance()))
+            );
+        } catch (UnsupportedLanguageException | MalformedQueryException | UnknownWordException e) {
+            response.error = e.getMessage();
+        }
+    }
+
     private List<String> listSynonyms(Meaning r) {
         return r.synonyms.stream().map(e -> e.text).collect(toList());
     }
@@ -162,6 +247,9 @@ public class LexiconProtocol {
         public boolean example = false;
         public boolean extend = false;
         public boolean synonym = false;
+        public boolean embedding = false;
+        public boolean similar = false;
+        public boolean distance = false;
         public double minFrequency = 1e-4;
         public int maxCount = 10;
         public int memory = 0;
@@ -173,6 +261,9 @@ public class LexiconProtocol {
         public List<ResponseExample> examples = new ArrayList();
         public List<ResponseTranslation> extensions = new ArrayList<>();
         public List<ResponseSynonymSet> synonyms = new ArrayList<>();
+        public List<ResponseMatch> matches = new ArrayList<>();
+        public List<Double> embedding = new ArrayList<>();
+        public double distance = 0.0;
         public String error;
 
         public static Response error(String message) {
@@ -267,6 +358,19 @@ public class LexiconProtocol {
         }
     }
 
+    /**
+     * A similar match based on Word2Vec.
+     */
+    static class ResponseMatch extends Jsonable {
+        String match;
+        double distance;
+
+        public ResponseMatch(String match, double distance) {
+            this.match = match;
+            this.distance = distance;
+        }
+    }
+
     /*
      * A span of a sequence
      */
@@ -297,8 +401,9 @@ public class LexiconProtocol {
         int[][] sourceToTarget;
         Span sourceSpan;
         Span targetSpan;
+        double similarity;
 
-        public ResponseExample(String[] source, String[] sourceDelimiters, String[] target, String[] targetDelimiters, int[][] sourceToTarget, Span sourceSpan, Span targetSpan) {
+        public ResponseExample(String[] source, String[] sourceDelimiters, String[] target, String[] targetDelimiters, int[][] sourceToTarget, Span sourceSpan, Span targetSpan, double similarity) {
             this.source = source;
             this.sourceDelimiters = sourceDelimiters;
             this.target = target;
@@ -306,6 +411,7 @@ public class LexiconProtocol {
             this.sourceToTarget = sourceToTarget;
             this.sourceSpan = sourceSpan;
             this.targetSpan = targetSpan;
+            this.similarity = similarity;
         }
     }
 }

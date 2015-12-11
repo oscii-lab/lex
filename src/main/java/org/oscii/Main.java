@@ -13,6 +13,7 @@ import org.oscii.concordance.AlignedCorpus;
 import org.oscii.concordance.IndexedAlignedCorpus;
 import org.oscii.concordance.RemoteAlignedCorpus;
 import org.oscii.concordance.SentenceExample;
+import org.oscii.concordance.Word2VecManager;
 import org.oscii.lex.Lexicon;
 import org.oscii.lex.Ranker;
 import org.oscii.panlex.PanLexDir;
@@ -78,8 +79,30 @@ public class Main {
         if (options.has("rank")) {
             ranker = new Ranker((File) options.valueOf("rank"));
         }
-        
-        final LexiconProtocol protocol = new LexiconProtocol(lexicon, corpus, ranker);
+
+        Word2VecManager embeddings = null;
+        if (options.has("embeddings")) {
+            if (!options.has("embeddingslangs")) {
+                log.fatal("If using embeddings, you have to set the corresponding languages that are being represented in each model.");
+                System.exit(-2);
+            }
+            String embeddingsFiles = (String) options.valueOf("embeddings");
+            String embeddingsLangs = (String) options.valueOf("embeddingslangs");
+            String[] files = embeddingsFiles.split(",");
+            String[] langs = embeddingsLangs.split(",");
+            if (langs.length != files.length) {
+                log.fatal("Unequal number of Word2Vec models ({}) and languages ({}).",
+                          files.length, langs.length);
+                System.exit(-1);
+            }
+            embeddings = new Word2VecManager();
+            for (int i = 0; i < files.length; ++i) {
+                log.info("adding word2vec model for language {}: {}", langs[i], files[i]);
+                embeddings.add(langs[i], new File(files[i]));
+            }
+        }
+
+        final LexiconProtocol protocol = new LexiconProtocol(lexicon, corpus, ranker, embeddings);
 
         // Serve lexicon (http API)
         Server server = null;
@@ -120,7 +143,11 @@ public class Main {
 
         // Ranker
         parser.accepts("rank", "path to CSV file with rankings").withRequiredArg().ofType(File.class);
-        
+
+        // Word2Vec
+        parser.accepts("embeddings", "comma-separated list of binary Word2Vec model files").withRequiredArg().describedAs("FileList");
+        parser.accepts("embeddingslangs", "comma-separated list of languages for Word2Vec models").withRequiredArg().describedAs("LangList");
+
         OptionSet options = null;
         parser.acceptsAll(Arrays.asList("h", "help"), "show help").forHelp();
 

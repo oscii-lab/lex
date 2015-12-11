@@ -10,3 +10,6 @@ project(":CoreNLP").projectDir = new File("$System.env.CORENLP_HOME")
 include "phrasal"
 project(":phrasal").projectDir = new File("$System.env.PHRASAL_HOME")
 
+// Word2VecJava
+include "Word2VecJava"
+project(":Word2VecJava").projectDir = new File("$System.env.WORD2VECJAVA_HOME")

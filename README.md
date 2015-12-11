@@ -2,6 +2,16 @@
 
 A research project to learn, index, and display all lexical information.
 
+## Dependencies
+
+You have to clone the following repositories as a pre-requisite:
+
+```
+ $ git clone git@github.com:stanfordnlp/phrasal.git
+ $ git clone git@github.com:stanfordnlp/CoreNLP.git
+ $ git clone git@github.com:oscii-lab/Word2VecJava.git
+```
+
 ## Building
 
 * Run `gradle test` to build and test `lex`.
