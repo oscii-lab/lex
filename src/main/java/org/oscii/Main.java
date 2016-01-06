@@ -13,9 +13,9 @@ import org.oscii.concordance.AlignedCorpus;
 import org.oscii.concordance.IndexedAlignedCorpus;
 import org.oscii.concordance.RemoteAlignedCorpus;
 import org.oscii.concordance.SentenceExample;
-import org.oscii.concordance.Word2VecManager;
 import org.oscii.lex.Lexicon;
 import org.oscii.lex.Ranker;
+import org.oscii.neural.Word2VecManager;
 import org.oscii.panlex.PanLexDir;
 import org.oscii.panlex.PanLexJSONParser;
 
