@@ -15,13 +15,10 @@ import java.util.Map;
 
 import org.oscii.math.VectorMath;
 
-
 /**
  * A simple container for a word embedding model.
  * 
- * TODO(spenceg) Replace mem-mapped file loading. Silly.
- * 
- * @author rayder441
+ * @author Spence Green
  *
  */
 public class EmbeddingContainer {
@@ -45,6 +42,20 @@ public class EmbeddingContainer {
     for (String word : vocab) word2Index.put(word, word2Index.size());
   }
 
+  /**
+   * Get the dimension of the embeddings.
+   * 
+   * @return
+   */
+  public int dimension() { return embeddings[0].length; }
+  
+  /**
+   * Get the vocabulary size.
+   * 
+   * @return
+   */
+  public int vocabSize() { return vocab.length; }
+  
   /**
    * Get the word embedding. Returns null if no embedding exists.
    * 
@@ -73,7 +84,7 @@ public class EmbeddingContainer {
    * @return
    */
   public float[] getMean(String[] tokens) {
-    float[] avgVec = new float[tokens.length];
+    float[] avgVec = new float[dimension()];
     int n = 0;
     for (String token : tokens) {
       float[] v = getRawVector(token);
@@ -131,10 +142,6 @@ public class EmbeddingContainer {
 
       String[] vocabs = new String[vocabSize];
       float[][] vectors = new float[vocabSize][layerSize];
-      //      DoubleBuffer vectors = DoubleBuffer.allocate(vocabSize * layerSize);
-
-      //      long lastLogMessage = System.currentTimeMillis();
-      //      final float[] floats = new float[layerSize];
       for (int lineno = 0; lineno < vocabSize; lineno++) {
         // read vocab
         sb.setLength(0);
@@ -152,9 +159,6 @@ public class EmbeddingContainer {
         // read vector
         final FloatBuffer floatBuffer = buffer.asFloatBuffer();
         floatBuffer.get(vectors[lineno]);
-        //        for (int i = 0; i < floats.length; ++i) {
-        //          vectors.put(lineno * layerSize + i, floats[i]);
-        //        }
         buffer.position(buffer.position() + 4 * layerSize);
 
         // remap file
@@ -193,7 +197,7 @@ public class EmbeddingContainer {
       String[] vocab = new String[vocabSize];
       float[][] vectors = new float[vocabSize][layerSize];
       for (String line; (line = reader.readLine()) != null;) {
-        int i = reader.getLineNumber() - 1; // one-indexed
+        int i = reader.getLineNumber() - 2; // one-indexed
         String[] values = line.trim().split(" ");
         vocab[i] = values[0].trim();
 

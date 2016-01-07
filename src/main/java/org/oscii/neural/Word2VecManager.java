@@ -120,20 +120,24 @@ public class Word2VecManager {
     if (!supports(lang) || context.length() == 0 || concordances.size() == 0) {
       return false;
     }
-    final EmbeddingContainer searcher = models.get(lang);
+    final EmbeddingContainer model = models.get(lang);
     // retrieve and score context; replaceAll() strips all punctuation
     String[] contextTokens = reduceTokens(context.replaceAll("\\p{P}", "").split("\\s+"), MIN_SEG_LEN, MIN_TOK_LEN, MAX_RES_LEN);
-    float[] contextMean = searcher.getMean(contextTokens);
+    float[] contextMean = model.getMean(contextTokens);
     logger.info("context={} ({})", contextTokens, contextTokens.length);
     // iterate over concordance results
     concordances.forEach(ex -> {
       String[] tokens = reduceTokens(ex.sentence.tokens, MIN_SEG_LEN, MIN_TOK_LEN, MAX_RES_LEN);
-      float[] tokensMean = searcher.getMean(tokens);
+      float[] tokensMean = model.getMean(tokens);
       logger.debug("means: tokens=[{},{},{},...] context=[{},{},{},...]",
           tokensMean[0], tokensMean[1], tokensMean[2],
           contextMean[0], contextMean[1], contextMean[2]);
-      ex.similarity = VectorMath.cosineSimilarity(tokensMean, contextMean);
-      if (Double.isNaN(ex.similarity)) throw new RuntimeException("Cosine similarity undefined for concordance entry");
+      try {
+        ex.similarity = VectorMath.cosineSimilarity(tokensMean, contextMean);
+      } catch(Exception e) {
+        logger.warn("Zero vector for concordance ranking");
+        ex.similarity = -2.0; // Give it a low score.
+      }
       logger.debug("distance: {}", ex.similarity);
     });
     // rerank according to word2vec similarities
