@@ -1,20 +1,15 @@
 package org.oscii.api;
 
-import com.google.common.primitives.Doubles;
 import com.google.gson.Gson;
-import com.medallia.word2vec.Searcher;
-import com.medallia.word2vec.Searcher.Match;
-import com.medallia.word2vec.Searcher.UnknownWordException;
-import com.medallia.word2vec.Word2VecModel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.oscii.concordance.AlignedCorpus;
 import org.oscii.concordance.AlignedSentence;
 import org.oscii.concordance.SentenceExample;
-import org.oscii.concordance.Word2VecManager;
-import org.oscii.concordance.Word2VecManager.UnsupportedLanguageException;
-import org.oscii.concordance.Word2VecManager.MalformedQueryException;
 import org.oscii.lex.*;
+import org.oscii.neural.Word2VecManager;
+import org.oscii.neural.Word2VecManager.MalformedQueryException;
+import org.oscii.neural.Word2VecManager.UnsupportedLanguageException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,7 +49,6 @@ public class LexiconProtocol {
         if (request.synonym) addSynonyms(request, response);
         if (request.embedding) addEmbedding(request, response);
         if (request.distance) addDistance(request, response);
-        if (request.similar) addMatches(request, response);
         return response;
     }
 
@@ -173,11 +167,11 @@ public class LexiconProtocol {
      *     0.08149381270654195,-0.15073516043655721,...],...}
      */
     private void addEmbedding(Request request, Response response) {
-        try {
-            response.embedding = embeddings.getRawVector(request.source, request.query);
-        } catch (UnknownWordException | UnsupportedLanguageException e) {
-            response.error = e.getMessage();
-        }
+      try {
+        response.embedding = embeddings.getRawVector(request.source, request.query);
+      } catch (UnsupportedLanguageException e) {
+        response.error = e.getMessage();
+      }
     }
 
     /**
@@ -192,37 +186,13 @@ public class LexiconProtocol {
      * {...,"distance":0.347985021280413}
      */
     private void addDistance(Request request, Response response) {
-        try {
-            response.distance = embeddings.getSimilarity(request.source, request.query, request.context);
-        } catch (UnsupportedLanguageException | MalformedQueryException | UnknownWordException e) {
-            response.error = e.getMessage();
-        }
+      try {
+        response.distance = embeddings.getSimilarity(request.source, request.query, request.context);
+      } catch (UnsupportedLanguageException | MalformedQueryException e) {
+        response.error = e.getMessage();
+      }
     }
 
-    /**
-     * Adds similar terms for given request to response.
-     *
-     * Example:
-     * http://localhost:8090/translate/lexicon?query=explain&similar=true
-     * =>
-     * {...,"matches":[
-     *    {"match":"explain","distance":1.0000000000000002},
-     *    {"match":"predict","distance":0.6387358641143756},
-     *    {"match":"understand","distance":0.6370402633877622},
-     *    {"match":"relate","distance":0.602837642683336},
-     *    {"match":"discern","distance":0.5984616315627042},
-     * ...}
-     */
-    private void addMatches(Request request, Response response) {
-        try {
-            List<Match> matches = embeddings.getMatches(request.source, request.query, request.maxCount);
-            matches.stream().forEach(
-                m -> response.matches.add(new ResponseMatch(m.match(), m.distance()))
-            );
-        } catch (UnsupportedLanguageException | MalformedQueryException | UnknownWordException e) {
-            response.error = e.getMessage();
-        }
-    }
 
     private List<String> listSynonyms(Meaning r) {
         return r.synonyms.stream().map(e -> e.text).collect(toList());
@@ -248,7 +218,6 @@ public class LexiconProtocol {
         public boolean extend = false;
         public boolean synonym = false;
         public boolean embedding = false;
-        public boolean similar = false;
         public boolean distance = false;
         public double minFrequency = 1e-4;
         public int maxCount = 10;
@@ -258,11 +227,10 @@ public class LexiconProtocol {
     public static class Response extends Jsonable {
         public List<ResponseTranslation> translations = new ArrayList<>();
         public List<ResponseDefinition> definitions = new ArrayList<>();
-        public List<ResponseExample> examples = new ArrayList();
+        public List<ResponseExample> examples = new ArrayList<>();
         public List<ResponseTranslation> extensions = new ArrayList<>();
         public List<ResponseSynonymSet> synonyms = new ArrayList<>();
-        public List<ResponseMatch> matches = new ArrayList<>();
-        public List<Double> embedding = new ArrayList<>();
+        public float[] embedding;
         public double distance = 0.0;
         public String error;
 
