@@ -106,7 +106,7 @@ public class LexiconProtocol {
             AlignedSentence target = source.aligned;
             Span sourceSpan = new Span(ex.sourceStart, ex.sourceLength);
             Span targetSpan = new Span(ex.targetStart, ex.targetLength);
-            ResponseExample example = new ResponseExample(source.tokens, source.delimiters, target.tokens, target.delimiters, source.getAlignment(), sourceSpan, targetSpan, ex.similarity);
+            ResponseExample example = new ResponseExample(source.tokens, source.delimiters, target.tokens, target.delimiters, source.getAlignment(), sourceSpan, targetSpan, ex.similarity, ex.memoryId);
             response.examples.add(example);
         });
     }
@@ -370,8 +370,9 @@ public class LexiconProtocol {
         Span sourceSpan;
         Span targetSpan;
         double similarity;
+        int memoryId; // -1: background TM, >=0: foregroundTM
 
-        public ResponseExample(String[] source, String[] sourceDelimiters, String[] target, String[] targetDelimiters, int[][] sourceToTarget, Span sourceSpan, Span targetSpan, double similarity) {
+        public ResponseExample(String[] source, String[] sourceDelimiters, String[] target, String[] targetDelimiters, int[][] sourceToTarget, Span sourceSpan, Span targetSpan, double similarity, int memoryId) {
             this.source = source;
             this.sourceDelimiters = sourceDelimiters;
             this.target = target;
@@ -380,6 +381,7 @@ public class LexiconProtocol {
             this.sourceSpan = sourceSpan;
             this.targetSpan = targetSpan;
             this.similarity = similarity;
+            this.memoryId = memoryId;
         }
     }
 }

@@ -121,7 +121,7 @@ public class IndexedAlignedCorpus extends AlignedCorpus {
         if (bLimit) {
             forQuery = forQuery.limit(max);
         }
-        return forQuery.map(loc -> new SentenceExample(loc.sentence, loc.tokenIndex, 1, 0, 0)).collect(toList());
+        return forQuery.map(loc -> new SentenceExample(loc.sentence, loc.tokenIndex, 1, 0, 0, -1)).collect(toList());
     }
 
     /* Support classes */
