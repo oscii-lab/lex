@@ -73,7 +73,12 @@ public class Lexicon {
         meanings.add(meaning);
     }
 
-    private void forEachMeanings(Consumer<Meanings> fn) {
+    public void merge(Lexicon otherLex) {
+        log.info("Merging lexicons");
+        otherLex.forEachMeanings(ms -> ms.meanings.stream().forEach(m -> this.add(m)));
+    }
+
+    public void forEachMeanings(Consumer<Meanings> fn) {
         index.values().stream().forEach(trie -> trie.values().forEach(map -> map.values().forEach(fn)));
     }
 
