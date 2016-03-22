@@ -148,10 +148,10 @@ public class LexiconProtocol {
         results.stream().forEach(r -> {
             if (r.synonyms.isEmpty()) return;
             if (r.pos.isEmpty()) {
-                response.synonyms.add(new ResponseSynonymSet("", listSynonyms(r)));
+                response.synonyms.add(new ResponseSynonymSet("", r.dataSource, listSynonyms(r)));
             } else {
                 r.pos.stream().distinct().forEach(pos ->
-                    response.synonyms.add(new ResponseSynonymSet(pos, listSynonyms(r))));
+                    response.synonyms.add(new ResponseSynonymSet(pos, r.dataSource, listSynonyms(r))));
             }
         });
         response.synonyms = response.synonyms.stream().distinct().collect(toList());
@@ -299,10 +299,12 @@ public class LexiconProtocol {
 
     static class ResponseSynonymSet extends Jsonable {
         String pos;
+        String dataSource;
         List<String> synonyms;
 
-        public ResponseSynonymSet(String pos, List<String> synonyms) {
+        public ResponseSynonymSet(String pos, String dataSource, List<String> synonyms) {
             this.pos = pos;
+            this.dataSource = dataSource;
             this.synonyms = synonyms;
         }
 
