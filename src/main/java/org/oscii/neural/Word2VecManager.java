@@ -9,6 +9,7 @@ import org.oscii.math.VectorMath;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -148,15 +149,18 @@ public class Word2VecManager {
   }
 
   /**
-   * Returns the raw word vector (n-dimensional array of doubles) for
-   * given query and language.
+   * Returns the averaged raw word vector (n-dimensional array of
+   * doubles) for given query and language. Applies tokenization
+   * through punctuation removal and reducing into a bag of words.
    *
    * @param lang
    * @param query
    */
   public float[] getRawVector(String lang, String query) throws UnsupportedLanguageException {
     if (!supports(lang)) throw new UnsupportedLanguageException(lang);
-    return models.get(lang).getRawVector(query);
+    String[] bagOfWords = getBagOfWords(query.replaceAll("\\p{P}", "").split("\\s+"));
+    logger.debug("BOW: {}", Arrays.toString(bagOfWords));
+    return models.get(lang).getMean(bagOfWords);
   }
   
   /**
@@ -231,6 +235,19 @@ public class Word2VecManager {
     } else {
       return tokset.toArray(new String[tokset.size()]);
     }
+  }
+
+  /**
+   * Returns bag-of-words for given token sequence.
+   *
+   * @param tokens
+   */
+  public static String[] getBagOfWords(String[] tokens) {
+    Set<String> tokset = new HashSet<>();
+    for (String token : tokens) {
+      tokset.add(token);
+    }
+    return tokset.toArray(new String[tokset.size()]);
   }
 
   /**
