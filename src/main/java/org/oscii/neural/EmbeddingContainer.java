@@ -10,6 +10,7 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -206,6 +207,27 @@ public class EmbeddingContainer {
         }
       }
       return new EmbeddingContainer(vocab, vectors);
+    }
+  }
+  
+  /**
+   * 
+   * @param args
+   * @throws IOException 
+   */
+  public static void main(String[] args) throws IOException {
+    if (args.length != 1) {
+      System.err.printf("Usage: java %s bin_file%n", EmbeddingContainer.class.getName());
+      System.exit(-1);
+    }
+    
+    final String fileName = args[0];
+    System.out.println("Loading embeddings from: " + fileName + " ...");
+    EmbeddingContainer container = EmbeddingContainer.fromBinFile(new File(fileName));
+    System.out.printf("Embedding dimension: %d%n", container.dimension());
+    for (String wordType : container.vocab) {
+      float[] emb = container.getRawVector(wordType);
+      System.out.printf("%s\t%s%n", wordType, Arrays.toString(emb));
     }
   }
 }
