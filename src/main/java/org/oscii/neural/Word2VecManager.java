@@ -48,6 +48,7 @@ public class Word2VecManager {
    * @return true if model was added successfully, else false
    */
   public boolean add(String lang, File file) throws IOException {
+    logger.info("Loading {} embeddings from {}", lang, file);
     EmbeddingContainer model = EmbeddingContainer.fromBinFile(file);
     put(lang, model);
     return true;
@@ -160,6 +161,18 @@ public class Word2VecManager {
     String[] bagOfWords = getBagOfWords(query.replaceAll("\\p{P}", "").split("\\s+"));
     logger.debug("BOW: {}", Arrays.toString(bagOfWords));
     return models.get(lang).getMean(bagOfWords);
+  }
+  
+  /**
+   * Get the mean vector for 
+   * @param lang
+   * @param query
+   * @return
+   * @throws UnsupportedLanguageException
+   */
+  public float[] getMeanVector(String lang, String[] query) throws UnsupportedLanguageException {
+    if (!supports(lang)) throw new UnsupportedLanguageException(lang);
+    return models.get(lang).getMean(query);
   }
 
   /**
