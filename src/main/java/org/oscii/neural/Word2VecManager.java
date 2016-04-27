@@ -135,7 +135,11 @@ public class Word2VecManager {
           tokensMean[0], tokensMean[1], tokensMean[2],
           contextMean[0], contextMean[1], contextMean[2]);
       try {
-        ex.similarity = VectorMath.cosineSimilarity(tokensMean, contextMean);
+        double sim = VectorMath.cosineSimilarity(tokensMean, contextMean);
+        if (Double.isNaN(sim)) {
+          sim = -2.0; // Give it a low score.
+        }
+        ex.similarity = sim;
       } catch(Exception e) {
         logger.warn("Zero vector for concordance ranking");
         ex.similarity = -2.0; // Give it a low score.
