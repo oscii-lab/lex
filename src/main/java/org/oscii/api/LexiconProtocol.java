@@ -104,11 +104,50 @@ public class LexiconProtocol {
         results.forEach(ex -> {
             AlignedSentence source = ex.sentence;
             AlignedSentence target = source.aligned;
-            Span sourceSpan = new Span(ex.sourceStart, ex.sourceLength);
-            Span targetSpan = new Span(ex.targetStart, ex.targetLength);
-            ResponseExample example = new ResponseExample(source.tokens, source.delimiters, target.tokens, target.delimiters, source.getAlignment(), sourceSpan, targetSpan, ex.similarity, ex.memoryId);
-            response.examples.add(example);
+            if (request.translate && exactQueryMatch(request, ex)) {
+                String sourceTerm = joinSegment(source.tokens, source.delimiters);
+                String targetTerm = joinSegment(target.tokens, target.delimiters);
+                response.translations.add(
+                        new ResponseTranslation(sourceTerm, "", targetTerm, 0.0));
+            } else {
+                Span sourceSpan = new Span(ex.sourceStart, ex.sourceLength);
+                Span targetSpan = new Span(ex.targetStart, ex.targetLength);
+                ResponseExample example = new ResponseExample(
+                        source.tokens,
+                        source.delimiters,
+                        target.tokens,
+                        target.delimiters,
+                        source.getAlignment(),
+                        sourceSpan,
+                        targetSpan,
+                        ex.similarity,
+                        ex.memoryId);
+                response.examples.add(example);
+            }
         });
+    }
+
+    // Interleave tokens and delimiters into a rendered string.
+    private String joinSegment(String[] tokens, String[] delimiters) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < tokens.length; i++) {
+            if (i > delimiters.length) {
+                sb.append(delimiters[i]);
+            } else {
+                sb.append(" ");
+            }
+            sb.append(tokens[i]);
+        }
+        if (delimiters.length > tokens.length) {
+            sb.append(delimiters[tokens.length]);
+        }
+        return sb.toString();
+    }
+
+    // The query of the request exactly matches the example.
+    private boolean exactQueryMatch(Request request, SentenceExample ex) {
+        String sourceOfExample = joinSegment(ex.sentence.tokens, ex.sentence.delimiters);
+        return request.query.toLowerCase().equals(sourceOfExample);
     }
 
     private void addExtensions(Request request, Response response) {
