@@ -104,7 +104,7 @@ public class LexiconProtocol {
         results.forEach(ex -> {
             AlignedSentence source = ex.sentence;
             AlignedSentence target = source.aligned;
-            if (request.translate && exactQueryMatch(request, ex)) {
+            if (request.translate && exactQueryMatch(ex)) {
                 String sourceTerm = joinSegment(source.tokens, source.delimiters);
                 String targetTerm = joinSegment(target.tokens, target.delimiters);
                 response.translations.add(
@@ -131,7 +131,7 @@ public class LexiconProtocol {
     private String joinSegment(String[] tokens, String[] delimiters) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < tokens.length; i++) {
-            if (i > delimiters.length) {
+            if (i < delimiters.length) {
                 sb.append(delimiters[i]);
             } else {
                 sb.append(" ");
@@ -144,10 +144,9 @@ public class LexiconProtocol {
         return sb.toString();
     }
 
-    // The query of the request exactly matches the example.
-    private boolean exactQueryMatch(Request request, SentenceExample ex) {
-        String sourceOfExample = joinSegment(ex.sentence.tokens, ex.sentence.delimiters);
-        return request.query.toLowerCase().equals(sourceOfExample);
+    // The query of the request is the complete example.
+    private boolean exactQueryMatch(SentenceExample ex) {
+        return ex.sourceLength == ex.sentence.tokens.length;
     }
 
     private void addExtensions(Request request, Response response) {
