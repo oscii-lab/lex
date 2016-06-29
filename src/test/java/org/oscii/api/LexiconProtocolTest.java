@@ -80,8 +80,8 @@ public class LexiconProtocolTest extends TestCase {
         assertEquals("en", source);
         assertEquals("es", target);
         List<SentenceExample> examples = Arrays.asList(new SentenceExample[]{
-                new SentenceExample(aligned("small dog", "perrito"), 1, 1, 0, 1, -1),
-                new SentenceExample(aligned("Dog", "p e r r o"), 0, 1, 0, 5, -1)
+                new SentenceExample(aligned("small dog", "perrito"), 1, 1, 0, 1, 1),
+                new SentenceExample(aligned("Dog", "p e r r o"), 0, 1, 0, 5, 1)
         });
         return examples;
       }
@@ -94,6 +94,7 @@ public class LexiconProtocolTest extends TestCase {
     LexiconProtocol.Response response = protocol.respond(request);
     assertEquals("perro", response.translations.get(0).target);
     assertEquals("perra", response.translations.get(1).target);
+    assertEquals(3, response.translations.size());
     assertEquals("p e r r o", response.translations.get(2).target);
     assertEquals(1, response.examples.size());
   }
