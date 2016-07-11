@@ -1,24 +1,35 @@
 package org.oscii.corpus;
 
+import java.util.Arrays;
+import java.util.regex.Pattern;
+
 /**
- * Tokenizer
+ * Simple corpus tokenizer
  */
 public interface Tokenizer {
-  String[] tokenize(String line);
+    String[] tokenize(String line);
 
-  public Tokenizer alphanumeric = new Tokenizer() {
-    @Override
-    public String[] tokenize(String line) {
-      return line.split("[^\\w']+");
-    }
-  };
+    Tokenizer alphanumeric = new Tokenizer() {
+        String delimiter = "[^\\w']+";
+        Pattern splitter = Pattern.compile(delimiter);
 
-  public Tokenizer alphanumericLower = new Tokenizer() {
-    @Override
-    public String[] tokenize(String line) {
-      return alphanumeric.tokenize(line.toLowerCase());
-    }
-  };
+        @Override
+        public String[] tokenize(String line) {
+            String[] tokens = splitter.split(line);
+            if (tokens.length > 0 && tokens[0].isEmpty()) {
+                return Arrays.copyOfRange(tokens, 1, tokens.length);
+            } else {
+                return tokens;
+            }
+        }
+    };
+
+    Tokenizer alphanumericLower = new Tokenizer() {
+        @Override
+        public String[] tokenize(String line) {
+            return alphanumeric.tokenize(line.toLowerCase());
+        }
+    };
 
 
 }
