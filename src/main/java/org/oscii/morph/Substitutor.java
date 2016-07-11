@@ -33,6 +33,7 @@ public class Substitutor {
         private final String affix;
 
         private Segmentation(String stem, String affix, String word) {
+            assert stem != null && affix != null && word != null;
             this.stem = stem;
             this.affix = affix;
             this.word = word;
@@ -44,6 +45,7 @@ public class Substitutor {
         private final String output;
 
         public WordPair(String input, String output) {
+            assert input != null && output != null;
             this.input = input;
             this.output = output;
         }
@@ -73,6 +75,7 @@ public class Substitutor {
         private final Substitution sub;
 
         public Transformation(String input, String output, Substitution sub) {
+            assert sub != null;
             this.pair = new WordPair(input, output);
             this.sub = sub;
         }

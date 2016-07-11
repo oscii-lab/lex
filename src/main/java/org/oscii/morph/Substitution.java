@@ -11,10 +11,7 @@ public abstract class Substitution {
     public final String to;
 
     public Substitution(String id, String from, String to) {
-        assert id != null;
-        assert from != null;
-        assert to != null;
-
+        assert id != null && from != null && to != null;
         this.id = id;
         this.from = from;
         this.to = to;
