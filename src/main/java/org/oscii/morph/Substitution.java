@@ -1,10 +1,14 @@
 package org.oscii.morph;
 
+import com.google.common.collect.Interner;
+import com.google.common.collect.Interners;
+
 /**
  * An orthographic substitution
  */
 public abstract class Substitution {
     public static final String EMPTY = "ε";
+    Interner<Substitution> interner=Interners.newWeakInterner();
 
     public final String id;
     public final String from;
@@ -41,6 +45,10 @@ public abstract class Substitution {
 
     public String toString() {
         return id + "/" + (from.isEmpty() ? EMPTY : from) + "/" + (to.isEmpty() ? EMPTY : to);
+    }
+
+    public Substitution intern() {
+        return interner.intern(this);
     }
 
   /* Implementations */

@@ -1,7 +1,5 @@
 package org.oscii.morph;
 
-import com.google.common.collect.Interner;
-import com.google.common.collect.Interners;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.oscii.corpus.Corpus;
@@ -23,67 +21,10 @@ import static java.util.stream.Collectors.*;
 public class Substitutor {
     private final Word2VecManager embeddings;
     private Map<Substitution, List<Transformation>> substitutions;
-    Interner<Substitution> subInterner;
     private final static Logger log = LogManager.getLogger(Substitutor.class);
-
-
-    private static class Segmentation {
-        private final String word;
-        private final String stem;
-        private final String affix;
-
-        private Segmentation(String stem, String affix, String word) {
-            assert stem != null && affix != null && word != null;
-            this.stem = stem;
-            this.affix = affix;
-            this.word = word;
-        }
-    }
-
-    private static class WordPair {
-        private final String input;
-        private final String output;
-
-        public WordPair(String input, String output) {
-            assert input != null && output != null;
-            this.input = input;
-            this.output = output;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            WordPair wordPair = (WordPair) o;
-
-            if (!input.equals(wordPair.input)) return false;
-            return output.equals(wordPair.output);
-
-        }
-
-        @Override
-        public int hashCode() {
-            int result = input.hashCode();
-            result = 31 * result + output.hashCode();
-            return result;
-        }
-    }
-
-    private static class Transformation {
-        private final WordPair pair;
-        private final Substitution sub;
-
-        public Transformation(String input, String output, Substitution sub) {
-            assert sub != null;
-            this.pair = new WordPair(input, output);
-            this.sub = sub;
-        }
-    }
 
     public Substitutor(Word2VecManager embeddings) {
         this.embeddings = embeddings;
-        this.subInterner = Interners.newWeakInterner();
     }
 
     /**
@@ -119,20 +60,16 @@ public class Substitutor {
     public void prune(int maxSplitsPerPair, int minPairCount) {
         Map<Substitution, List<Transformation>> a, b, c;
         log.info("Pruning substitution rules: minPairCount of {}", minPairCount);
-        a = substitutions.entrySet()
-                .parallelStream().filter(e -> e.getValue().size() >= minPairCount)
-                .collect(toMap(e -> e.getKey(), e -> e.getValue()));
+        a = enforceMinPairCount(substitutions, minPairCount);
         log.info("Pruning substitution rules: maxSplitsPerPair of {}", maxSplitsPerPair);
         b = a.values()
-                .parallelStream().flatMap(x -> x.stream())
+                .parallelStream().flatMap(ts -> ts.stream())
                 .collect(groupingBy(t -> t.pair))
                 .values().parallelStream()
                 .flatMap(ts -> mostFrequent(ts, maxSplitsPerPair))
                 .collect(groupingBy(t -> t.sub));
-        log.info("Pruning substitution rules: minPairCount of {} again", minPairCount);
-        c = b.entrySet()
-                .parallelStream().filter(e -> e.getValue().size() >= minPairCount)
-                .collect(toMap(e -> e.getKey(), e -> e.getValue()));
+        log.info("Pruning substitution rules: minPairCount of {} (again)", minPairCount);
+        c = enforceMinPairCount(b, minPairCount);
         substitutions = c;
     }
 
@@ -154,7 +91,7 @@ public class Substitutor {
         for (Segmentation input : segs) {
             for (Segmentation output : segs) {
                 if (input == output) continue;
-                Substitution sub = subInterner.intern(newSub.apply(input.affix, output.affix));
+                Substitution sub = newSub.apply(input.affix, output.affix).intern();
                 ts.add(new Transformation(input.word, output.word, sub));
             }
         }
@@ -185,5 +122,71 @@ public class Substitutor {
         String suffix = word.substring(n - k, n);
         String stem = word.substring(0, n - k);
         return new Segmentation(stem, suffix, word);
+    }
+
+    private Map<Substitution, List<Transformation>> enforceMinPairCount(Map<Substitution, List<Transformation>> m,
+                                                                        int minPairCount) {
+        return m.values()
+                .parallelStream().filter(ts -> ts.size() >= minPairCount)
+                .flatMap(ts -> ts.stream()).collect(groupingBy(t -> t.sub));
+    }
+
+    /* Helper classes */
+
+    // Splitting a word into stem and affix
+    private static class Segmentation {
+        private final String word;
+        private final String stem;
+        private final String affix;
+
+        private Segmentation(String stem, String affix, String word) {
+            assert stem != null && affix != null && word != null;
+            this.stem = stem;
+            this.affix = affix;
+            this.word = word;
+        }
+    }
+
+    // Two words that can be transformed into each other.
+    private static class WordPair {
+        private final String input;
+        private final String output;
+
+        public WordPair(String input, String output) {
+            assert input != null && output != null;
+            this.input = input;
+            this.output = output;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            WordPair wordPair = (WordPair) o;
+
+            if (!input.equals(wordPair.input)) return false;
+            return output.equals(wordPair.output);
+
+        }
+
+        @Override
+        public int hashCode() {
+            int result = input.hashCode();
+            result = 31 * result + output.hashCode();
+            return result;
+        }
+    }
+
+    // The way to transform one word into another using a substitution.
+    private static class Transformation {
+        private final WordPair pair;
+        private final Substitution sub;
+
+        public Transformation(String input, String output, Substitution sub) {
+            assert sub != null;
+            this.pair = new WordPair(input, output);
+            this.sub = sub;
+        }
     }
 }
