@@ -59,8 +59,10 @@ public class Substitutor {
      */
     public void prune(int maxSplitsPerPair, int minPairCount) {
         Map<Substitution, List<Transformation>> a, b, c;
+
         log.info("Pruning substitution rules: minPairCount of {}", minPairCount);
         a = enforceMinPairCount(substitutions, minPairCount);
+
         log.info("Pruning substitution rules: maxSplitsPerPair of {}", maxSplitsPerPair);
         b = a.values()
                 .parallelStream().flatMap(ts -> ts.stream())
@@ -68,8 +70,10 @@ public class Substitutor {
                 .values().parallelStream()
                 .flatMap(ts -> mostFrequent(ts, maxSplitsPerPair))
                 .collect(groupingBy(t -> t.sub));
+
         log.info("Pruning substitution rules: minPairCount of {} (again)", minPairCount);
         c = enforceMinPairCount(b, minPairCount);
+
         substitutions = c;
     }
 
@@ -126,8 +130,7 @@ public class Substitutor {
 
     private Map<Substitution, List<Transformation>> enforceMinPairCount(Map<Substitution, List<Transformation>> m,
                                                                         int minPairCount) {
-        return m.values()
-                .parallelStream().filter(ts -> ts.size() >= minPairCount)
+        return m.values().parallelStream().filter(ts -> ts.size() >= minPairCount)
                 .flatMap(ts -> ts.stream()).collect(groupingBy(t -> t.sub));
     }
 
