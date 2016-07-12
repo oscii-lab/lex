@@ -29,7 +29,8 @@ public class SubstituteMain {
         corpus.addLines(corpusPath);
 
         embeddings = new Word2VecManager();
-        // embeddings.add((String) options.valueOf("language"), (File) options.valueOf("embeddings"));
+        String language = (String) options.valueOf("language");
+        embeddings.add(language, (File) options.valueOf("embeddings"), corpus.vocab());
 
         Substitutor subber = new Substitutor(embeddings);
         subber.extractAll(corpus, (int) options.valueOf("minVocabCount"));
