@@ -5,10 +5,7 @@ import org.apache.logging.log4j.Logger;
 import org.oscii.corpus.Corpus;
 import org.oscii.neural.Word2VecManager;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
@@ -31,10 +28,13 @@ public class Substitutor {
      * Extract all substitutions from the vocabulary of the corpus.
      *
      * @param corpus a monolingual corpus.
+     * @param vocab allowed vocabulary
      */
-    public void extractAll(Corpus corpus, int minVocabCount) {
+    public void extractAll(Corpus corpus, Set<String> vocab) {
         log.info("Extracting substitution rules");
-        List<String> vocab = corpus.vocab().stream().filter(w -> corpus.count(w) >= minVocabCount).collect(toList());
+        if (vocab == null) {
+            vocab = corpus.vocab();
+        }
         Stream<Transformation> p = IndexByStem(vocab, Substitutor::getPrefix).values()
                 .parallelStream().flatMap(x -> transformations(x, Substitution.Prefix::new));
         Stream<Transformation> s = IndexByStem(vocab, Substitutor::getSuffix).values()

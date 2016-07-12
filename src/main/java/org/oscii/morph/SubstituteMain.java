@@ -11,6 +11,9 @@ import org.oscii.neural.Word2VecManager;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Set;
+
+import static java.util.stream.Collectors.toSet;
 
 /**
  * Implementation of Unsupervised Morphology Induction Using Word Embeddings
@@ -27,13 +30,15 @@ public class SubstituteMain {
         String corpusPath = (String) options.valueOf("corpus");
         Corpus corpus = new Corpus(Tokenizer.alphanumericLower);
         corpus.addLines(corpusPath);
+        int minVocabCount = (int) options.valueOf("minVocabCount");
+        Set<String> vocab = corpus.vocab().stream().filter(w -> corpus.count(w) >= minVocabCount).collect(toSet());
 
         embeddings = new Word2VecManager();
         String language = (String) options.valueOf("language");
-        embeddings.add(language, (File) options.valueOf("embeddings"), corpus.vocab());
+        embeddings.add(language, (File) options.valueOf("embeddings"), vocab);
 
         Substitutor subber = new Substitutor(embeddings);
-        subber.extractAll(corpus, (int) options.valueOf("minVocabCount"));
+        subber.extractAll(corpus, vocab);
         subber.prune((int) options.valueOf("maxSplitsPerPair"), (int) options.valueOf("minPairCount"));
         subber.findVectors();
     }

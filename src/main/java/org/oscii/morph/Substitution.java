@@ -8,7 +8,7 @@ import com.google.common.collect.Interners;
  */
 public abstract class Substitution {
     public static final String EMPTY = "ε";
-    Interner<Substitution> interner=Interners.newWeakInterner();
+    private static Interner<Substitution> interner = Interners.newWeakInterner();
 
     public final String id;
     public final String from;
