@@ -51,8 +51,11 @@ public abstract class Substitution {
         return interner.intern(this);
     }
 
-  /* Implementations */
+    /* Implementations */
 
+    /**
+     * A prefix substitution.
+     */
     public static class Prefix extends Substitution {
         public Prefix(String from, String to) {
             super("p", from, to);
@@ -60,11 +63,14 @@ public abstract class Substitution {
 
         @Override
         public String apply(String input) {
-            assert input.startsWith(from);
+            assert input.startsWith(from) : input;
             return input.replaceFirst(from, to);
         }
     }
 
+    /**
+     * A suffix substitution.
+     */
     public static class Suffix extends Substitution {
         public Suffix(String from, String to) {
             super("s", from, to);
