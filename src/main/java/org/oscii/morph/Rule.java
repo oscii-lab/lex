@@ -6,15 +6,15 @@ import com.google.common.collect.Interners;
 /**
  * An orthographic substitution
  */
-public abstract class Substitution {
+public abstract class Rule {
     public static final String EMPTY = "ε";
-    private static Interner<Substitution> interner = Interners.newWeakInterner();
+    private static Interner<Rule> interner = Interners.newWeakInterner();
 
     public final String id;
     public final String from;
     public final String to;
 
-    public Substitution(String id, String from, String to) {
+    public Rule(String id, String from, String to) {
         assert id != null && from != null && to != null;
         this.id = id;
         this.from = from;
@@ -28,7 +28,7 @@ public abstract class Substitution {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Substitution that = (Substitution) o;
+        Rule that = (Rule) o;
 
         if (!id.equals(that.id)) return false;
         if (!from.equals(that.from)) return false;
@@ -47,7 +47,7 @@ public abstract class Substitution {
         return id + "/" + (from.isEmpty() ? EMPTY : from) + "/" + (to.isEmpty() ? EMPTY : to);
     }
 
-    public Substitution intern() {
+    public Rule intern() {
         return interner.intern(this);
     }
 
@@ -56,7 +56,7 @@ public abstract class Substitution {
     /**
      * A prefix substitution.
      */
-    public static class Prefix extends Substitution {
+    public static class Prefix extends Rule {
         public Prefix(String from, String to) {
             super("p", from, to);
         }
@@ -71,7 +71,7 @@ public abstract class Substitution {
     /**
      * A suffix substitution.
      */
-    public static class Suffix extends Substitution {
+    public static class Suffix extends Rule {
         public Suffix(String from, String to) {
             super("s", from, to);
         }

@@ -1,5 +1,6 @@
 package org.oscii.neural;
 
+import com.eatthepath.jvptree.VPTree;
 import org.oscii.math.VectorMath;
 
 import java.io.File;
@@ -12,10 +13,9 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * A simple container for a word embedding model.
@@ -30,6 +30,9 @@ public class EmbeddingContainer {
     private final float[][] embeddings;
     private final Map<String, Integer> word2Index;
 
+    private final Map<float[], Integer> embedding2Index;
+    private VPTree<float[]> neighborIndex;
+
     /**
      * Constructor.
      *
@@ -40,7 +43,11 @@ public class EmbeddingContainer {
         this.vocab = v;
         this.embeddings = e;
         this.word2Index = new HashMap<>(vocab.length);
-        for (String word : vocab) word2Index.put(word, word2Index.size());
+        this.embedding2Index = new HashMap<>(vocab.length);
+        for (int i = 0; i < vocab.length; i++) {
+            word2Index.put(vocab[i], i);
+            embedding2Index.put(embeddings[i], i);
+        }
     }
 
     /**
@@ -100,6 +107,20 @@ public class EmbeddingContainer {
         VectorMath.multiplyInPlace(avgVec, 1.0f / n);
         return avgVec;
     }
+
+    public List<String> neighbors(String word, int k) {
+        return neighbors(embeddings[word2Index.get(word)], k);
+    }
+
+    public List<String> neighbors(float[] embedding, int k) {
+        if (neighborIndex == null) {
+            neighborIndex = new VPTree<>(VectorMath::cosineSimilarity, Arrays.asList(embeddings));
+        }
+        return neighborIndex.getNearestNeighbors(embedding, k)
+                .stream().map(e -> vocab[embedding2Index.get(e)]).collect(toList());
+    }
+
+    /* File Input */
 
     /**
      * Read file with default byte order.

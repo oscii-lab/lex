@@ -17,7 +17,8 @@ import static java.util.stream.Collectors.*;
  */
 public class Substitutor {
     private final Word2VecManager embeddings;
-    private Map<Substitution, List<Transformation>> substitutions;
+    private Map<Rule, List<RuleLexicalized>> substitutions;
+    private List<RuleScored> scored;
     private final static Logger log = LogManager.getLogger(Substitutor.class);
 
     public Substitutor(Word2VecManager embeddings) {
@@ -35,10 +36,10 @@ public class Substitutor {
         if (vocab == null) {
             vocab = corpus.vocab();
         }
-        Stream<Transformation> p = IndexByStem(vocab, Substitutor::getPrefix).values()
-                .parallelStream().flatMap(x -> transformations(x, Substitution.Prefix::new));
-        Stream<Transformation> s = IndexByStem(vocab, Substitutor::getSuffix).values()
-                .parallelStream().flatMap(x -> transformations(x, Substitution.Suffix::new));
+        Stream<RuleLexicalized> p = IndexByStem(vocab, Substitutor::getPrefix).values()
+                .parallelStream().flatMap(x -> transformations(x, Rule.Prefix::new));
+        Stream<RuleLexicalized> s = IndexByStem(vocab, Substitutor::getSuffix).values()
+                .parallelStream().flatMap(x -> transformations(x, Rule.Suffix::new));
         substitutions = Stream.concat(p, s).collect(groupingBy(t -> t.sub));
     }
 
@@ -58,7 +59,7 @@ public class Substitutor {
      * @param maxSplitsPerPair k most frequent splits to keep
      */
     public void prune(int maxSplitsPerPair, int minPairCount) {
-        Map<Substitution, List<Transformation>> a, b, c;
+        Map<Rule, List<RuleLexicalized>> a, b, c;
 
         log.info("Pruning substitution rules: minPairCount of {}", minPairCount);
         a = enforceMinPairCount(substitutions, minPairCount);
@@ -77,26 +78,27 @@ public class Substitutor {
         substitutions = c;
     }
 
-    public void findVectors() {
-        log.info("Finding substitution vectors");
+    public void scoreRules() {
+        log.info("Scoring substitutions");
+
     }
 
-    private Stream<Transformation> mostFrequent(List<Transformation> ts, int k) {
+    private Stream<RuleLexicalized> mostFrequent(List<RuleLexicalized> ts, int k) {
         if (ts.size() <= k) return ts.stream();
         return ts.stream().sorted(comparingInt(t -> substitutions.get(t.sub).size())).limit(k);
     }
 
     // All transformations for a list of segmentations with a common stem.
-    private Stream<Transformation> transformations(List<Segmentation> segs,
-                                                   BiFunction<String, String, ? extends Substitution> newSub) {
+    private Stream<RuleLexicalized> transformations(List<Segmentation> segs,
+                                                    BiFunction<String, String, ? extends Rule> newSub) {
         final int n = segs.size();
         if (n < 2) return Stream.empty(); // Optimization
-        List<Transformation> ts = new ArrayList<>(n * (n - 1));
+        List<RuleLexicalized> ts = new ArrayList<>(n * (n - 1));
         for (Segmentation input : segs) {
             for (Segmentation output : segs) {
                 if (input == output) continue;
-                Substitution sub = newSub.apply(input.affix, output.affix).intern();
-                ts.add(new Transformation(input.word, output.word, sub));
+                Rule sub = newSub.apply(input.affix, output.affix).intern();
+                ts.add(new RuleLexicalized(input.word, output.word, sub));
             }
         }
         return ts.stream();
@@ -128,8 +130,8 @@ public class Substitutor {
         return new Segmentation(stem, suffix, word);
     }
 
-    private Map<Substitution, List<Transformation>> enforceMinPairCount(Map<Substitution, List<Transformation>> m,
-                                                                        int minPairCount) {
+    private Map<Rule, List<RuleLexicalized>> enforceMinPairCount(Map<Rule, List<RuleLexicalized>> m,
+                                                                 int minPairCount) {
         return m.values().parallelStream().filter(ts -> ts.size() >= minPairCount)
                 .flatMap(ts -> ts.stream()).collect(groupingBy(t -> t.sub));
     }
@@ -150,46 +152,5 @@ public class Substitutor {
         }
     }
 
-    // Two words that can be transformed into each other.
-    private static class WordPair {
-        private final String input;
-        private final String output;
 
-        public WordPair(String input, String output) {
-            assert input != null && output != null;
-            this.input = input;
-            this.output = output;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            WordPair wordPair = (WordPair) o;
-
-            if (!input.equals(wordPair.input)) return false;
-            return output.equals(wordPair.output);
-
-        }
-
-        @Override
-        public int hashCode() {
-            int result = input.hashCode();
-            result = 31 * result + output.hashCode();
-            return result;
-        }
-    }
-
-    // The way to transform one word into another using a substitution.
-    private static class Transformation {
-        private final WordPair pair;
-        private final Substitution sub;
-
-        public Transformation(String input, String output, Substitution sub) {
-            assert sub != null;
-            this.pair = new WordPair(input, output);
-            this.sub = sub;
-        }
-    }
 }

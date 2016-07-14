@@ -40,7 +40,7 @@ public class SubstituteMain {
         Substitutor subber = new Substitutor(embeddings);
         subber.extractAll(corpus, vocab);
         subber.prune((int) options.valueOf("maxSplitsPerPair"), (int) options.valueOf("minPairCount"));
-        subber.findVectors();
+        subber.scoreRules();
     }
 
     /*
