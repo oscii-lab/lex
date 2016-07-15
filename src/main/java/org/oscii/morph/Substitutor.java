@@ -81,7 +81,7 @@ public class Substitutor {
 
     public void scoreRules() {
         log.info("Scoring substitutions");
-        scored = substitutions.entrySet().parallelStream().limit(30)
+        scored = substitutions.entrySet().parallelStream()
                 .map(e -> scoreRule(e.getKey(), e.getValue()))
                 .sorted((r, s) -> Double.compare(s.hitRate, r.hitRate))
                 .collect(toList());
