@@ -1,7 +1,11 @@
 package org.oscii.neural;
 
 import com.eatthepath.jvptree.VPTree;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import org.apache.commons.collections4.map.LRUMap;
 import org.oscii.math.VectorMath;
+import sun.misc.LRUCache;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -14,6 +18,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static java.util.stream.Collectors.toList;
 
@@ -112,13 +117,47 @@ public class EmbeddingContainer {
         return neighbors(embeddings[word2Index.get(word)], k);
     }
 
-    static double angularDistance(float[] a, float[] b) {
-        return Math.acos(VectorMath.cosineSimilarity(a, b)) / Math.PI;
+
+    class Vectors {
+        float[] a;
+        float[] b;
+
+        public Vectors(float[] a, float[] b) {
+            this.a = a;
+            this.b = b;
+        }
+
+        // Note: comparison on vector identity only, not contents!
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Vectors vectors = (Vectors) o;
+
+            if (a != vectors.a) return false;
+            return b == vectors.b;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = a.hashCode();
+            result = 31 * result + b.hashCode();
+            return result;
+        }
+    }
+
+    Cache<Vectors, Double> distanceCache = Caffeine.newBuilder().maximumSize(1_000_000).softValues().build();
+    double angularDistance(float[] a, float[] b) {
+        return distanceCache.get(
+                new Vectors(a, b),
+                vs -> Math.acos(VectorMath.cosineSimilarity(vs.a, vs.b)) / Math.PI);
     }
 
     public List<String> neighbors(float[] embedding, int k) {
         if (neighborIndex == null) {
-            neighborIndex = new VPTree<>(EmbeddingContainer::angularDistance, Arrays.asList(embeddings));
+            neighborIndex = new VPTree<>(this::angularDistance, Arrays.asList(embeddings));
         }
         return neighborIndex.getNearestNeighbors(embedding, k)
                 .stream().map(e -> vocab[embedding2Index.get(e)]).collect(toList());

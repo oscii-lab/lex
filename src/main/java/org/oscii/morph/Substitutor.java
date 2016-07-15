@@ -146,6 +146,10 @@ public class Substitutor {
                 .flatMap(ts -> ts.stream()).collect(groupingBy(t -> t.sub));
     }
 
+    public List<RuleScored> getScored() {
+        return scored;
+    }
+
     /* Helper classes */
 
     // Splitting a word into stem and affix

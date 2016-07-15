@@ -31,4 +31,8 @@ public class RulePair {
         result = 31 * result + output.hashCode();
         return result;
     }
+
+    public String toString() {
+        return String.format("%s->%s", input, output);
+    }
 }

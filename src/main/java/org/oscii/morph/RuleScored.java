@@ -87,7 +87,6 @@ public class RuleScored {
     }
 
     public String toString() {
-        return String.format("%s [%d ; %f]", sub.toString(), support.size(), hitRate);
-
+        return String.format("%s [%d ; %f ; %s]", sub.toString(), support.size(), hitRate, support.get(0).pair.toString());
     }
 }

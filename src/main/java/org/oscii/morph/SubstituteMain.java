@@ -40,6 +40,10 @@ public class SubstituteMain {
         subber.prune((int) options.valueOf("maxSplitsPerPair"), (int) options.valueOf("minPairCount"));
         subber.scoreRules();
 
+        for (RuleScored r : subber.getScored()) {
+            log.info(r.toString());
+        }
+
         log.info("Done.");
     }
 
