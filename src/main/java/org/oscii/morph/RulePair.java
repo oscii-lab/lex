@@ -1,7 +1,7 @@
 package org.oscii.morph;
 
 /**
- * Two words that can be transformed into each other.
+ * Two words that can be transformed into one another.
  */
 public class RulePair {
     final String input;

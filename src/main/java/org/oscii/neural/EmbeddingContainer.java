@@ -112,9 +112,13 @@ public class EmbeddingContainer {
         return neighbors(embeddings[word2Index.get(word)], k);
     }
 
+    static double angularDistance(float[] a, float[] b) {
+        return Math.acos(VectorMath.cosineSimilarity(a, b)) / Math.PI;
+    }
+
     public List<String> neighbors(float[] embedding, int k) {
         if (neighborIndex == null) {
-            neighborIndex = new VPTree<>(VectorMath::cosineSimilarity, Arrays.asList(embeddings));
+            neighborIndex = new VPTree<>(EmbeddingContainer::angularDistance, Arrays.asList(embeddings));
         }
         return neighborIndex.getNearestNeighbors(embedding, k)
                 .stream().map(e -> vocab[embedding2Index.get(e)]).collect(toList());
@@ -215,7 +219,7 @@ public class EmbeddingContainer {
                 if (vocab == null || vocab.contains(word)) {
                     words[wordindex] = word;
                     vectors[wordindex] = vector;
-                    index++;
+                    wordindex++;
                 }
 
                 // remap file

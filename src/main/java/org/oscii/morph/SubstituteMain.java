@@ -6,6 +6,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.oscii.corpus.Corpus;
 import org.oscii.corpus.Tokenizer;
+import org.oscii.neural.EmbeddingContainer;
 import org.oscii.neural.Word2VecManager;
 
 import java.io.File;
@@ -22,7 +23,6 @@ import static java.util.stream.Collectors.toSet;
 public class SubstituteMain {
     private static final Integer DEFAULT_API_PORT = 8091;
     private final static Logger log = LogManager.getLogger(SubstituteMain.class);
-    private static Word2VecManager embeddings;
 
     public static void main(String[] args) throws IOException {
         OptionSet options = parse(args);
@@ -30,17 +30,17 @@ public class SubstituteMain {
         String corpusPath = (String) options.valueOf("corpus");
         Corpus corpus = new Corpus(Tokenizer.alphanumericLower);
         corpus.addLines(corpusPath);
+
         int minVocabCount = (int) options.valueOf("minVocabCount");
         Set<String> vocab = corpus.vocab().stream().filter(w -> corpus.count(w) >= minVocabCount).collect(toSet());
-
-        embeddings = new Word2VecManager();
-        String language = (String) options.valueOf("language");
-        embeddings.add(language, (File) options.valueOf("embeddings"), vocab);
+        EmbeddingContainer embeddings = EmbeddingContainer.fromBinFile((File) options.valueOf("embeddings"), vocab);
 
         Substitutor subber = new Substitutor(embeddings);
         subber.extractAll(corpus, vocab);
         subber.prune((int) options.valueOf("maxSplitsPerPair"), (int) options.valueOf("minPairCount"));
         subber.scoreRules();
+
+        log.info("Done.");
     }
 
     /*

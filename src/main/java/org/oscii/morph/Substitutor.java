@@ -3,6 +3,7 @@ package org.oscii.morph;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.oscii.corpus.Corpus;
+import org.oscii.neural.EmbeddingContainer;
 import org.oscii.neural.Word2VecManager;
 
 import java.util.*;
@@ -16,12 +17,12 @@ import static java.util.stream.Collectors.*;
  * A collection of substitution rules.
  */
 public class Substitutor {
-    private final Word2VecManager embeddings;
+    private final EmbeddingContainer embeddings;
     private Map<Rule, List<RuleLexicalized>> substitutions;
     private List<RuleScored> scored;
     private final static Logger log = LogManager.getLogger(Substitutor.class);
 
-    public Substitutor(Word2VecManager embeddings) {
+    public Substitutor(EmbeddingContainer embeddings) {
         this.embeddings = embeddings;
     }
 
@@ -80,7 +81,16 @@ public class Substitutor {
 
     public void scoreRules() {
         log.info("Scoring substitutions");
+        scored = substitutions.entrySet().parallelStream().limit(30)
+                .map(e -> scoreRule(e.getKey(), e.getValue()))
+                .sorted((r, s) -> Double.compare(s.hitRate, r.hitRate))
+                .collect(toList());
+    }
 
+    private RuleScored scoreRule(Rule rule, List<RuleLexicalized> support) {
+        RuleScored rs = new RuleScored(rule, support);
+        rs.score(embeddings);
+        return rs;
     }
 
     private Stream<RuleLexicalized> mostFrequent(List<RuleLexicalized> ts, int k) {
