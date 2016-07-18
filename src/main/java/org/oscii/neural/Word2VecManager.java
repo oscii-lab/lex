@@ -138,6 +138,9 @@ public class Word2VecManager {
         double sim = VectorMath.cosineSimilarity(tokensMean, contextMean);
         if (Double.isNaN(sim)) {
           sim = -2.0; // Give it a low score.
+        } else if (ex.memoryId > 0) {
+          // personal TM match: add +1.0 so entries appear on top (note: similarity is not cosine sim any more)
+          sim += 1.0;
         }
         ex.similarity = sim;
       } catch(Exception e) {
