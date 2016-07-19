@@ -6,7 +6,12 @@ import org.apache.logging.log4j.Logger;
 import org.oscii.concordance.AlignedCorpus;
 import org.oscii.concordance.AlignedSentence;
 import org.oscii.concordance.SentenceExample;
-import org.oscii.lex.*;
+import org.oscii.lex.Definition;
+import org.oscii.lex.Expression;
+import org.oscii.lex.Lexicon;
+import org.oscii.lex.Meaning;
+import org.oscii.lex.Ranker;
+import org.oscii.lex.Translation;
 import org.oscii.neural.Word2VecManager;
 import org.oscii.neural.Word2VecManager.MalformedQueryException;
 import org.oscii.neural.Word2VecManager.UnsupportedLanguageException;
@@ -94,7 +99,7 @@ public class LexiconProtocol {
         logger.debug("TIMING examples: {}", (endTime - startTime) / 1e9);
         if (bHasEmbeddings) {
             startTime = endTime;
-            boolean bSuccess = embeddings.rankConcordances(request.source, request.context, results);
+            boolean bSuccess = embeddings.rankConcordances(request.source, request.context, results, request.memory);
             endTime = System.nanoTime();
             logger.debug("TIMING embeddings: {} ({})", (endTime - startTime) / 1e9, results.size());
             if (!bSuccess) {

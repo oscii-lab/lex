@@ -118,7 +118,7 @@ public class Word2VecManager {
    * @param context
    * @param concordances
    */
-  public boolean rankConcordances(String lang, String context, List<SentenceExample> concordances) {
+  public boolean rankConcordances(String lang, String context, List<SentenceExample> concordances, int memoryId) {
     if (!supports(lang) || context.length() == 0 || concordances.size() == 0) {
       return false;
     }
@@ -138,8 +138,11 @@ public class Word2VecManager {
         double sim = VectorMath.cosineSimilarity(tokensMean, contextMean);
         if (Double.isNaN(sim)) {
           sim = -2.0; // Give it a low score.
+        } else if (ex.memoryId == memoryId) {
+          // personal TM match in same project: place on top by adding +2.0 (note: similarity is not cosine sim any more)
+          sim += 2.0;
         } else if (ex.memoryId > 0) {
-          // personal TM match: add +1.0 so entries appear on top (note: similarity is not cosine sim any more)
+          // personal TM match: add +1.0 so entries appear on top but below same-project matches (also note: see above)
           sim += 1.0;
         }
         ex.similarity = sim;
