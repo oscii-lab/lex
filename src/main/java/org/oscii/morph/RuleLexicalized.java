@@ -1,5 +1,7 @@
 package org.oscii.morph;
 
+import org.oscii.neural.EmbeddingContainer;
+
 /**
  * The way to transform one word into another using a substitution.
  */

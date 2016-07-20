@@ -38,7 +38,14 @@ public class SubstituteMain {
         Substitutor subber = new Substitutor(embeddings);
         subber.extractAll(corpus, vocab);
         subber.prune((int) options.valueOf("maxSplitsPerPair"), (int) options.valueOf("minPairCount"));
-        subber.scoreRules();
+
+        RuleScored.ScoringParams params = new RuleScored.ScoringParams(
+                (int) options.valueOf("maxSupportSize"),
+                (int) options.valueOf("maxRankRule"),
+                (int) options.valueOf("maxRankTransformation"),
+                (double) options.valueOf("minCosineTransformation"),
+                (int) options.valueOf("minSizeDirection"));
+        subber.scoreRules(params);
 
         for (RuleScored r : subber.getScored()) {
             log.info(r.toString());
@@ -56,9 +63,24 @@ public class SubstituteMain {
         // Corpus
         parser.accepts("corpus", "path to corpus file").withRequiredArg();
         parser.accepts("cacheCounts", "whether to cache corpus counts");
-        parser.accepts("minVocabCount", "minimum corpus count to include a word type").withRequiredArg().ofType(Integer.class).defaultsTo(1);
-        parser.accepts("minPairCount", "minimum word pair count to include a substitution").withRequiredArg().ofType(Integer.class).defaultsTo(2);
-        parser.accepts("maxSplitsPerPair", "maximum number of ways a pair can be split").withRequiredArg().ofType(Integer.class).defaultsTo(4);
+        parser.accepts("minVocabCount", "minimum corpus count to include a word type")
+                .withRequiredArg().ofType(Integer.class).defaultsTo(1);
+        parser.accepts("minPairCount", "minimum word pair count to include a substitution")
+                .withRequiredArg().ofType(Integer.class).defaultsTo(2);
+        parser.accepts("maxSplitsPerPair", "maximum number of ways a pair can be split")
+                .withRequiredArg().ofType(Integer.class).defaultsTo(4);
+
+        // Scoring
+        parser.accepts("maxSupportSize", "Number of word pairs to consider when scoring a rule")
+        .withRequiredArg().ofType(Integer.class).defaultsTo(1000);
+        parser.accepts("maxRankRule", "Max rank of a word pair for a rule to be a hit")
+        .withRequiredArg().ofType(Integer.class).defaultsTo(100);
+        parser.accepts("maxRankTransformation", "Max rank of a word pair for a transformation to be kept")
+                .withRequiredArg().ofType(Integer.class).defaultsTo(30);
+        parser.accepts("minCosineTransformation", "Min cosine distance of a word pair for a transformation to be kept")
+                .withRequiredArg().ofType(Double.class).defaultsTo(0.5);
+        parser.accepts("minSizeDirection", "Min number of word pairs for a direction vector to be kept")
+                .withRequiredArg().ofType(Integer.class).defaultsTo(10);
 
         // HTTP Rest API
         parser.accepts("port", "API port").withRequiredArg().ofType(Integer.class).defaultsTo(DEFAULT_API_PORT);

@@ -79,17 +79,17 @@ public class Substitutor {
         substitutions = c;
     }
 
-    public void scoreRules() {
+    public void scoreRules(RuleScored.ScoringParams params) {
         log.info("Scoring substitutions");
         scored = substitutions.entrySet().parallelStream()
-                .map(e -> scoreRule(e.getKey(), e.getValue()))
+                .map(e -> scoreRule(e.getKey(), e.getValue(), params))
                 .sorted((r, s) -> Double.compare(s.hitRate, r.hitRate))
                 .collect(toList());
     }
 
-    private RuleScored scoreRule(Rule rule, List<RuleLexicalized> support) {
+    private RuleScored scoreRule(Rule rule, List<RuleLexicalized> support, RuleScored.ScoringParams params) {
         RuleScored rs = new RuleScored(rule, support);
-        rs.score(embeddings);
+        rs.score(embeddings, params);
         return rs;
     }
 

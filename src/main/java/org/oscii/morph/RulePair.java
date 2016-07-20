@@ -1,16 +1,41 @@
 package org.oscii.morph;
 
+import org.oscii.neural.EmbeddingContainer;
+
 /**
- * Two words that can be transformed into one another.
+ * Two words for which the input can be transformed into the output.
  */
 public class RulePair {
     final String input;
     final String output;
+    float[] direction;
 
     public RulePair(String input, String output) {
         assert input != null && output != null;
         this.input = input;
         this.output = output;
+    }
+
+    /**
+     * Get and cache the direction of a word pair.
+     */
+    public float[] getDirection(EmbeddingContainer embeddings) {
+        if (direction == null) {
+            float[] in = embeddings.getRawVector(input);
+            float[] out = embeddings.getRawVector(output);
+            if (in != null && out != null) {
+                direction =subtract(out, in);
+            }
+        }
+        return direction;
+    }
+
+    private static float[] subtract(float[] x, float[] y) {
+        float[] z = new float[x.length];
+        for (int i = 0; i < z.length; i++) {
+            z[i] = x[i] - y[i];
+        }
+        return z;
     }
 
     @Override

@@ -1,38 +1,71 @@
 package org.oscii.morph;
 
+import org.oscii.math.VectorMath;
 import org.oscii.neural.EmbeddingContainer;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.function.Function;
 
+import static java.lang.Math.toIntExact;
+import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 
 /**
  * A rule scored by the embeddings of its support.
  */
 public class RuleScored {
-    public final static int MAX_SUPPORT_SAMPLE_SIZE = 1000;
-    public final static int RANK_THRESHOLD = 100;
+
+    /**
+     * Parameters for scoring.
+     */
+    public static class ScoringParams {
+        public final int maxSupportSize;
+        public final int maxRankRule;
+        public final int maxRankTransformation;
+        public final double minCosineTransformation;
+        public final int minSizeDirection;
+
+        public ScoringParams(int maxSupportSize,
+                             int maxRankRule,
+                             int maxRankTransformation,
+                             double minCosineTransformation,
+                             int minSizeDirection) {
+            this.maxSupportSize = maxSupportSize;
+            this.maxRankRule = maxRankRule;
+            this.maxRankTransformation = maxRankTransformation;
+            this.minCosineTransformation = minCosineTransformation;
+            this.minSizeDirection = minSizeDirection;
+        }
+    }
+
 
     final Rule sub;
     final List<RuleLexicalized> support;
+
+    // Populated by scoring
+    List<RuleLexicalized> embedded;
     List<RuleLexicalized> sample;
-    List<Integer> ranks;
+    Map<RulePair, Queue<Transformation>> candidates;
+    int hits = 0;
+    int comparisons = 0;
     double hitRate;
+
+    // Populated by filtering
+    List<RulePair> topDirections;
+    List<Transformation> transformations;
 
     public RuleScored(Rule sub, List<RuleLexicalized> support) {
         this.sub = sub;
         this.support = support;
     }
 
-    public double score(EmbeddingContainer embeddings) {
-        List<RuleLexicalized> embedded = support.stream().filter(r -> embedded(r, embeddings)).collect(toList());
-        if (embedded.size() > MAX_SUPPORT_SAMPLE_SIZE) {
+    public double score(EmbeddingContainer embeddings, ScoringParams params) {
+        embedded = support.stream().filter(r -> embedded(r, embeddings)).collect(toList());
+        if (embedded.size() > params.maxSupportSize) {
             sample = new ArrayList<>(embedded);
             Collections.shuffle(sample);
-            sample = sample.subList(0, MAX_SUPPORT_SAMPLE_SIZE);
+            sample = sample.subList(0, params.maxSupportSize);
         } else {
             sample = embedded;
         }
@@ -42,15 +75,47 @@ public class RuleScored {
             return hitRate;
         }
 
-        ranks = new ArrayList<>(n * (n-1));
+        candidates = new HashMap<>();
         for (RuleLexicalized r : sample) {
+            List<Transformation> trans = new ArrayList<>(sample.size()-1);
             for (RuleLexicalized s : sample) {
                 if (r == s) continue;
-                ranks.add(rank(r, s, embeddings));
+                Transformation t = rank(r.pair, s.pair, embeddings, params.maxRankRule);
+                trans.add(t);
+                comparisons++;
+                if (t.rank <= params.maxRankRule) {
+                    hits++;
+                }
+            }
+            trans.sort((t, u) -> Integer.compare(t.rank, u.rank));
+            candidates.put(r.pair, new LinkedList<>(trans));
+        }
+        hitRate = (double) hits / (double) comparisons;
+        filterTransformations(params);
+        return hitRate;
+    }
+
+    public List<Transformation> filterTransformations(ScoringParams params) {
+        topDirections = new ArrayList<>();
+        while(true) {
+            Map.Entry<RulePair, List<Transformation>> mostCommon = candidates.values().parallelStream()
+                    .map(ts -> ts.peek())
+                    .collect(groupingBy(t -> t.direction))
+                    .entrySet().parallelStream()
+                    .max((s, t) -> Long.compare(s.getValue().size(), t.getValue().size())).get();
+            if (mostCommon.getValue().size() >= params.minSizeDirection) {
+                topDirections.add(mostCommon.getKey());
+                mostCommon.getValue().forEach(t -> {
+                    candidates.get(t.rule).remove();
+                    if (t.rank <= params.maxRankTransformation && t.cosine >= params.minCosineTransformation) {
+                        transformations.add(t);
+                    }
+                });
+            } else {
+                break;
             }
         }
-        hitRate = ranks.stream().filter(r -> r <= RANK_THRESHOLD).count() / (double) ranks.size();
-        return hitRate;
+        return transformations;
     }
 
     private boolean embedded(RuleLexicalized r, EmbeddingContainer embeddings) {
@@ -62,7 +127,7 @@ public class RuleScored {
         return true;
     }
 
-    private static float[] add(float[] x, float[] y) {
+    static float[] add(float[] x, float[] y) {
         float[] z = new float[x.length];
         for (int i = 0; i < z.length; i++) {
             z[i] = x[i] + y[i];
@@ -70,20 +135,13 @@ public class RuleScored {
         return z;
     }
 
-    private static float[] subtract(float[] x, float[] y) {
-        float[] z = new float[x.length];
-        for (int i = 0; i < z.length; i++) {
-            z[i] = x[i] - y[i];
-        }
-        return z;
-    }
-
-    private static int rank(RuleLexicalized r, RuleLexicalized s, EmbeddingContainer vs) {
-        float[] direction = subtract(vs.getRawVector(r.pair.output), vs.getRawVector(r.pair.input));
-        float[] got = add(direction, vs.getRawVector(s.pair.input));
-        List<String> neighbors = vs.neighbors(got, RANK_THRESHOLD);
-        int index = neighbors.indexOf(s.pair.output);
-        return (index == -1) ? RANK_THRESHOLD + 1 : index + 1;
+    private static Transformation rank(RulePair r, RulePair d, EmbeddingContainer vs, int rankThreshold) {
+        float[] transformed = add(d.getDirection(vs), vs.getRawVector(r.input));
+        double cosine = VectorMath.cosineSimilarity(d.getDirection(vs), r.getDirection(vs));
+        List<String> neighbors = vs.neighbors(transformed, rankThreshold);
+        int index = neighbors.indexOf(r.output);
+        int rank = (index == -1) ? rankThreshold + 1 : index + 1;
+        return new Transformation(r, d, rank, cosine);
     }
 
     public String toString() {
