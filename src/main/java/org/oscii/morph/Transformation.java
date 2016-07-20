@@ -18,4 +18,13 @@ public class Transformation {
         this.cosine = cosine;
     }
 
+    @Override
+    public String toString() {
+        return "Transformation{" +
+                "rule=" + rule +
+                ", direction=" + direction +
+                ", rank=" + rank +
+                ", cosine=" + cosine +
+                '}';
+    }
 }

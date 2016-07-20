@@ -16,6 +16,7 @@ import static java.util.stream.Collectors.toList;
  */
 public class RuleScored {
 
+
     /**
      * Parameters for scoring.
      */
@@ -77,14 +78,13 @@ public class RuleScored {
 
         candidates = new HashMap<>();
         for (RuleLexicalized r : sample) {
-            List<Transformation> trans = new ArrayList<>(sample.size()-1);
+            List<Transformation> trans = new ArrayList<>(sample.size());
             for (RuleLexicalized s : sample) {
-                if (r == s) continue;
                 Transformation t = rank(r.pair, s.pair, embeddings, params.maxRankRule);
-                trans.add(t);
                 comparisons++;
                 if (t.rank <= params.maxRankRule) {
                     hits++;
+                    trans.add(t);
                 }
             }
             trans.sort((t, u) -> Integer.compare(t.rank, u.rank));
@@ -95,8 +95,9 @@ public class RuleScored {
         return hitRate;
     }
 
-    public List<Transformation> filterTransformations(ScoringParams params) {
+    private void filterTransformations(ScoringParams params) {
         topDirections = new ArrayList<>();
+        transformations = new ArrayList<>();
         while(true) {
             Map.Entry<RulePair, List<Transformation>> mostCommon = candidates.values().parallelStream()
                     .map(ts -> ts.peek())
@@ -115,6 +116,10 @@ public class RuleScored {
                 break;
             }
         }
+        transformations.sort((t, u) -> Double.compare(t.rank - t.cosine, u.rank - u.cosine));
+    }
+
+    public List<Transformation> getTransformations() {
         return transformations;
     }
 

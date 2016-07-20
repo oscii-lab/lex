@@ -7,7 +7,6 @@ import org.apache.logging.log4j.Logger;
 import org.oscii.corpus.Corpus;
 import org.oscii.corpus.Tokenizer;
 import org.oscii.neural.EmbeddingContainer;
-import org.oscii.neural.Word2VecManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -49,6 +48,7 @@ public class SubstituteMain {
 
         for (RuleScored r : subber.getScored()) {
             log.info(r.toString());
+            r.getTransformations().stream().limit(5).forEach(t -> log.info("    " + t.toString()));
         }
 
         log.info("Done.");
@@ -72,9 +72,9 @@ public class SubstituteMain {
 
         // Scoring
         parser.accepts("maxSupportSize", "Number of word pairs to consider when scoring a rule")
-        .withRequiredArg().ofType(Integer.class).defaultsTo(1000);
+                .withRequiredArg().ofType(Integer.class).defaultsTo(1000);
         parser.accepts("maxRankRule", "Max rank of a word pair for a rule to be a hit")
-        .withRequiredArg().ofType(Integer.class).defaultsTo(100);
+                .withRequiredArg().ofType(Integer.class).defaultsTo(100);
         parser.accepts("maxRankTransformation", "Max rank of a word pair for a transformation to be kept")
                 .withRequiredArg().ofType(Integer.class).defaultsTo(30);
         parser.accepts("minCosineTransformation", "Min cosine distance of a word pair for a transformation to be kept")
