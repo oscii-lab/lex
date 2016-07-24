@@ -14,4 +14,9 @@ public class RuleLexicalized {
         this.pair = new RulePair(input, output);
         this.sub = sub;
     }
+
+    public RuleLexicalized(RulePair pair, Rule sub) {
+        this.pair = pair;
+        this.sub = sub;
+    }
 }

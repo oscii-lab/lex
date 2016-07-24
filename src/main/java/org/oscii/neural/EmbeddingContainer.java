@@ -113,11 +113,27 @@ public class EmbeddingContainer {
         return avgVec;
     }
 
+    /**
+     * Return k words nearest to a word. The result will include the word.
+     */
     public List<String> neighbors(String word, int k) {
         return neighbors(embeddings[word2Index.get(word)], k);
     }
 
+    /**
+     * Return k words nearest to an embedding vector.
+     */
+    public List<String> neighbors(float[] embedding, int k) {
+        if (neighborIndex == null) {
+            neighborIndex = new VPTree<>(this::cachedAngularDistance, Arrays.asList(embeddings));
+        }
+        return neighborIndex.getNearestNeighbors(embedding, k)
+                .stream().map(e -> vocab[embedding2Index.get(e)]).collect(toList());
+    }
 
+    /**
+     * A cache key for pairs of vectors.
+     */
     class Vectors {
         float[] a;
         float[] b;
@@ -148,19 +164,18 @@ public class EmbeddingContainer {
         }
     }
 
-    Cache<Vectors, Double> distanceCache = Caffeine.newBuilder().maximumSize(1_000_000).softValues().build();
-    double angularDistance(float[] a, float[] b) {
+    Cache<Vectors, Double> distanceCache = Caffeine.newBuilder()
+            .maximumSize(1_000_000)
+            .softValues()
+            .build();
+    double cachedAngularDistance(float[] a, float[] b) {
         return distanceCache.get(
                 new Vectors(a, b),
-                vs -> Math.acos(VectorMath.cosineSimilarity(vs.a, vs.b)) / Math.PI);
+                vs -> EmbeddingContainer.angularDistance(vs.a, vs.b));
     }
 
-    public List<String> neighbors(float[] embedding, int k) {
-        if (neighborIndex == null) {
-            neighborIndex = new VPTree<>(this::angularDistance, Arrays.asList(embeddings));
-        }
-        return neighborIndex.getNearestNeighbors(embedding, k)
-                .stream().map(e -> vocab[embedding2Index.get(e)]).collect(toList());
+    static double angularDistance(float[] a, float[] b) {
+        return Math.acos(VectorMath.cosineSimilarity(a, b)) / Math.PI;
     }
 
     /* File Input */

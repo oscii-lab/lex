@@ -22,14 +22,14 @@ import static java.util.stream.Collectors.toList;
  */
 public class RuleScored {
     /**
-     * Parameters for scoring.
+     * Parameters for scoring. Default values are from Soricut & Och '15.
      */
     public static class ScoringParams {
-        public final int maxSupportSize;
-        public final int maxRankRule;
-        public final int maxRankTransformation;
-        public final double minCosineTransformation;
-        public final int minSizeDirection;
+        public int maxSupportSize = 1000;
+        public int maxRankRule = 100;
+        public int maxRankTransformation = 30;
+        public double minCosineTransformation = 0.5;
+        public int minSizeDirection = 10;
 
         public ScoringParams(int maxSupportSize,
                              int maxRankRule,
@@ -51,22 +51,29 @@ public class RuleScored {
     final List<RuleLexicalized> support;
 
     // Populated by scoring
-    List<RuleLexicalized> embedded;
-    List<RuleLexicalized> sample;
+    List<RuleLexicalized> embedded; // Pairs where both words are embedded
+    List<RuleLexicalized> sample; // Pairs sampled from embedded for direction selection
     Map<RulePair, List<Transformation>> hits; // Indexed by word pair
     int comparisons;
     int numHits;
     double hitRate;
 
     // Populated by filtering
-    Map<RulePair, List<Transformation>> topDirections; // Index by direction
+    List<RulePair> topDirections; // Index by direction
     List<Transformation> transformations;
+
+    // Place to add two vectors together, which drastically reduces object creation
+    // Note: only one thread can call scorePairAndDirection for this rule at a time.
+    float[] added;
 
     public RuleScored(Rule rule, List<RuleLexicalized> support) {
         this.rule = rule;
         this.support = support;
     }
 
+    /**
+     * Find the hit rate, best directions, and all transformations for a rule.
+     */
     public double score(EmbeddingContainer embeddings, ScoringParams params) {
         embedded = support.stream().filter(r -> embedded(r, embeddings)).collect(toList());
         if (embedded.size() > params.maxSupportSize) {
@@ -83,6 +90,7 @@ public class RuleScored {
         }
 
         log.debug("Score {} pairs for {}", sample.size(), rule.toString());
+        added = new float[embeddings.dimension()];
         hits = new HashMap<>();
         for (RuleLexicalized r : sample) {
             List<Transformation> hit = new ArrayList<>(sample.size());
@@ -103,12 +111,12 @@ public class RuleScored {
         log.debug("  {} hits / {} comparisons = {} hit rate for {} rules and {} transformations",
                 numHits, comparisons, hitRate, hits.size(),
                 hits.values().stream().collect(summingInt(List::size)));
-        filterTransformations(params);
+        filterTransformations(embeddings, params);
         return hitRate;
     }
 
-    private void filterTransformations(ScoringParams params) {
-        topDirections = new HashMap<>();
+    private void filterTransformations(EmbeddingContainer embeddings, ScoringParams params) {
+        topDirections = new ArrayList<>();
         transformations = new ArrayList<>();
         HashMap<RulePair, List<Transformation>> remaining = new HashMap<>(hits);
         int previousSize = -1;
@@ -124,16 +132,17 @@ public class RuleScored {
                         int size = mostCommon.getValue().size();
                         log.debug("  #{} direction has {} hits", topDirections.size() + 1, size);
                         if (size >= params.minSizeDirection) {
-                            topDirections.put(mostCommon.getKey(), mostCommon.getValue());
+                            topDirections.add(mostCommon.getKey());
                             // Remove all pairs explained by this direction
                             mostCommon.getValue().forEach(t -> remaining.remove(t.rule));
                         }
                     });
         }
-        // Find all valid transformations
+
+        // Find all valid transformations for all embedded rules
         log.debug("  Finding transformations for {} directions", topDirections.size());
-        topDirections.values().forEach(ts -> ts.forEach(t -> {
-            // log.debug("    Evaluating: {}", t.toString());
+        topDirections.forEach(d -> embedded.forEach(r -> {
+            Transformation t = scorePairAndDirection(r.pair, d, embeddings, params.maxRankTransformation);
             if (t.rank <= params.maxRankTransformation && t.cosine >= params.minCosineTransformation) {
                 transformations.add(t);
             }
@@ -155,18 +164,16 @@ public class RuleScored {
         return true;
     }
 
-    private static float[] add(float[] x, float[] y) {
-        float[] z = new float[x.length];
+    private void add(float[] x, float[] y, float[] z) {
         for (int i = 0; i < z.length; i++) {
             z[i] = x[i] + y[i];
         }
-        return z;
     }
 
-    private static Transformation scorePairAndDirection(RulePair r, RulePair d, EmbeddingContainer vs, int rankThreshold) {
-        float[] transformed = add(d.getDirection(vs), vs.getRawVector(r.input));
+    private Transformation scorePairAndDirection(RulePair r, RulePair d, EmbeddingContainer vs, int rankThreshold) {
+        add(d.getDirection(vs), vs.getRawVector(r.input), added);
         double cosine = VectorMath.cosineSimilarity(d.getDirection(vs), r.getDirection(vs));
-        List<String> neighbors = vs.neighbors(transformed, rankThreshold);
+        List<String> neighbors = vs.neighbors(added, rankThreshold);
         int index = neighbors.indexOf(r.output);
         int rank = (index == -1) ? rankThreshold + 1 : index + 1;
         return new Transformation(r, d, rank, cosine);
