@@ -1,12 +1,15 @@
 package org.oscii.morph;
 
+import com.google.gson.annotations.Expose;
 import org.oscii.neural.EmbeddingContainer;
 
 /**
  * Two words for which the input can be transformed into the output.
  */
 public class RulePair {
+    @Expose
     final String input;
+    @Expose
     final String output;
     float[] direction;
 

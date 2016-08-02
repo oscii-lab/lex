@@ -1,14 +1,22 @@
 package org.oscii.panlex;
 
 import com.google.gson.Gson;
-import junit.framework.TestCase;
 import org.junit.Test;
 import org.oscii.lex.Meaning;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 
-public class PanLexJSONParserTest extends TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+public class PanLexJSONParserTest {
 
     /*
      * Create an object like obj from JSON object s.

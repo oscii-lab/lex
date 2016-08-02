@@ -2,6 +2,7 @@ package org.oscii.morph;
 
 import com.google.common.collect.Interner;
 import com.google.common.collect.Interners;
+import com.google.gson.annotations.Expose;
 
 /**
  * An orthographic substitution
@@ -10,13 +11,16 @@ public abstract class Rule {
     public static final String EMPTY = "ε";
     private static Interner<Rule> interner = Interners.newWeakInterner();
 
-    public final String id;
+    @Expose
+    public final String kind;
+    @Expose
     public final String from;
+    @Expose
     public final String to;
 
-    public Rule(String id, String from, String to) {
-        assert id != null && from != null && to != null;
-        this.id = id;
+    public Rule(String kind, String from, String to) {
+        assert kind != null && from != null && to != null;
+        this.kind = kind;
         this.from = from;
         this.to = to;
     }
@@ -30,21 +34,21 @@ public abstract class Rule {
 
         Rule that = (Rule) o;
 
-        if (!id.equals(that.id)) return false;
+        if (!kind.equals(that.kind)) return false;
         if (!from.equals(that.from)) return false;
         return to.equals(that.to);
     }
 
     @Override
     public int hashCode() {
-        int result = id.hashCode();
+        int result = kind.hashCode();
         result = 31 * result + from.hashCode();
         result = 31 * result + to.hashCode();
         return result;
     }
 
     public String toString() {
-        return id + "/" + (from.isEmpty() ? EMPTY : from) + "/" + (to.isEmpty() ? EMPTY : to);
+        return kind + "/" + (from.isEmpty() ? EMPTY : from) + "/" + (to.isEmpty() ? EMPTY : to);
     }
 
     public Rule intern() {

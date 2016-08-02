@@ -1,5 +1,7 @@
 package org.oscii.morph;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import org.apache.logging.log4j.LogManager;
@@ -8,8 +10,12 @@ import org.oscii.corpus.Corpus;
 import org.oscii.corpus.Tokenizer;
 import org.oscii.neural.EmbeddingContainer;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.util.Arrays;
 import java.util.Set;
 
@@ -38,18 +44,26 @@ public class SubstituteMain {
         subber.extractAll(corpus, vocab);
         subber.prune((int) options.valueOf("maxSplitsPerPair"), (int) options.valueOf("minPairCount"));
 
-        RuleScored.ScoringParams params = new RuleScored.ScoringParams(
-                (int) options.valueOf("maxSupportSize"),
-                (int) options.valueOf("maxRankRule"),
-                (int) options.valueOf("maxRankTransformation"),
-                (double) options.valueOf("minCosineTransformation"),
-                (int) options.valueOf("minSizeDirection"));
+        RuleScored.ScoringParams params = new RuleScored.ScoringParams();
+        params.maxSupportSize = (int) options.valueOf("maxSupportSize");
+        params.maxRankRule = (int) options.valueOf("maxRankRule");
+        params.maxRankTransformation = (int) options.valueOf("maxRankTransformation");
+        params.minCosineTransformation = (double) options.valueOf("minCosineTransformation");
+        params.minSizeDirection = (int) options.valueOf("minSizeDirection");
         subber.scoreRules(params);
 
-        for (RuleScored r : subber.getScored()) {
-            log.info(r.toString());
-            r.getTransformations().stream().limit(5).forEach(t -> log.info("    " + t.toString()));
+        OutputStream out = System.out;
+        String outPath = (String) options.valueOf("outfile");
+        log.info("Writing to {}", outPath.equals("-") ? "stdout" : outPath);
+        if (!outPath.equals("-")) {
+            out = new FileOutputStream(new File(outPath));
         }
+        BufferedWriter outWriter = new BufferedWriter(new OutputStreamWriter(out));
+        if (options.valueOf("format").equals("json")) {
+            Gson gson = new GsonBuilder().setPrettyPrinting().excludeFieldsWithoutExposeAnnotation().create();
+            gson.toJson(subber.getScored(), outWriter);
+        }
+        outWriter.close();
 
         log.info("Done.");
     }
@@ -78,7 +92,7 @@ public class SubstituteMain {
         parser.accepts("maxRankTransformation", "Max rank of a word pair for a transformation to be kept")
                 .withRequiredArg().ofType(Integer.class).defaultsTo(30);
         parser.accepts("minCosineTransformation", "Min cosine distance of a word pair for a transformation to be kept")
-                .withRequiredArg().ofType(Double.class).defaultsTo(0.1); // 0.5 in paper, but that prunes everything
+                .withRequiredArg().ofType(Double.class).defaultsTo(0.5);
         parser.accepts("minSizeDirection", "Min number of word pairs for a direction vector to be kept")
                 .withRequiredArg().ofType(Integer.class).defaultsTo(10);
 
@@ -88,6 +102,10 @@ public class SubstituteMain {
         // Word2Vec
         parser.accepts("embeddings", "binary Word2Vec model file").withRequiredArg().ofType(File.class);
         parser.accepts("language", "language for Word2Vec embeddings").withRequiredArg();
+
+        // Output
+        parser.accepts("format", "output format").withRequiredArg().defaultsTo("json");
+        parser.accepts("outfile", "output file (- for stdout)").withRequiredArg().defaultsTo("-");
 
         OptionSet options = null;
         parser.acceptsAll(Arrays.asList("h", "help"), "show help").forHelp();

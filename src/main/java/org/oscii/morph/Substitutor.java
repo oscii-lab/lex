@@ -4,14 +4,18 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.oscii.corpus.Corpus;
 import org.oscii.neural.EmbeddingContainer;
-import org.oscii.neural.Word2VecManager;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import static java.util.Comparator.comparingInt;
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
 
 /**
  * A collection of substitution rules.
@@ -30,7 +34,7 @@ public class Substitutor {
      * Extract all substitutions from the vocabulary of the corpus.
      *
      * @param corpus a monolingual corpus.
-     * @param vocab allowed vocabulary
+     * @param vocab  allowed vocabulary
      */
     public void extractAll(Corpus corpus, Set<String> vocab) {
         log.info("Extracting substitution rules");
@@ -38,9 +42,9 @@ public class Substitutor {
             vocab = corpus.vocab();
         }
         Stream<RuleLexicalized> p = IndexByStem(vocab, Substitutor::getPrefix).values()
-                .parallelStream().flatMap(x -> transformations(x, Rule.Prefix::new));
+                .parallelStream().flatMap(x -> getRulesLexicalized(x, Rule.Prefix::new));
         Stream<RuleLexicalized> s = IndexByStem(vocab, Substitutor::getSuffix).values()
-                .parallelStream().flatMap(x -> transformations(x, Rule.Suffix::new));
+                .parallelStream().flatMap(x -> getRulesLexicalized(x, Rule.Suffix::new));
         substitutions = Stream.concat(p, s).collect(groupingBy(t -> t.sub));
     }
 
@@ -98,9 +102,10 @@ public class Substitutor {
         return ts.stream().sorted(comparingInt(t -> substitutions.get(t.sub).size())).limit(k);
     }
 
-    // All transformations for a list of segmentations with a common stem.
-    private Stream<RuleLexicalized> transformations(List<Segmentation> segs,
-                                                    BiFunction<String, String, ? extends Rule> newSub) {
+    // All transformations (stored in RuleLexicalized objects)
+    // for a list of segmentations with a common stem.
+    private Stream<RuleLexicalized> getRulesLexicalized(List<Segmentation> segs,
+                                                        BiFunction<String, String, ? extends Rule> newSub) {
         final int n = segs.size();
         if (n < 2) return Stream.empty(); // Optimization
         List<RuleLexicalized> ts = new ArrayList<>(n * (n - 1));
