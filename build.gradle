@@ -43,7 +43,7 @@ dependencies {
 
 // Gradle application plugin
 mainClassName = System.getProperty("mainClass")
-applicationDefaultJvmArgs = ["-ea", "-XX:+UseG1GC", "-XX:+UseStringDeduplication"]
+// applicationDefaultJvmArgs = ["-ea", "-XX:+UseG1GC", "-XX:+UseStringDeduplication"]
 
 // Run .e.g., with: gradle run -DmainClass=org.oscii.Main -Pargs="-r panlex.json -s"
 run {
