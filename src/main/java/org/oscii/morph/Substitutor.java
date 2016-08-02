@@ -25,6 +25,7 @@ public class Substitutor {
     private Map<Rule, List<RuleLexicalized>> substitutions;
     private List<RuleScored> scored;
     private final static Logger log = LogManager.getLogger(Substitutor.class);
+    private int numScored = 0;
 
     public Substitutor(EmbeddingContainer embeddings) {
         this.embeddings = embeddings;
@@ -84,7 +85,7 @@ public class Substitutor {
     }
 
     public void scoreRules(RuleScored.ScoringParams params) {
-        log.info("Scoring substitutions");
+        log.info("Scoring substitutions for {} rules", substitutions.size());
         scored = substitutions.entrySet().parallelStream()
                 .map(e -> scoreRule(e.getKey(), e.getValue(), params))
                 .sorted((r, s) -> Double.compare(s.hitRate, r.hitRate))
@@ -93,7 +94,11 @@ public class Substitutor {
 
     private RuleScored scoreRule(Rule rule, List<RuleLexicalized> support, RuleScored.ScoringParams params) {
         RuleScored rs = new RuleScored(rule, support);
+        long start = System.nanoTime();
         rs.score(embeddings, params);
+        double elapsed = (System.nanoTime() - start) / 1e9;
+        log.info("Scored rule #{}, {}, using {} pairs in {} seconds",
+                ++numScored, rs.rule, rs.sample.size(), String.format("%.1g", elapsed));
         return rs;
     }
 
