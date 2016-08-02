@@ -5,12 +5,17 @@ import org.apache.logging.log4j.Logger;
 import org.oscii.corpus.Corpus;
 import org.oscii.neural.EmbeddingContainer;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import static java.util.Comparator.comparingInt;
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
 
 /**
  * A collection of substitution rules.
@@ -29,7 +34,7 @@ public class Substitutor {
      * Extract all substitutions from the vocabulary of the corpus.
      *
      * @param corpus a monolingual corpus.
-     * @param vocab allowed vocabulary
+     * @param vocab  allowed vocabulary
      */
     public void extractAll(Corpus corpus, Set<String> vocab) {
         log.info("Extracting substitution rules");

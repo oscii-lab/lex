@@ -1,5 +1,6 @@
 package org.oscii.morph;
 
+import com.google.gson.annotations.Expose;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.oscii.math.VectorMath;
@@ -30,23 +31,11 @@ public class RuleScored {
         public int maxRankTransformation = 30;
         public double minCosineTransformation = 0.5;
         public int minSizeDirection = 10;
-
-        public ScoringParams(int maxSupportSize,
-                             int maxRankRule,
-                             int maxRankTransformation,
-                             double minCosineTransformation,
-                             int minSizeDirection) {
-            this.maxSupportSize = maxSupportSize;
-            this.maxRankRule = maxRankRule;
-            this.maxRankTransformation = maxRankTransformation;
-            this.minCosineTransformation = minCosineTransformation;
-            this.minSizeDirection = minSizeDirection;
-        }
     }
-
 
     private final static Logger log = LogManager.getLogger(RuleScored.class);
 
+    @Expose
     final Rule rule;
     final List<RuleLexicalized> support;
 
@@ -56,10 +45,12 @@ public class RuleScored {
     Map<RulePair, List<Transformation>> hits; // Indexed by word pair
     int comparisons;
     int numHits;
+    @Expose
     double hitRate;
 
     // Populated by filtering
     List<RulePair> topDirections; // Index by direction
+    @Expose
     List<Transformation> transformations;
 
     // Place to add two vectors together, which drastically reduces object creation
