@@ -38,15 +38,17 @@ public class Substitutor {
      * @param vocab  allowed vocabulary
      */
     public void extractAll(Corpus corpus, Set<String> vocab) {
-        log.info("Extracting substitution rules");
         if (vocab == null) {
             vocab = corpus.vocab();
         }
+        log.info("Extracting prefix rules");
         Stream<RuleLexicalized> p = IndexByStem(vocab, Substitutor::getPrefix).values()
                 .parallelStream().flatMap(x -> getRulesLexicalized(x, Rule.Prefix::new));
+        log.info("Extracting suffix rules");
         Stream<RuleLexicalized> s = IndexByStem(vocab, Substitutor::getSuffix).values()
                 .parallelStream().flatMap(x -> getRulesLexicalized(x, Rule.Suffix::new));
-        substitutions = Stream.concat(p, s).collect(groupingBy(t -> t.sub));
+        log.info("Indexing rules");
+        substitutions = Stream.concat(p, s).parallel().collect(groupingBy(t -> t.sub));
     }
 
     /**
@@ -98,7 +100,7 @@ public class Substitutor {
         rs.score(embeddings, params);
         double elapsed = (System.nanoTime() - start) / 1e9;
         log.info("Scored rule #{}, {}, using {} pairs in {} seconds",
-                ++numScored, rs.rule, rs.sample.size(), String.format("%.1g", elapsed));
+                ++numScored, rs.rule, rs.sample.size(), String.format("%.1f", elapsed));
         return rs;
     }
 
