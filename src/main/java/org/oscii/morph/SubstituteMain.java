@@ -78,7 +78,7 @@ public class SubstituteMain {
         parser.accepts("maxRankTransformation", "Max rank of a word pair for a transformation to be kept")
                 .withRequiredArg().ofType(Integer.class).defaultsTo(30);
         parser.accepts("minCosineTransformation", "Min cosine distance of a word pair for a transformation to be kept")
-                .withRequiredArg().ofType(Double.class).defaultsTo(0.1); // 0.5 in paper, but that prunes everything
+                .withRequiredArg().ofType(Double.class).defaultsTo(0.5);
         parser.accepts("minSizeDirection", "Min number of word pairs for a direction vector to be kept")
                 .withRequiredArg().ofType(Integer.class).defaultsTo(10);
 

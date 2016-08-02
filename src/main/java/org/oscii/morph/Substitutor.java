@@ -4,7 +4,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.oscii.corpus.Corpus;
 import org.oscii.neural.EmbeddingContainer;
-import org.oscii.neural.Word2VecManager;
 
 import java.util.*;
 import java.util.function.BiFunction;
@@ -38,9 +37,9 @@ public class Substitutor {
             vocab = corpus.vocab();
         }
         Stream<RuleLexicalized> p = IndexByStem(vocab, Substitutor::getPrefix).values()
-                .parallelStream().flatMap(x -> transformations(x, Rule.Prefix::new));
+                .parallelStream().flatMap(x -> getRulesLexicalized(x, Rule.Prefix::new));
         Stream<RuleLexicalized> s = IndexByStem(vocab, Substitutor::getSuffix).values()
-                .parallelStream().flatMap(x -> transformations(x, Rule.Suffix::new));
+                .parallelStream().flatMap(x -> getRulesLexicalized(x, Rule.Suffix::new));
         substitutions = Stream.concat(p, s).collect(groupingBy(t -> t.sub));
     }
 
@@ -98,9 +97,10 @@ public class Substitutor {
         return ts.stream().sorted(comparingInt(t -> substitutions.get(t.sub).size())).limit(k);
     }
 
-    // All transformations for a list of segmentations with a common stem.
-    private Stream<RuleLexicalized> transformations(List<Segmentation> segs,
-                                                    BiFunction<String, String, ? extends Rule> newSub) {
+    // All transformations (stored in RuleLexicalized objects)
+    // for a list of segmentations with a common stem.
+    private Stream<RuleLexicalized> getRulesLexicalized(List<Segmentation> segs,
+                                                        BiFunction<String, String, ? extends Rule> newSub) {
         final int n = segs.size();
         if (n < 2) return Stream.empty(); // Optimization
         List<RuleLexicalized> ts = new ArrayList<>(n * (n - 1));

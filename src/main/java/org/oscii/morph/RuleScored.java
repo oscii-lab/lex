@@ -170,9 +170,10 @@ public class RuleScored {
         }
     }
 
+    // Score a pair of related words using a direction defined by another pair of words with the same relation.
     private Transformation scorePairAndDirection(RulePair r, RulePair d, EmbeddingContainer vs, int rankThreshold) {
         add(d.getDirection(vs), vs.getRawVector(r.input), added);
-        double cosine = VectorMath.cosineSimilarity(d.getDirection(vs), r.getDirection(vs));
+        double cosine = VectorMath.cosineSimilarity(added, vs.getRawVector(r.output));
         List<String> neighbors = vs.neighbors(added, rankThreshold);
         int index = neighbors.indexOf(r.output);
         int rank = (index == -1) ? rankThreshold + 1 : index + 1;

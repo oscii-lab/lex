@@ -8,8 +8,9 @@ import org.oscii.neural.EmbeddingContainer;
 public class Transformation {
     final RulePair rule;
     final RulePair direction;
-    final int rank;
-    final double cosine;
+    final int rank; // Rank of output in the k-nearest neighbors of input + direction
+    // Note: The rank is truncated: it stores min(actual rank, rank threshold + 1)
+    final double cosine; // Cosine similarity of output to input + direction
 
     public Transformation(RulePair rule, RulePair direction, int rank, double cosine) {
         this.rule = rule;
