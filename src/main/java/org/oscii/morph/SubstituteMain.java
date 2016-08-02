@@ -38,6 +38,7 @@ public class SubstituteMain {
 
         int minVocabCount = (int) options.valueOf("minVocabCount");
         Set<String> vocab = corpus.vocab().stream().filter(w -> corpus.count(w) >= minVocabCount).collect(toSet());
+        log.info("Loading embeddings for {} word types", vocab.size());
         EmbeddingContainer embeddings = EmbeddingContainer.fromBinFile((File) options.valueOf("embeddings"), vocab);
 
         Substitutor subber = new Substitutor(embeddings);

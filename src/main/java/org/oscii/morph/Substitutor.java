@@ -25,6 +25,7 @@ public class Substitutor {
     private Map<String, List<RuleLexicalized>> substitutions;
     private List<RuleScored> scored;
     private final static Logger log = LogManager.getLogger(Substitutor.class);
+    private int numExtracted = 0;
     private int numScored = 0;
 
     public Substitutor(EmbeddingContainer embeddings) {
