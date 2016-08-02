@@ -41,6 +41,7 @@ public class SubstituteMain {
         log.info("Loading embeddings for {} word types", vocab.size());
         EmbeddingContainer embeddings = EmbeddingContainer.fromBinFile((File) options.valueOf("embeddings"), vocab);
         vocab = vocab.parallelStream().filter(embeddings::contains).collect(toSet());
+        log.info("Found embeddings for {} word types", vocab.size());
 
         Substitutor subber = new Substitutor(embeddings);
         int minStemLength = (int) options.valueOf("minStemLength");
