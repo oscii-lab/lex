@@ -1,11 +1,7 @@
 package org.oscii.neural;
 
 import com.eatthepath.jvptree.VPTree;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
-import org.apache.commons.collections4.map.LRUMap;
 import org.oscii.math.VectorMath;
-import sun.misc.LRUCache;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -17,15 +13,16 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static java.util.stream.Collectors.toList;
 
 /**
  * A simple container for a word embedding model.
- *
- * @author Spence Green
  */
 public class EmbeddingContainer {
 
