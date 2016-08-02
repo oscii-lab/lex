@@ -17,6 +17,7 @@ public abstract class Rule {
     public final String from;
     @Expose
     public final String to;
+    private String string;
 
     public Rule(String kind, String from, String to) {
         assert kind != null && from != null && to != null;
@@ -48,7 +49,10 @@ public abstract class Rule {
     }
 
     public String toString() {
-        return kind + "/" + (from.isEmpty() ? EMPTY : from) + "/" + (to.isEmpty() ? EMPTY : to);
+        if (string == null) {
+            string = kind + "/" + (from.isEmpty() ? EMPTY : from) + "/" + (to.isEmpty() ? EMPTY : to);
+        }
+        return string;
     }
 
     public Rule intern() {

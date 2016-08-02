@@ -22,7 +22,7 @@ import static java.util.stream.Collectors.toList;
  */
 public class Substitutor {
     private final EmbeddingContainer embeddings;
-    private Map<Rule, List<RuleLexicalized>> substitutions;
+    private Map<String, List<RuleLexicalized>> substitutions;
     private List<RuleScored> scored;
     private final static Logger log = LogManager.getLogger(Substitutor.class);
     private int numScored = 0;
@@ -41,14 +41,12 @@ public class Substitutor {
         if (vocab == null) {
             vocab = corpus.vocab();
         }
-        log.info("Extracting prefix rules");
+        log.info("Extracting rules");
         Stream<RuleLexicalized> p = IndexByStem(vocab, Substitutor::getPrefix).values()
                 .parallelStream().flatMap(x -> getRulesLexicalized(x, Rule.Prefix::new));
-        log.info("Extracting suffix rules");
         Stream<RuleLexicalized> s = IndexByStem(vocab, Substitutor::getSuffix).values()
                 .parallelStream().flatMap(x -> getRulesLexicalized(x, Rule.Suffix::new));
-        log.info("Indexing rules");
-        substitutions = Stream.concat(p, s).parallel().collect(groupingBy(t -> t.sub));
+        substitutions = Stream.concat(p, s).parallel().collect(groupingBy(t -> t.sub.toString()));
     }
 
     /**
@@ -67,7 +65,7 @@ public class Substitutor {
      * @param maxSplitsPerPair k most frequent splits to keep
      */
     public void prune(int maxSplitsPerPair, int minPairCount) {
-        Map<Rule, List<RuleLexicalized>> a, b, c;
+        Map<String, List<RuleLexicalized>> a, b, c;
 
         log.info("Pruning substitution rules: minPairCount of {}", minPairCount);
         a = enforceMinPairCount(substitutions, minPairCount);
@@ -78,7 +76,7 @@ public class Substitutor {
                 .collect(groupingBy(t -> t.pair))
                 .values().parallelStream()
                 .flatMap(ts -> mostFrequent(ts, maxSplitsPerPair))
-                .collect(groupingBy(t -> t.sub));
+                .collect(groupingBy(t -> t.sub.toString()));
 
         log.info("Pruning substitution rules: minPairCount of {} (again)", minPairCount);
         c = enforceMinPairCount(b, minPairCount);
@@ -88,8 +86,9 @@ public class Substitutor {
 
     public void scoreRules(RuleScored.ScoringParams params) {
         log.info("Scoring substitutions for {} rules", substitutions.size());
-        scored = substitutions.entrySet().parallelStream()
-                .map(e -> scoreRule(e.getKey(), e.getValue(), params))
+        scored = substitutions.values().parallelStream()
+                .filter(rs -> !rs.isEmpty())
+                .map(rs -> scoreRule(rs.get(0).sub, rs, params))
                 .sorted((r, s) -> Double.compare(s.hitRate, r.hitRate))
                 .collect(toList());
     }
@@ -106,7 +105,7 @@ public class Substitutor {
 
     private Stream<RuleLexicalized> mostFrequent(List<RuleLexicalized> ts, int k) {
         if (ts.size() <= k) return ts.stream();
-        return ts.stream().sorted(comparingInt(t -> substitutions.get(t.sub).size())).limit(k);
+        return ts.stream().sorted(comparingInt(t -> substitutions.get(t.sub.toString()).size())).limit(k);
     }
 
     // All transformations (stored in RuleLexicalized objects)
@@ -152,10 +151,10 @@ public class Substitutor {
         return new Segmentation(stem, suffix, word);
     }
 
-    private Map<Rule, List<RuleLexicalized>> enforceMinPairCount(Map<Rule, List<RuleLexicalized>> m,
-                                                                 int minPairCount) {
+    private Map<String, List<RuleLexicalized>> enforceMinPairCount(Map<String, List<RuleLexicalized>> m,
+                                                                   int minPairCount) {
         return m.values().parallelStream().filter(ts -> ts.size() >= minPairCount)
-                .flatMap(ts -> ts.stream()).collect(groupingBy(t -> t.sub));
+                .flatMap(ts -> ts.stream()).collect(groupingBy(t -> t.sub.toString()));
     }
 
     public List<RuleScored> getScored() {
