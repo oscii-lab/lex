@@ -38,15 +38,15 @@ public class Substitutor {
      * @param vocab  allowed vocabulary
      * @param minStemLength
      */
-    public void extractAll(Corpus corpus, Set<String> vocab, int minStemLength) {
+    public void extractAll(Corpus corpus, Set<String> vocab, int minStemLength, int maxStemCardinality) {
         if (vocab == null) {
             vocab = corpus.vocab();
         }
         log.info("Extracting rules");
         Stream<RuleLexicalized> p = IndexByStem(vocab, minStemLength, Substitutor::getPrefix).values()
-                .parallelStream().flatMap(x -> getRulesLexicalized(x, Rule.Prefix::new));
+                .parallelStream().flatMap(x -> getRulesLexicalized(x, maxStemCardinality, Rule.Prefix::new));
         Stream<RuleLexicalized> s = IndexByStem(vocab, minStemLength, Substitutor::getSuffix).values()
-                .parallelStream().flatMap(x -> getRulesLexicalized(x, Rule.Suffix::new));
+                .parallelStream().flatMap(x -> getRulesLexicalized(x, maxStemCardinality, Rule.Suffix::new));
         substitutions = Stream.concat(p, s).parallel().collect(groupingBy(t -> t.sub.toString()));
     }
 
@@ -112,9 +112,11 @@ public class Substitutor {
     // All transformations (stored in RuleLexicalized objects)
     // for a list of segmentations with a common stem.
     private Stream<RuleLexicalized> getRulesLexicalized(List<Segmentation> segs,
+                                                        int maxStemCardinality,
                                                         BiFunction<String, String, ? extends Rule> newSub) {
         final int n = segs.size();
         if (n < 2) return Stream.empty(); // Optimization
+        if (segs.size() > maxStemCardinality) return Stream.empty(); // Pruning
         List<RuleLexicalized> ts = new ArrayList<>(n * (n - 1));
         for (Segmentation input : segs) {
             for (Segmentation output : segs) {
