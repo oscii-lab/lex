@@ -34,18 +34,18 @@ public class Substitutor {
 
     /**
      * Extract all substitutions from the vocabulary of the corpus.
-     *
-     * @param corpus a monolingual corpus.
+     *  @param corpus a monolingual corpus.
      * @param vocab  allowed vocabulary
+     * @param minStemLength
      */
-    public void extractAll(Corpus corpus, Set<String> vocab) {
+    public void extractAll(Corpus corpus, Set<String> vocab, int minStemLength) {
         if (vocab == null) {
             vocab = corpus.vocab();
         }
         log.info("Extracting rules");
-        Stream<RuleLexicalized> p = IndexByStem(vocab, Substitutor::getPrefix).values()
+        Stream<RuleLexicalized> p = IndexByStem(vocab, minStemLength, Substitutor::getPrefix).values()
                 .parallelStream().flatMap(x -> getRulesLexicalized(x, Rule.Prefix::new));
-        Stream<RuleLexicalized> s = IndexByStem(vocab, Substitutor::getSuffix).values()
+        Stream<RuleLexicalized> s = IndexByStem(vocab, minStemLength, Substitutor::getSuffix).values()
                 .parallelStream().flatMap(x -> getRulesLexicalized(x, Rule.Suffix::new));
         substitutions = Stream.concat(p, s).parallel().collect(groupingBy(t -> t.sub.toString()));
     }
@@ -127,13 +127,15 @@ public class Substitutor {
     }
 
     // Index all segmented words by the remaining stem.
-    Map<String, List<Segmentation>> IndexByStem(Collection<String> vocab, BiFunction<String, Integer, Segmentation> f) {
-        return vocab.parallelStream().flatMap(w -> {
+    Map<String, List<Segmentation>> IndexByStem(Collection<String> vocab,
+                                                int minStemLength,
+                                                BiFunction<String, Integer, Segmentation> segment) {
+        return vocab.parallelStream().filter(w -> w.length() > minStemLength).flatMap(w -> {
             int n = w.length();
-            int affixMax = Math.min(6, n - 1);
+            int affixMax = Math.min(6, n - minStemLength);
             List<Segmentation> entries = new ArrayList<>(affixMax);
             for (int k = 0; k <= affixMax; k++) {
-                entries.add(f.apply(w, k));
+                entries.add(segment.apply(w, k));
             }
             return entries.stream();
         }).collect(groupingBy(p -> p.stem));

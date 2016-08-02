@@ -42,7 +42,7 @@ public class SubstituteMain {
         EmbeddingContainer embeddings = EmbeddingContainer.fromBinFile((File) options.valueOf("embeddings"), vocab);
 
         Substitutor subber = new Substitutor(embeddings);
-        subber.extractAll(corpus, vocab);
+        subber.extractAll(corpus, vocab, (int) options.valueOf("minStemLength"));
         subber.prune((int) options.valueOf("maxSplitsPerPair"), (int) options.valueOf("minPairCount"));
 
         RuleScored.ScoringParams params = new RuleScored.ScoringParams();
@@ -84,6 +84,8 @@ public class SubstituteMain {
                 .withRequiredArg().ofType(Integer.class).defaultsTo(2);
         parser.accepts("maxSplitsPerPair", "maximum number of ways a pair can be split")
                 .withRequiredArg().ofType(Integer.class).defaultsTo(4);
+        parser.accepts("minStemLength", "minimum length of a stem")
+                .withRequiredArg().ofType(Integer.class).defaultsTo(1);
 
         // Scoring
         parser.accepts("maxSupportSize", "Number of word pairs to consider when scoring a rule")
