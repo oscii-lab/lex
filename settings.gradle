@@ -1,8 +1,0 @@
-//
-// lex dependencies
-//
-
-// Phrasal
-include "phrasal"
-project(":phrasal").projectDir = new File("$System.env.PHRASAL_HOME")
-
