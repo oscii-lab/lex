@@ -40,7 +40,6 @@ public class RuleScored {
     final List<RuleLexicalized> support;
 
     // Populated by scoring
-    List<RuleLexicalized> embedded; // Pairs where both words are embedded
     List<RuleLexicalized> sample; // Pairs sampled from embedded for direction selection
     Map<RulePair, List<Transformation>> hits; // Indexed by word pair
     int comparisons;
@@ -66,13 +65,12 @@ public class RuleScored {
      * Find the hit rate, best directions, and all transformations for a rule.
      */
     public double score(EmbeddingContainer embeddings, ScoringParams params) {
-        embedded = support.stream().filter(r -> embedded(r, embeddings)).collect(toList());
-        if (embedded.size() > params.maxSupportSize) {
-            sample = new ArrayList<>(embedded);
+        if (support.size() > params.maxSupportSize) {
+            sample = new ArrayList<>(support);
             Collections.shuffle(sample);
             sample = sample.subList(0, params.maxSupportSize);
         } else {
-            sample = embedded;
+            sample = support;
         }
         int n = sample.size();
         if (n == 0) {
@@ -132,7 +130,7 @@ public class RuleScored {
 
         // Find all valid transformations for all embedded rules
         log.debug("  Finding transformations for {} directions", topDirections.size());
-        topDirections.forEach(d -> embedded.forEach(r -> {
+        topDirections.forEach(d -> support.forEach(r -> {
             Transformation t = scorePairAndDirection(r.pair, d, embeddings, params.maxRankTransformation);
             if (t.rank <= params.maxRankTransformation && t.cosine >= params.minCosineTransformation) {
                 transformations.add(t);

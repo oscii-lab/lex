@@ -40,6 +40,7 @@ public class SubstituteMain {
         Set<String> vocab = corpus.vocab().stream().filter(w -> corpus.count(w) >= minVocabCount).collect(toSet());
         log.info("Loading embeddings for {} word types", vocab.size());
         EmbeddingContainer embeddings = EmbeddingContainer.fromBinFile((File) options.valueOf("embeddings"), vocab);
+        vocab = vocab.parallelStream().filter(embeddings::contains).collect(toSet());
 
         Substitutor subber = new Substitutor(embeddings);
         int minStemLength = (int) options.valueOf("minStemLength");

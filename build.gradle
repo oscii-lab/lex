@@ -40,12 +40,8 @@ dependencies {
     compile group: 'org.eclipse.jetty', name: 'jetty-servlet', version: '9.2.1.v20140609'
 }
 
-
-// Gradle application plugin
-mainClassName = System.getProperty("mainClass")
-// applicationDefaultJvmArgs = ["-ea", "-XX:+UseG1GC", "-XX:+UseStringDeduplication"]
-
 // Run .e.g., with: gradle run -DmainClass=org.oscii.Main -Pargs="-r panlex.json -s"
+mainClassName = System.getProperty("mainClass", "org.oscii.Main")
 run {
     if ( project.hasProperty('args') ) {
         args project.args.split('\\s+')
