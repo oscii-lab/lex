@@ -31,6 +31,7 @@ public class RuleScored {
         public int maxRankTransformation = 30;
         public double minCosineTransformation = 0.5;
         public int minSizeDirection = 10;
+        public double minHitRate = 0.0;
     }
 
     private final static Logger log = LogManager.getLogger(RuleScored.class);
@@ -100,7 +101,9 @@ public class RuleScored {
         log.debug("  {} hits / {} comparisons = {} hit rate for {} rules and {} transformations",
                 numHits, comparisons, hitRate, hits.size(),
                 hits.values().stream().collect(summingInt(List::size)));
-        filterTransformations(embeddings, params);
+        if (hitRate >= params.minHitRate) {
+            filterTransformations(embeddings, params);
+        }
         return hitRate;
     }
 

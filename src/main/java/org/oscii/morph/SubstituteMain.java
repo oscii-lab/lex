@@ -55,6 +55,7 @@ public class SubstituteMain {
         params.maxRankTransformation = (int) options.valueOf("maxRankTransformation");
         params.minCosineTransformation = (double) options.valueOf("minCosineTransformation");
         params.minSizeDirection = (int) options.valueOf("minSizeDirection");
+        params.minHitRate = (double) options.valueOf("minHitRate");
         subber.scoreRules(params);
 
         OutputStream out = System.out;
@@ -104,6 +105,8 @@ public class SubstituteMain {
                 .withRequiredArg().ofType(Double.class).defaultsTo(0.5);
         parser.accepts("minSizeDirection", "Min number of word pairs for a direction vector to be kept")
                 .withRequiredArg().ofType(Integer.class).defaultsTo(10);
+        parser.accepts("minHitRate", "Min hit rate of a rule to score transformations")
+                .withRequiredArg().ofType(Double.class).defaultsTo(0.0);
 
         // HTTP Rest API
         parser.accepts("port", "API port").withRequiredArg().ofType(Integer.class).defaultsTo(DEFAULT_API_PORT);
