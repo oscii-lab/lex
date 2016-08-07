@@ -66,7 +66,7 @@ public class LexiconProtocol {
             String pos = t.pos.stream().findFirst().orElse("");
             if (t.frequency >= request.minFrequency || response.translations.isEmpty()) {
                 response.translations.add(new ResponseTranslation(
-                        request.query, pos, t.translation.text, t.frequency));
+                        request.query, pos, t.translation.text, t.frequency, -1));
             }
         });
     }
@@ -104,11 +104,11 @@ public class LexiconProtocol {
         results.forEach(ex -> {
             AlignedSentence source = ex.sentence;
             AlignedSentence target = source.aligned;
-            if (request.translate && exactQueryMatch(ex)) {
+            if (request.translate && ex.memoryId >= 0 && exactQueryMatch(ex)) {
                 String sourceTerm = joinSegment(source.tokens, source.delimiters);
                 String targetTerm = joinSegment(target.tokens, target.delimiters);
                 response.translations.add(
-                        new ResponseTranslation(sourceTerm, "", targetTerm, 0.0));
+                        new ResponseTranslation(sourceTerm, "", targetTerm, 0.0, ex.memoryId));
             } else {
                 Span sourceSpan = new Span(ex.sourceStart, ex.sourceLength);
                 Span targetSpan = new Span(ex.targetStart, ex.targetLength);
@@ -146,6 +146,7 @@ public class LexiconProtocol {
 
     // The query of the request is the complete example.
     private boolean exactQueryMatch(SentenceExample ex) {
+        // Check that the number of aligned words in the source covers the entire source.
         return ex.sourceLength == ex.sentence.tokens.length;
     }
 
@@ -284,17 +285,19 @@ public class LexiconProtocol {
         String pos;
         String target;
         double frequency;
+        int memoryId; // -1: background TM, >=0: foregroundTM
 
-        ResponseTranslation(String source, String pos, String target, double frequency) {
+        ResponseTranslation(String source, String pos, String target, double frequency, int memoryId) {
             this.source = source;
             this.pos = pos;
             this.target = target;
             this.frequency = frequency;
+            this.memoryId = memoryId;
         }
 
         public static ResponseTranslation create(Expression ex, Translation first) {
             String pos = first.pos.stream().findFirst().orElse("");
-            return new ResponseTranslation(ex.text, pos, first.translation.text, first.frequency);
+            return new ResponseTranslation(ex.text, pos, first.translation.text, first.frequency, -1);
         }
     }
 

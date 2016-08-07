@@ -30,7 +30,7 @@ public class PanLexDir {
             @Override
             public InputStream open(String filename) {
                 try {
-                    // Always return an empty array
+                    // Always return an EMPTY array
                     return IOUtils.toInputStream("[]", "UTF-8");
                 } catch (IOException e) {
                     e.printStackTrace();
