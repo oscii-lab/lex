@@ -73,10 +73,9 @@ public class PanLexJSONParser {
      */
     private void populateLanguageTags() {
         Map<String, String> threeToTwo = new HashMap<>();
-        for (Locale loc : Locale.getAvailableLocales()) {
-            if (!loc.getLanguage().isEmpty()) {
-                threeToTwo.put(loc.getISO3Language(), loc.getLanguage());
-            }
+        for (String s : Locale.getISOLanguages()) {
+            Locale loc = new Locale(s);
+            threeToTwo.put(loc.getISO3Language(), loc.getLanguage());
         }
         // TODO(denero) Reconstruct other language tag info (e.g., region)
         // TODO(denero) What about 3-letter codes with no 2-letter equivalent?
