@@ -130,9 +130,12 @@ public class PanLexJSONParser {
      * For all words with a shared meaning, process Meanings by language.
      */
     public void forEachMeaning(Consumer<Meaning> process) {
-      Map<String, List<Meaning>> byLanguage = denotations.values().stream().map(this::createMeaning)
-        .collect(groupingBy(m -> m.expression.languageTag));
-      processMeanings(process, byLanguage);
+      denotations.values().stream().collect(groupingBy(dn -> dn.mn)).values()
+      .forEach(denotationsForMeaning -> {
+       Map<String, List<Meaning>> byLanguage = denotationsForMeaning.stream().map(this::createMeaning)
+             .collect(groupingBy(m -> m.expression.languageTag));
+           processMeanings(process, byLanguage);
+      });
     }
 
     /*
