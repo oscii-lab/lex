@@ -15,6 +15,7 @@ import org.oscii.concordance.RemoteAlignedCorpus;
 import org.oscii.concordance.SentenceExample;
 import org.oscii.lex.Lexicon;
 import org.oscii.lex.Ranker;
+import org.oscii.morph.MorphologyManager;
 import org.oscii.neural.Word2VecManager;
 import org.oscii.panlex.PanLexDir;
 import org.oscii.panlex.PanLexJSONParser;
@@ -81,6 +82,7 @@ public class Main {
         }
 
         Word2VecManager embeddings = null;
+        MorphologyManager morphology = null;
         if (options.has("embeddings")) {
             if (!options.has("embeddingslangs")) {
                 log.fatal("If using embeddings, you have to set the corresponding languages that are being represented in each model.");
@@ -88,21 +90,29 @@ public class Main {
             }
             String embeddingsFiles = (String) options.valueOf("embeddings");
             String embeddingsLangs = (String) options.valueOf("embeddingslangs");
+            String embeddingsMorph = (String) options.valueOf("embeddingsMorph");
             String[] files = embeddingsFiles.split(",");
             String[] langs = embeddingsLangs.split(",");
+            String[] morph = embeddingsLangs.split(",");
             if (langs.length != files.length) {
                 log.fatal("Unequal number of Word2Vec models ({}) and languages ({}).",
                           files.length, langs.length);
                 System.exit(-1);
             }
             embeddings = new Word2VecManager();
+            if (morph.length == langs.length) {
+                morphology = new MorphologyManager(lexicon);
+            }
             for (int i = 0; i < files.length; ++i) {
                 log.info("adding word2vec model for language {}: {}", langs[i], files[i]);
                 embeddings.add(langs[i], new File(files[i]));
+                if (morphology != null) {
+                    morphology.add(langs[i], morph[i], embeddings.getVocabulary(langs[i]));
+                }
             }
         }
 
-        final LexiconProtocol protocol = new LexiconProtocol(lexicon, corpus, ranker, embeddings);
+        final LexiconProtocol protocol = new LexiconProtocol(lexicon, corpus, ranker, embeddings, morphology);
 
         // Serve lexicon (http API)
         Server server = null;
@@ -147,6 +157,7 @@ public class Main {
         // Word2Vec
         parser.accepts("embeddings", "comma-separated list of binary Word2Vec model files").withRequiredArg().describedAs("FileList");
         parser.accepts("embeddingslangs", "comma-separated list of languages for Word2Vec models").withRequiredArg().describedAs("LangList");
+        parser.accepts("embeddingsmorph", "comma-separated list of JSON neural morphology files").withRequiredArg().describedAs("MorphList");
 
         OptionSet options = null;
         parser.acceptsAll(Arrays.asList("h", "help"), "show help").forHelp();
