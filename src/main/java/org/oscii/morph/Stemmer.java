@@ -26,8 +26,18 @@ public class Stemmer {
         this.lexicon = lexicon;
         this.language = language;
         lexicalizedIndex = rulesScored.stream()
-                .flatMap(r -> r.getTransformations().isEmpty() ? Stream.empty() : r.getTransformations().stream())
+                .flatMap(this::getTransformations)
                 .collect(groupingBy(t -> Lexicon.degrade(t.rule.input)));
+    }
+
+    Stream<Transformation> getTransformations(RuleScored r) {
+        if (r == null) {
+            return Stream.empty();
+        } else if (r.getTransformations() == null) {
+            return Stream.empty();
+        } else {
+            return r.getTransformations().stream();
+        }
     }
 
     /**
