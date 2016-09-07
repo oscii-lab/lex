@@ -5,6 +5,7 @@ import org.oscii.lex.Lexicon;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
@@ -25,7 +26,7 @@ public class Stemmer {
         this.lexicon = lexicon;
         this.language = language;
         lexicalizedIndex = rulesScored.stream()
-                .flatMap(r -> r.getTransformations().stream())
+                .flatMap(r -> r.getTransformations().isEmpty() ? Stream.empty() : r.getTransformations().stream())
                 .collect(groupingBy(t -> Lexicon.degrade(t.rule.input)));
     }
 
