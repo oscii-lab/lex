@@ -7,17 +7,19 @@ import com.google.gson.annotations.Expose;
 /**
  * An orthographic substitution
  */
-public abstract class Rule {
+public class Rule {
     public static final String EMPTY = "ε";
     private static Interner<Rule> interner = Interners.newWeakInterner();
 
     @Expose
-    public final String kind;
+    public String kind;
     @Expose
-    public final String from;
+    public String from;
     @Expose
-    public final String to;
+    public String to;
     private String string;
+
+    public Rule() { }
 
     public Rule(String kind, String from, String to) {
         assert kind != null && from != null && to != null;
@@ -26,7 +28,10 @@ public abstract class Rule {
         this.to = to;
     }
 
-    public abstract String apply(String input);
+    // Not abstract because of serialization.
+    public String apply(String input) {
+        throw new RuntimeException("Only a subclass of a Rule should be applied.");
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -65,6 +70,7 @@ public abstract class Rule {
      * A prefix substitution.
      */
     public static class Prefix extends Rule {
+        public Prefix() { }
         public Prefix(String from, String to) {
             super("p", from, to);
         }
@@ -80,6 +86,7 @@ public abstract class Rule {
      * A suffix substitution.
      */
     public static class Suffix extends Rule {
+        public Suffix() { }
         public Suffix(String from, String to) {
             super("s", from, to);
         }

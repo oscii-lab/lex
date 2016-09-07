@@ -13,18 +13,18 @@ import static java.util.stream.Collectors.toList;
  * Indexes and applies rules from a substitutor.
  */
 public class Stemmer {
-    private final Substitutor subber;
     private final List<String> vocab;
     private final Lexicon lexicon;
     private final String language;
+    private final List<RuleScored> rules;
     private Map<String, List<Transformation>> lexicalizedIndex;
 
-    public Stemmer(Substitutor subber, List<String> embeddingVocab, Lexicon lexicon, String language) {
-        this.subber = subber;
+    public Stemmer(List<RuleScored> rulesScored, List<String> embeddingVocab, Lexicon lexicon, String language) {
+        this.rules = rulesScored;
         this.vocab = embeddingVocab;
         this.lexicon = lexicon;
         this.language = language;
-        lexicalizedIndex = subber.getScored().stream()
+        lexicalizedIndex = rulesScored.stream()
                 .flatMap(r -> r.getTransformations().stream())
                 .collect(groupingBy(t -> Lexicon.degrade(t.rule.input)));
     }

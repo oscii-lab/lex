@@ -38,9 +38,9 @@ public class MorphologyManager {
         logger.info("Loading morphology rules for {} from {}.", lang, path);
         JsonReader reader = new JsonReader(new FileReader(new File(path)));
         Type listOfRuleScored = new TypeToken<ArrayList<RuleScored>>(){}.getType();
-        Substitutor subber = gson.fromJson(reader, listOfRuleScored);
+        List<RuleScored> rules = gson.fromJson(reader, listOfRuleScored);
         logger.info("Indexing morphological transformations for {}.", lang);
-        Stemmer stemmer = new Stemmer(subber, embeddingVocab, lexicon, lang);
+        Stemmer stemmer = new Stemmer(rules, embeddingVocab, lexicon, lang);
         logger.info("Done.");
         stemmers.put(lang, stemmer);
     }
