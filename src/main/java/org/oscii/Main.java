@@ -90,10 +90,10 @@ public class Main {
             }
             String embeddingsFiles = (String) options.valueOf("embeddings");
             String embeddingsLangs = (String) options.valueOf("embeddingslangs");
-            String embeddingsMorph = (String) options.valueOf("embeddingsMorph");
+            String embeddingsMorph = (String) options.valueOf("embeddingsmorph");
             String[] files = embeddingsFiles.split(",");
             String[] langs = embeddingsLangs.split(",");
-            String[] morph = embeddingsLangs.split(",");
+            String[] morph = embeddingsMorph.split(",");
             if (langs.length != files.length) {
                 log.fatal("Unequal number of Word2Vec models ({}) and languages ({}).",
                           files.length, langs.length);

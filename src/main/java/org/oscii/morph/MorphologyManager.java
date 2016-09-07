@@ -32,9 +32,13 @@ public class MorphologyManager {
         if (stemmers.containsKey(lang)) {
             logger.error("Repeat language: {}", lang);
         }
+        logger.info("Loading morphology rules for {} from {}.", lang, path);
         JsonReader reader = new JsonReader(new FileReader(new File(path)));
         Substitutor subber = gson.fromJson(reader, SubstituteMain.class);
-        stemmers.put(lang, new Stemmer(subber, embeddingVocab, lexicon));
+        logger.info("Indexing morphological transformations for {}.", lang);
+        Stemmer stemmer = new Stemmer(subber, embeddingVocab, lexicon, lang);
+        logger.info("Done.");
+        stemmers.put(lang, stemmer);
     }
 
     /**
