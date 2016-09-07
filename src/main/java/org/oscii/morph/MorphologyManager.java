@@ -1,6 +1,7 @@
 package org.oscii.morph;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -9,6 +10,8 @@ import org.oscii.lex.Lexicon;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +37,8 @@ public class MorphologyManager {
         }
         logger.info("Loading morphology rules for {} from {}.", lang, path);
         JsonReader reader = new JsonReader(new FileReader(new File(path)));
-        Substitutor subber = gson.fromJson(reader, SubstituteMain.class);
+        Type listOfRuleScored = new TypeToken<ArrayList<RuleScored>>(){}.getType();
+        Substitutor subber = gson.fromJson(reader, listOfRuleScored);
         logger.info("Indexing morphological transformations for {}.", lang);
         Stemmer stemmer = new Stemmer(subber, embeddingVocab, lexicon, lang);
         logger.info("Done.");
