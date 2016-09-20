@@ -48,22 +48,22 @@ public class Stemmer {
         List<Transformation> lexicalized = lexicalizedIndex.get(degraded);
         if (lexicalized != null) {
             lexicalized.sort((t, u) -> Double.compare(u.cosine, t.cosine));
-            return lexicalized.stream()
+            List<String> hits = lexicalized.stream()
                     .map(t -> t.rule.output)
                     .distinct()
                     .filter(w -> !lexicon.lookup(w, language).isEmpty())
                     .collect(toList());
+            if (!hits.isEmpty()) {
+                return hits;
+            }
         }
-        if (!vocab.contains(degraded)) {
-            return rules.stream()
-                    .filter(r -> r.rule.applies(query))
-                    .sorted((r, s) -> Double.compare(s.hitRate, r.hitRate))
-                    .map(r -> r.rule.apply(query))
-                    .distinct()
-                    .filter(w -> !lexicon.lookup(w, language).isEmpty())
-                    .collect(toList());
-        }
-        return Collections.emptyList();
+        return rules.stream()
+                .filter(r -> r.rule.applies(query))
+                .sorted((r, s) -> Double.compare(s.hitRate, r.hitRate))
+                .map(r -> r.rule.apply(query))
+                .distinct()
+                .filter(w -> !lexicon.lookup(w, language).isEmpty())
+                .collect(toList());
     }
 
 }
