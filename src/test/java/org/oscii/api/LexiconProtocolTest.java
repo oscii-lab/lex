@@ -86,7 +86,7 @@ public class LexiconProtocolTest extends TestCase {
       }
     };
 
-    LexiconProtocol protocol = new LexiconProtocol(lexicon, corpus, null, null, morphology);
+    LexiconProtocol protocol = new LexiconProtocol(lexicon, corpus, null, null, null);
     LexiconProtocol.Request request = translation("dog", "en", "es");
     request.minFrequency = 0.0;
     request.translate = true;

@@ -4,6 +4,9 @@ import com.google.common.collect.Interner;
 import com.google.common.collect.Interners;
 import com.google.gson.annotations.Expose;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * An orthographic substitution
  */
@@ -19,6 +22,43 @@ public class Rule {
     public String to;
     private String string;
 
+    private static Map<String, RuleKind> kinds = new HashMap<>();
+
+    private interface RuleKind {
+        String apply(String input, String from, String to);
+
+        boolean applies(String input, String from);
+    }
+
+    static {
+        kinds.put("p", new RuleKind() {
+            public String apply(String input, String from, String to) {
+                return input.replaceFirst(from, to);
+            }
+
+            public boolean applies(String input, String from) {
+                return input.startsWith(from);
+            }
+        });
+        kinds.put("s", new RuleKind() {
+            public String apply(String input, String from, String to) {
+                return input.substring(0, input.length() - from.length()) + to;
+            }
+
+            public boolean applies(String input, String from) {
+                return input.endsWith(from);
+            }
+        });
+    }
+
+    public static Rule makePrefix(String from, String to) {
+        return new Rule("p", from, to);
+    }
+
+    public static Rule makeSuffix(String from, String to) {
+        return new Rule("s", from, to);
+    }
+
     public Rule() { }
 
     public Rule(String kind, String from, String to) {
@@ -30,7 +70,12 @@ public class Rule {
 
     // Not abstract because of serialization.
     public String apply(String input) {
-        throw new RuntimeException("Only a subclass of a Rule should be applied.");
+        assert applies(input) : input;
+        return kinds.get(kind).apply(input, from, to);
+    }
+
+    public boolean applies(String input) {
+        return kinds.get(kind).applies(input, from);
     }
 
     @Override
@@ -62,39 +107,5 @@ public class Rule {
 
     public Rule intern() {
         return interner.intern(this);
-    }
-
-    /* Implementations */
-
-    /**
-     * A prefix substitution.
-     */
-    public static class Prefix extends Rule {
-        public Prefix() { }
-        public Prefix(String from, String to) {
-            super("p", from, to);
-        }
-
-        @Override
-        public String apply(String input) {
-            assert input.startsWith(from) : input;
-            return input.replaceFirst(from, to);
-        }
-    }
-
-    /**
-     * A suffix substitution.
-     */
-    public static class Suffix extends Rule {
-        public Suffix() { }
-        public Suffix(String from, String to) {
-            super("s", from, to);
-        }
-
-        @Override
-        public String apply(String input) {
-            assert input.endsWith(from) : input;
-            return input.substring(0, input.length() - from.length()) + to;
-        }
     }
 }

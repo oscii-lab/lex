@@ -23,7 +23,9 @@ import org.oscii.panlex.PanLexJSONParser;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 public class Main {
@@ -32,7 +34,7 @@ public class Main {
     private static final Integer DEFAULT_API_PORT = 8090;
     private static final Integer DEFAULT_MAX_SENTENCE_PAIRS = 100;
     private static final String DEFAULT_LANGUAGES = "en,es,de,fr";
-    private static final String DEFAULT_PATTERN = "(?U)\\p{Lower}*";
+    private static final String DEFAULT_PATTERN = "(?U)\\p[a-d]{Lower}*"; // TODO
 
     public static void main(String[] args) throws Exception {
         final OptionSet options = parse(args);
@@ -104,7 +106,6 @@ public class Main {
                 morphology = new MorphologyManager(lexicon);
             }
             for (int i = 0; i < files.length; ++i) {
-                log.info("adding word2vec model for language {}: {}", langs[i], files[i]);
                 embeddings.add(langs[i], new File(files[i]));
                 if (morphology != null) {
                     morphology.add(langs[i], morph[i], embeddings.getVocabulary(langs[i]));

@@ -62,23 +62,22 @@ public class LexiconProtocol {
      * Add translations filtered by frequency.
      */
     private void addTranslations(Request request, Response response) {
-        List<Translation> results =
-                lexicon.translate(request.query, request.source, request.target);
-
+        String sourceTerm = request.query;
+        List<Translation> results = lexicon.translate(sourceTerm, request.source, request.target);
 
         if (results.isEmpty() && morphology != null) {
             String stem = morphology.getKnownStem(request.query, request.source);
-            if (!stem.equals(request.query)) {
-                results = lexicon.translate(request.query, request.source, request.target);
+            if (!stem.equals(sourceTerm)) {
+                sourceTerm = stem;
+                results = lexicon.translate(stem, request.source, request.target);
             }
         }
 
+        final String s = sourceTerm;
         results.stream().limit(request.maxCount).forEach(t -> {
-            // TODO(denero) Add formatted source?
             String pos = t.pos.stream().findFirst().orElse("");
             if (t.frequency >= request.minFrequency || response.translations.isEmpty()) {
-                response.translations.add(new ResponseTranslation(
-                        request.query, pos, t.translation.text, t.frequency, -1));
+                response.translations.add(new ResponseTranslation(s, pos, t.translation.text, t.frequency, -1));
             }
         });
     }
