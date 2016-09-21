@@ -34,7 +34,7 @@ public class Main {
     private static final Integer DEFAULT_API_PORT = 8090;
     private static final Integer DEFAULT_MAX_SENTENCE_PAIRS = 100;
     private static final String DEFAULT_LANGUAGES = "en,es,de,fr";
-    private static final String DEFAULT_PATTERN = "(?U)\\p[a-d]{Lower}*"; // TODO
+    private static final String DEFAULT_PATTERN = "(?U)\\p{Lower}*";
 
     public static void main(String[] args) throws Exception {
         final OptionSet options = parse(args);
