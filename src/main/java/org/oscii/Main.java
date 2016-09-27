@@ -7,12 +7,10 @@ import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import org.oscii.api.LexiconProtocol;
 import org.oscii.api.LexServlet;
+import org.oscii.api.LexiconProtocol;
 import org.oscii.concordance.AlignedCorpus;
 import org.oscii.concordance.IndexedAlignedCorpus;
-import org.oscii.concordance.RemoteAlignedCorpus;
-import org.oscii.concordance.SentenceExample;
 import org.oscii.lex.Lexicon;
 import org.oscii.lex.Ranker;
 import org.oscii.morph.MorphologyManager;
@@ -23,9 +21,7 @@ import org.oscii.panlex.PanLexJSONParser;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 public class Main {
@@ -100,11 +96,16 @@ public class Main {
             }
             if (langs.length != files.length) {
                 log.fatal("Unequal number of Word2Vec models ({}) and languages ({}).",
-                          files.length, langs.length);
+                        files.length, langs.length);
                 System.exit(-1);
             }
             embeddings = new Word2VecManager();
-            if (morph.length == langs.length) {
+            if (morph.length > 0) {
+                if (morph.length != langs.length) {
+                    log.fatal("Unequal number of morphology models ({}) and languages ({}).",
+                            morph.length, langs.length);
+                    System.exit(-1);
+                }
                 morphology = new MorphologyManager(lexicon);
             }
             for (int i = 0; i < files.length; ++i) {
