@@ -9,7 +9,13 @@ import org.oscii.math.VectorMath;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Manages a collection of language-specific word2vec models.
@@ -37,8 +43,6 @@ public class Word2VecManager {
     /**
      * Adds a word2vec model from a binary model file for given language.
      *
-     * @param lang
-     * @param file
      * @return true if model was added successfully, else false
      */
     public boolean add(String lang, File file) throws IOException {
@@ -66,9 +70,6 @@ public class Word2VecManager {
 
     /**
      * Checks whether the query is part of model for given language.
-     *
-     * @param lang
-     * @param query
      */
     public boolean containsQuery(String lang, String query) {
         return supports(lang) && models.get(lang).contains(query);
@@ -77,9 +78,6 @@ public class Word2VecManager {
     /**
      * Checks whether the degraded query (e.g. lowercased) is part of
      * model for given language.
-     *
-     * @param lang
-     * @param query
      */
     public boolean containsDegradedQuery(String lang, String query) {
         return supports(lang) && models.get(lang).contains(Lexicon.degrade(query));
@@ -88,9 +86,6 @@ public class Word2VecManager {
     /**
      * Returns the query or degraded query if it is part of the model
      * for a given language. Throws UnknownWordException if not.
-     *
-     * @param lang
-     * @param query
      */
     public String getMatchingQuery(String lang, String query) {
         if (containsQuery(lang, query)) {
@@ -111,12 +106,8 @@ public class Word2VecManager {
      * reduce computation time, the candidates are reduced in size by
      * filtering out short entries (likely stop words) and truncating
      * the result to a maximum number of entries.
-     *
-     * @param lang
-     * @param context
-     * @param concordances
      */
-    public boolean rankConcordances(String lang, String context, List<SentenceExample> concordances) {
+    public boolean rankConcordances(String lang, String context, List<SentenceExample> concordances, int memoryId) {
         if (!supports(lang) || context.length() == 0 || concordances.size() == 0) {
             return false;
         }
@@ -136,6 +127,12 @@ public class Word2VecManager {
                 double sim = VectorMath.cosineSimilarity(tokensMean, contextMean);
                 if (Double.isNaN(sim)) {
                     sim = -2.0; // Give it a low score.
+                } else if (ex.memoryId == memoryId) {
+                    // personal TM match in same project: place on top by adding +2.0 (note: similarity is not cosine sim any more)
+                    sim += 2.0;
+                } else if (ex.memoryId > 0) {
+                    // personal TM match: add +1.0 so entries appear on top but below same-project matches (also note: see above)
+                    sim += 1.0;
                 }
                 ex.similarity = sim;
             } catch (Exception e) {
@@ -154,9 +151,6 @@ public class Word2VecManager {
      * Returns the averaged raw word vector (n-dimensional array of
      * doubles) for given query and language. Applies tokenization
      * through punctuation removal and reducing into a bag of words.
-     *
-     * @param lang
-     * @param query
      */
     public float[] getRawVector(String lang, String query) throws UnsupportedLanguageException {
         if (!supports(lang)) throw new UnsupportedLanguageException(lang);
@@ -166,12 +160,7 @@ public class Word2VecManager {
     }
 
     /**
-     * Get the mean vector for
-     *
-     * @param lang
-     * @param query
-     * @return
-     * @throws UnsupportedLanguageException
+     * Get the mean vector for a query.
      */
     public float[] getMeanVector(String lang, String[] query) throws UnsupportedLanguageException {
         if (!supports(lang)) throw new UnsupportedLanguageException(lang);
@@ -183,11 +172,7 @@ public class Word2VecManager {
      * the given language. If query2 is of length 0, the method expects
      * a '|||'-delimited query pair in query1, e.g. "dog|||cat", or
      * throws a MalformedQueryException else. The query is degraded if
-     * needed (see {@link Lexicon.degrade}).
-     *
-     * @param lang
-     * @param query1
-     * @param query2
+     * needed.
      */
     public double getSimilarity(String lang, String query1, String query2) throws
             UnsupportedLanguageException, MalformedQueryException {
@@ -209,10 +194,6 @@ public class Word2VecManager {
 
     /**
      * The K nearest words to a query vector in a language.
-     *
-     * @param query
-     * @param k
-     * @return
      */
     public List<String> nearestNeighbors(String lang, float[] query, int k) {
         // TODO
@@ -226,11 +207,6 @@ public class Word2VecManager {
      * - Filters short tokens (tokens of length < minTokLength).
      * - Limits the result to maxSegLength entries.
      * - Filters duplicates.
-     *
-     * @param tokens
-     * @param minSegLength
-     * @param minTokLength
-     * @param maxSegLength
      */
     public static String[] reduceTokens(String[] tokens, int minSegLength, int minTokLength, int maxSegLength) {
         if (tokens.length < minSegLength) {
@@ -254,8 +230,6 @@ public class Word2VecManager {
 
     /**
      * Returns bag-of-words for given token sequence.
-     *
-     * @param tokens
      */
     public static String[] getBagOfWords(String[] tokens) {
         Set<String> tokset = new HashSet<>();

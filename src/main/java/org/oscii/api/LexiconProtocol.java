@@ -6,7 +6,12 @@ import org.apache.logging.log4j.Logger;
 import org.oscii.concordance.AlignedCorpus;
 import org.oscii.concordance.AlignedSentence;
 import org.oscii.concordance.SentenceExample;
-import org.oscii.lex.*;
+import org.oscii.lex.Definition;
+import org.oscii.lex.Expression;
+import org.oscii.lex.Lexicon;
+import org.oscii.lex.Meaning;
+import org.oscii.lex.Ranker;
+import org.oscii.lex.Translation;
 import org.oscii.morph.MorphologyManager;
 import org.oscii.neural.Word2VecManager;
 import org.oscii.neural.Word2VecManager.MalformedQueryException;
@@ -105,7 +110,7 @@ public class LexiconProtocol {
         logger.debug("TIMING examples: {}", (endTime - startTime) / 1e9);
         if (bHasEmbeddings) {
             startTime = endTime;
-            boolean bSuccess = embeddings.rankConcordances(request.source, request.context, results);
+            boolean bSuccess = embeddings.rankConcordances(request.source, request.context, results, request.memory);
             endTime = System.nanoTime();
             logger.debug("TIMING embeddings: {} ({})", (endTime - startTime) / 1e9, results.size());
             if (!bSuccess) {
@@ -201,7 +206,7 @@ public class LexiconProtocol {
                 response.synonyms.add(new ResponseSynonymSet("", listSynonyms(r)));
             } else {
                 r.pos.stream().distinct().forEach(pos ->
-                    response.synonyms.add(new ResponseSynonymSet(pos, listSynonyms(r))));
+                        response.synonyms.add(new ResponseSynonymSet(pos, listSynonyms(r))));
             }
         });
         response.synonyms = response.synonyms.stream().distinct().collect(toList());
@@ -209,26 +214,26 @@ public class LexiconProtocol {
 
     /**
      * Adds the raw word vector for a query to the response.
-     *
+     * <p>
      * Example:
      * http://localhost:8090/translate/lexicon?query=explain&embedding=true
      * =>
      * {...,"embedding":[-0.07444860785060135,8.24243638592437E-4,0.03639942629448272,
-     *     0.08149381270654195,-0.15073516043655721,...],...}
+     * 0.08149381270654195,-0.15073516043655721,...],...}
      */
     private void addEmbedding(Request request, Response response) {
-      try {
-        response.embedding = embeddings.getRawVector(request.source, request.query);
-      } catch (UnsupportedLanguageException e) {
-        response.error = e.getMessage();
-      }
+        try {
+            response.embedding = embeddings.getRawVector(request.source, request.query);
+        } catch (UnsupportedLanguageException e) {
+            response.error = e.getMessage();
+        }
     }
 
     /**
      * Adds cosine distance of two terms in the given request to
      * response.  The field 'query' either takes both terms separated
      * by '|||', or fields 'query' and 'context' are used.
-     *
+     * <p>
      * Examples:
      * http://localhost:8090/translate/lexicon?query=explain|||tell&distance=true
      * http://localhost:8090/translate/lexicon?query=explain&context=tell&distance=true
@@ -236,11 +241,11 @@ public class LexiconProtocol {
      * {...,"distance":0.347985021280413}
      */
     private void addDistance(Request request, Response response) {
-      try {
-        response.distance = embeddings.getSimilarity(request.source, request.query, request.context);
-      } catch (UnsupportedLanguageException | MalformedQueryException e) {
-        response.error = e.getMessage();
-      }
+        try {
+            response.distance = embeddings.getSimilarity(request.source, request.query, request.context);
+        } catch (UnsupportedLanguageException | MalformedQueryException e) {
+            response.error = e.getMessage();
+        }
     }
 
 
