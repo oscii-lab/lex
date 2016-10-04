@@ -10,7 +10,6 @@ import org.oscii.lex.Lexicon;
 import org.oscii.lex.Translation;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
@@ -87,7 +86,7 @@ public class LexiconProtocolTest extends TestCase {
       }
     };
 
-    LexiconProtocol protocol = new LexiconProtocol(lexicon, corpus, null, null);
+    LexiconProtocol protocol = new LexiconProtocol(lexicon, corpus, null, null, null);
     LexiconProtocol.Request request = translation("dog", "en", "es");
     request.minFrequency = 0.0;
     request.translate = true;

@@ -44,9 +44,9 @@ public class Substitutor {
         }
         log.info("Extracting rules");
         Stream<RuleLexicalized> p = IndexByStem(vocab, minStemLength, Substitutor::getPrefix).values()
-                .parallelStream().flatMap(x -> getRulesLexicalized(x, maxStemCardinality, Rule.Prefix::new));
+                .parallelStream().flatMap(x -> getRulesLexicalized(x, maxStemCardinality, Rule::makePrefix));
         Stream<RuleLexicalized> s = IndexByStem(vocab, minStemLength, Substitutor::getSuffix).values()
-                .parallelStream().flatMap(x -> getRulesLexicalized(x, maxStemCardinality, Rule.Suffix::new));
+                .parallelStream().flatMap(x -> getRulesLexicalized(x, maxStemCardinality, Rule::makeSuffix));
         substitutions = Stream.concat(p, s).parallel().collect(groupingBy(t -> t.sub.toString()));
     }
 

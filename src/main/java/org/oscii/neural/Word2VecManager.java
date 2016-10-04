@@ -265,6 +265,10 @@ public class Word2VecManager {
         return tokset.toArray(new String[tokset.size()]);
     }
 
+    public List<String> getVocabulary(String lang) {
+        return models.get(lang).vocab();
+    }
+
     /**
      * Exception when a language is not supported.
      */

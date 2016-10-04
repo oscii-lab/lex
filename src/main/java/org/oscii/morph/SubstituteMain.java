@@ -71,6 +71,10 @@ public class SubstituteMain {
         }
         outWriter.close();
 
+        // Verify that serialized data can be read again.
+        MorphologyManager morphologyManager = new MorphologyManager(null);
+        morphologyManager.add("en", outPath, embeddings.vocab());
+
         log.info("Done.");
     }
 

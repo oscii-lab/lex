@@ -7,6 +7,7 @@ import org.oscii.concordance.AlignedCorpus;
 import org.oscii.concordance.AlignedSentence;
 import org.oscii.concordance.SentenceExample;
 import org.oscii.lex.*;
+import org.oscii.morph.MorphologyManager;
 import org.oscii.neural.Word2VecManager;
 import org.oscii.neural.Word2VecManager.MalformedQueryException;
 import org.oscii.neural.Word2VecManager.UnsupportedLanguageException;
@@ -20,18 +21,20 @@ import static java.util.stream.Collectors.toList;
  * Transmission protocol for Lexicon API
  */
 public class LexiconProtocol {
+    private final static Logger logger = LogManager.getLogger(LexiconProtocol.class);
+
     private final Lexicon lexicon;
     private final AlignedCorpus corpus;
     private final Ranker ranker;
     private final Word2VecManager embeddings;
+    private final MorphologyManager morphology;
 
-    private final static Logger logger = LogManager.getLogger(LexiconProtocol.class);
-
-    public LexiconProtocol(Lexicon lexicon, AlignedCorpus corpus, Ranker ranker, Word2VecManager embeddings) {
+    public LexiconProtocol(Lexicon lexicon, AlignedCorpus corpus, Ranker ranker, Word2VecManager embeddings, MorphologyManager morphology) {
         this.lexicon = lexicon;
         this.corpus = corpus;
         this.ranker = ranker;
         this.embeddings = embeddings;
+        this.morphology = morphology;
     }
 
     /*
@@ -59,14 +62,22 @@ public class LexiconProtocol {
      * Add translations filtered by frequency.
      */
     private void addTranslations(Request request, Response response) {
-        List<Translation> results =
-                lexicon.translate(request.query, request.source, request.target);
+        String sourceTerm = request.query;
+        List<Translation> results = lexicon.translate(sourceTerm, request.source, request.target);
+
+        if (results.isEmpty() && morphology != null) {
+            String stem = morphology.getKnownStem(request.query, request.source);
+            if (!stem.equals(sourceTerm)) {
+                sourceTerm = stem;
+                results = lexicon.translate(stem, request.source, request.target);
+            }
+        }
+
+        final String s = sourceTerm;
         results.stream().limit(request.maxCount).forEach(t -> {
-            // TODO(denero) Add formatted source?
             String pos = t.pos.stream().findFirst().orElse("");
             if (t.frequency >= request.minFrequency || response.translations.isEmpty()) {
-                response.translations.add(new ResponseTranslation(
-                        request.query, pos, t.translation.text, t.frequency, -1));
+                response.translations.add(new ResponseTranslation(s, pos, t.translation.text, t.frequency, -1));
             }
         });
     }

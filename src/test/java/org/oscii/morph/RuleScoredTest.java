@@ -11,7 +11,7 @@ public class RuleScoredTest {
 
     @Test
     public void score() throws Exception {
-        Rule.Suffix rule = new Rule.Suffix("ed", "ing");
+        Rule rule = Rule.makeSuffix("ed", "ing");
         RuleScored scored = new RuleScored(rule, Arrays.asList(new RuleLexicalized[]{
                 new RuleLexicalized(new RulePair("hopped", "hopping"), rule),
                 new RuleLexicalized(new RulePair("shopped", "shopping"), rule),

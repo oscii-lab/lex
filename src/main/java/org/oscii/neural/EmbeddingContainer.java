@@ -1,6 +1,7 @@
 package org.oscii.neural;
 
 import com.eatthepath.jvptree.VPTree;
+import com.google.common.collect.ImmutableList;
 import org.oscii.math.VectorMath;
 
 import java.io.File;
@@ -14,6 +15,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -303,5 +305,9 @@ public class EmbeddingContainer {
             float[] emb = container.getRawVector(wordType);
             System.out.printf("%s\t%s%n", wordType, Arrays.toString(emb));
         }
+    }
+
+    public List<String> vocab() {
+        return Collections.unmodifiableList(Arrays.asList(vocab));
     }
 }

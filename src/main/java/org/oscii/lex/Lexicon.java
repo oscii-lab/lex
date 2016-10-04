@@ -9,14 +9,27 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.oscii.concordance.AlignedCorpus;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 /**
  * A map from expressions to meanings.
@@ -155,7 +168,7 @@ public class Lexicon {
                 // Aggregate and filter by target language
                 .flatMap(m -> m.translations.stream()
                         .filter(t -> t.translation.language.equals(target)))
-                        // Remove textual duplicates, choosing the first of each group
+                // Remove textual duplicates, choosing the first of each group
                 .collect(groupingBy(t -> t.translation.text))
                 .values().stream().map(Lexicon::pickTranslation)
                 .collect(toList());
@@ -226,6 +239,13 @@ public class Lexicon {
         }
         reader.close();
         log.info("Total removed due to identity: {}", numRemoved);
+    }
+
+    public Set<String> getVocabulary(String language) {
+        return index.get(language).values().stream()
+                .flatMap(m -> m.keySet().stream())
+                .map(e -> e.text)
+                .collect(toSet());
     }
 
     // What is known about the meanings of an expression.
