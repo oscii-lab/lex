@@ -107,8 +107,8 @@ public class Main {
                 log.fatal("If using morphology, you have to set the corresponding languages that are being represented in each model.");
                 System.exit(-2);
             }
-            String morphFiles = (String) options.valueOf("embeddings");
-            String morphLangs = (String) options.valueOf("embeddingslangs");
+            String morphFiles = (String) options.valueOf("morph");
+            String morphLangs = (String) options.valueOf("morphlangs");
             String[] files = morphFiles.split(",");
             String[] langs = morphLangs.split(",");
             if (langs.length != files.length) {
