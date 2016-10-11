@@ -80,7 +80,6 @@ public class Main {
         }
 
         Word2VecManager embeddings = null;
-        MorphologyManager morphology = null;
         if (options.has("embeddings")) {
             if (!options.has("embeddingslangs")) {
                 log.fatal("If using embeddings, you have to set the corresponding languages that are being represented in each model.");
@@ -90,29 +89,37 @@ public class Main {
             String embeddingsLangs = (String) options.valueOf("embeddingslangs");
             String[] files = embeddingsFiles.split(",");
             String[] langs = embeddingsLangs.split(",");
-            String[] morph = new String[]{};
-            if (options.has("embeddingsmorph")) {
-                morph = ((String) options.valueOf("embeddingsmorph")).split(",");
-            }
             if (langs.length != files.length) {
                 log.fatal("Unequal number of Word2Vec models ({}) and languages ({}).",
                         files.length, langs.length);
                 System.exit(-1);
             }
             embeddings = new Word2VecManager();
-            if (morph.length > 0) {
-                if (morph.length != langs.length) {
-                    log.fatal("Unequal number of morphology models ({}) and languages ({}).",
-                            morph.length, langs.length);
-                    System.exit(-1);
-                }
-                morphology = new MorphologyManager(lexicon);
-            }
+
             for (int i = 0; i < files.length; ++i) {
                 embeddings.add(langs[i], new File(files[i]));
-                if (morphology != null) {
-                    morphology.add(langs[i], morph[i], embeddings.getVocabulary(langs[i]));
-                }
+            }
+        }
+
+        MorphologyManager morphology = null;
+        if (options.has("morph")) {
+            if (!options.has("morphlangs")) {
+                log.fatal("If using morphology, you have to set the corresponding languages that are being represented in each model.");
+                System.exit(-2);
+            }
+            String morphFiles = (String) options.valueOf("embeddings");
+            String morphLangs = (String) options.valueOf("embeddingslangs");
+            String[] files = morphFiles.split(",");
+            String[] langs = morphLangs.split(",");
+            if (langs.length != files.length) {
+                log.fatal("Unequal number of morphology models ({}) and languages ({}).",
+                        files.length, langs.length);
+                System.exit(-1);
+            }
+            morphology = new MorphologyManager(lexicon);
+
+            for (int i = 0; i < files.length; ++i) {
+                morphology.add(langs[i], files[i]);
             }
         }
 
@@ -161,7 +168,9 @@ public class Main {
         // Word2Vec
         parser.accepts("embeddings", "comma-separated list of binary Word2Vec model files").withRequiredArg().describedAs("FileList");
         parser.accepts("embeddingslangs", "comma-separated list of languages for Word2Vec models").withRequiredArg().describedAs("LangList");
-        parser.accepts("embeddingsmorph", "comma-separated list of JSON neural morphology files").withRequiredArg().describedAs("MorphList");
+
+        parser.accepts("morph", "comma-separated list of JSON neural morphology files").withRequiredArg().describedAs("MorphList");
+        parser.accepts("morphlangs", "comma-separated list of of languages for morphology models").withRequiredArg().describedAs("LangList");
 
         OptionSet options = null;
         parser.acceptsAll(Arrays.asList("h", "help"), "show help").forHelp();

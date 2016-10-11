@@ -31,7 +31,7 @@ public class MorphologyManager {
         this.lexicon = lexicon;
     }
 
-    public void add(String lang, String path, List<String> embeddingVocab) throws FileNotFoundException {
+    public void add(String lang, String path) throws FileNotFoundException {
         if (stemmers.containsKey(lang)) {
             logger.error("Repeat language: {}", lang);
         }
@@ -40,7 +40,7 @@ public class MorphologyManager {
         Type listOfRuleScored = new TypeToken<ArrayList<RuleScored>>(){}.getType();
         List<RuleScored> rules = gson.fromJson(reader, listOfRuleScored);
         logger.info("Indexing morphological transformations for {}.", lang);
-        Stemmer stemmer = new Stemmer(rules, embeddingVocab, lexicon, lang);
+        Stemmer stemmer = new Stemmer(rules, lexicon, lang);
         logger.info("Done.");
         stemmers.put(lang, stemmer);
     }
