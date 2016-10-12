@@ -1,6 +1,7 @@
 package org.oscii.api;
 
 import com.google.gson.Gson;
+import no.uib.cipr.matrix.Vector;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.oscii.concordance.AlignedCorpus;
@@ -13,6 +14,7 @@ import org.oscii.lex.Meaning;
 import org.oscii.lex.Ranker;
 import org.oscii.lex.Translation;
 import org.oscii.morph.MorphologyManager;
+import org.oscii.neural.FloatVector;
 import org.oscii.neural.Word2VecManager;
 import org.oscii.neural.Word2VecManager.MalformedQueryException;
 import org.oscii.neural.Word2VecManager.UnsupportedLanguageException;
@@ -223,7 +225,16 @@ public class LexiconProtocol {
      */
     private void addEmbedding(Request request, Response response) {
         try {
-            response.embedding = embeddings.getRawVector(request.source, request.query);
+            Vector v = embeddings.getRawVector(request.source, request.query);
+            if (v instanceof FloatVector) {
+                response.embedding = ((FloatVector) v).getData();
+            } else {
+                float[] f = new float[v.size()];
+                for (int i = 0; i < v.size(); i++) {
+                    f[i] = (float) v.get(i);
+                }
+                response.embedding = f;
+            }
         } catch (UnsupportedLanguageException e) {
             response.error = e.getMessage();
         }

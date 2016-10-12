@@ -1,7 +1,9 @@
 package org.oscii.morph;
 
+import no.uib.cipr.matrix.Vector;
 import org.junit.Test;
 import org.oscii.neural.EmbeddingContainer;
+import org.oscii.neural.FloatVector;
 
 import java.util.Arrays;
 
@@ -17,8 +19,11 @@ public class RuleScoredTest {
                 new RuleLexicalized(new RulePair("shopped", "shopping"), rule),
         }));
         String[] vocab = new String[]{"hopped", "hopping", "shopped", "shopping"};
-        float[][] vectors = new float[][]{
-                new float[]{1, 2}, new float[]{1, 3}, new float[]{2, 1}, new float[]{2, 2.1f}
+        Vector[] vectors = new Vector[]{
+                new FloatVector(new float[]{1, 2}),
+                new FloatVector(new float[]{1, 3}),
+                new FloatVector(new float[]{2, 1}),
+                new FloatVector(new float[]{2, 2.1f})
         };
         EmbeddingContainer embeddings = new EmbeddingContainer(vocab, vectors);
         RuleScored.ScoringParams params = new RuleScored.ScoringParams();
