@@ -87,7 +87,7 @@ public class SubstituteMain {
 
         // Corpus
         parser.accepts("corpus", "path to corpus file").withRequiredArg();
-        parser.accepts("corpusMaxTokens", "max tokens to read").withRequiredArg().ofType(Integer.class).defaultsTo(0);
+        parser.accepts("corpusMaxLines", "max lines to read").withRequiredArg().ofType(Integer.class).defaultsTo(0);
         parser.accepts("cacheCounts", "whether to cache corpus counts");
         parser.accepts("minVocabCount", "minimum corpus count to include a word type")
                 .withRequiredArg().ofType(Integer.class).defaultsTo(1);
