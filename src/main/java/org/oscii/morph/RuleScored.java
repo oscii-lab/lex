@@ -5,6 +5,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.oscii.math.VectorMath;
 import org.oscii.neural.EmbeddingContainer;
+import org.oscii.neural.FloatVector;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,7 +56,7 @@ public class RuleScored {
 
     // Place to add two vectors together, which drastically reduces object creation
     // Note: only one thread can call scorePairAndDirection for this rule at a time.
-    float[] added;
+    FloatVector added;
 
     public RuleScored(Rule rule, List<RuleLexicalized> support) {
         this.rule = rule;
@@ -80,7 +81,7 @@ public class RuleScored {
         }
 
         log.debug("Score {} pairs for {}", sample.size(), rule.toString());
-        added = new float[embeddings.dimension()];
+        added = new FloatVector(embeddings.dimension());
         hits = new HashMap<>();
         for (RuleLexicalized r : sample) {
             List<Transformation> hit = new ArrayList<>(sample.size());
@@ -156,15 +157,11 @@ public class RuleScored {
         return true;
     }
 
-    private void add(float[] x, float[] y, float[] z) {
-        for (int i = 0; i < z.length; i++) {
-            z[i] = x[i] + y[i];
-        }
-    }
-
     // Score a pair of related words using a direction defined by another pair of words with the same relation.
     private Transformation scorePairAndDirection(RulePair r, RulePair d, EmbeddingContainer vs, int rankThreshold) {
-        add(d.getDirection(vs), vs.getRawVector(r.input), added);
+        added.zero();
+        added.add(d.getDirection(vs));
+        added.add(vs.getRawVector(r.input));
         double cosine = VectorMath.cosineSimilarity(added, vs.getRawVector(r.output));
         List<String> neighbors = vs.neighbors(added, rankThreshold);
         int index = neighbors.indexOf(r.output);

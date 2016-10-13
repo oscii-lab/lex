@@ -1,5 +1,6 @@
 package org.oscii.neural;
 
+import no.uib.cipr.matrix.Vector;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.oscii.concordance.SentenceExample;
@@ -114,15 +115,15 @@ public class Word2VecManager {
         final EmbeddingContainer model = models.get(lang);
         // retrieve and score context; replaceAll() strips all punctuation
         String[] contextTokens = reduceTokens(context.replaceAll("\\p{P}", "").split("\\s+"), MIN_SEG_LEN, MIN_TOK_LEN, MAX_RES_LEN);
-        float[] contextMean = model.getMean(contextTokens);
+        Vector contextMean = model.getMean(contextTokens);
         logger.info("context={} ({})", contextTokens, contextTokens.length);
         // iterate over concordance results
         concordances.forEach(ex -> {
             String[] tokens = reduceTokens(ex.sentence.tokens, MIN_SEG_LEN, MIN_TOK_LEN, MAX_RES_LEN);
-            float[] tokensMean = model.getMean(tokens);
+            Vector tokensMean = model.getMean(tokens);
             logger.debug("means: tokens=[{},{},{},...] context=[{},{},{},...]",
-                    tokensMean[0], tokensMean[1], tokensMean[2],
-                    contextMean[0], contextMean[1], contextMean[2]);
+                    tokensMean.get(0), tokensMean.get(1), tokensMean.get(2),
+                    contextMean.get(0), contextMean.get(1), contextMean.get(2));
             try {
                 double sim = VectorMath.cosineSimilarity(tokensMean, contextMean);
                 if (Double.isNaN(sim)) {
@@ -152,7 +153,7 @@ public class Word2VecManager {
      * doubles) for given query and language. Applies tokenization
      * through punctuation removal and reducing into a bag of words.
      */
-    public float[] getRawVector(String lang, String query) throws UnsupportedLanguageException {
+    public Vector getRawVector(String lang, String query) throws UnsupportedLanguageException {
         if (!supports(lang)) throw new UnsupportedLanguageException(lang);
         String[] bagOfWords = getBagOfWords(query.replaceAll("\\p{P}", "").split("\\s+"));
         logger.debug("BOW: {}", Arrays.toString(bagOfWords));
@@ -162,7 +163,7 @@ public class Word2VecManager {
     /**
      * Get the mean vector for a query.
      */
-    public float[] getMeanVector(String lang, String[] query) throws UnsupportedLanguageException {
+    public Vector getMeanVector(String lang, String[] query) throws UnsupportedLanguageException {
         if (!supports(lang)) throw new UnsupportedLanguageException(lang);
         return models.get(lang).getMean(query);
     }
@@ -187,8 +188,8 @@ public class Word2VecManager {
             }
         }
         if (query1 == null || query2 == null) return -1.0;
-        float[] v1 = getRawVector(lang, query1);
-        float[] v2 = getRawVector(lang, query2);
+        Vector v1 = getRawVector(lang, query1);
+        Vector v2 = getRawVector(lang, query2);
         return VectorMath.cosineSimilarity(v1, v2);
     }
 

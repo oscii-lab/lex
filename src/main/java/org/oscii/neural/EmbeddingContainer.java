@@ -1,7 +1,8 @@
 package org.oscii.neural;
 
 import com.eatthepath.jvptree.VPTree;
-import com.google.common.collect.ImmutableList;
+import no.uib.cipr.matrix.DenseVector;
+import no.uib.cipr.matrix.Vector;
 import org.oscii.math.VectorMath;
 
 import java.io.File;
@@ -25,17 +26,19 @@ import static java.util.stream.Collectors.toList;
 
 /**
  * A simple container for a word embedding model.
+ * <p>
+ * V is the vector type, such as float[] or DenseVector
  */
 public class EmbeddingContainer {
 
     private final static long ONE_GB = 1024 * 1024 * 1024;
 
     private final String[] vocab;
-    private final float[][] embeddings;
+    private final Vector[] embeddings;
     private final Map<String, Integer> word2Index;
 
-    private final Map<float[], Integer> embedding2Index;
-    private VPTree<float[]> neighborIndex;
+    private final Map<Vector, Integer> embedding2Index;
+    private VPTree<Vector> neighborIndex;
 
     /**
      * Constructor.
@@ -43,7 +46,7 @@ public class EmbeddingContainer {
      * @param v
      * @param e
      */
-    public EmbeddingContainer(String[] v, float[][] e) {
+    public EmbeddingContainer(String[] v, Vector[] e) {
         this.vocab = v;
         this.embeddings = e;
         this.word2Index = new HashMap<>(vocab.length);
@@ -60,7 +63,7 @@ public class EmbeddingContainer {
      * @return
      */
     public int dimension() {
-        return embeddings[0].length;
+        return embeddings[0].size();
     }
 
     /**
@@ -78,7 +81,7 @@ public class EmbeddingContainer {
      * @param query
      * @return
      */
-    public float[] getRawVector(String query) {
+    public Vector getRawVector(String query) {
         Integer i = word2Index.get(query);
         return i == null ? null : embeddings[i];
     }
@@ -99,16 +102,23 @@ public class EmbeddingContainer {
      * @param tokens
      * @return
      */
-    public float[] getMean(String[] tokens) {
-        float[] avgVec = new float[dimension()];
+    public Vector getMean(String[] tokens) {
+        Vector avgVec = null;
         int n = 0;
         for (String token : tokens) {
-            float[] v = getRawVector(token);
+            Vector v = getRawVector(token);
             if (v == null) continue;
-            VectorMath.addInPlace(avgVec, v);
+            if (avgVec == null) {
+                avgVec = v.copy();
+            } else {
+                avgVec.add(v);
+            }
             ++n;
         }
-        VectorMath.multiplyInPlace(avgVec, 1.0f / n);
+        if (n == 0) {
+            return new DenseVector(dimension());
+        }
+        avgVec.scale(1.0f / n);
         return avgVec;
     }
 
@@ -122,9 +132,9 @@ public class EmbeddingContainer {
     /**
      * Return k words nearest to an embedding vector.
      */
-    public List<String> neighbors(float[] embedding, int k) {
+    public List<String> neighbors(Vector embedding, int k) {
         if (neighborIndex == null) {
-            neighborIndex = new VPTree<>(EmbeddingContainer::angularDistance, Arrays.asList(embeddings));
+            neighborIndex = new VPTree<Vector>(EmbeddingContainer::angularDistance, Arrays.asList(embeddings));
         }
         return neighborIndex.getNearestNeighbors(embedding, k)
                 .stream().map(e -> vocab[embedding2Index.get(e)]).collect(toList());
@@ -133,7 +143,7 @@ public class EmbeddingContainer {
     /**
      * Distance metric based on angle between vectors.
      */
-    static double angularDistance(float[] a, float[] b) {
+    static double angularDistance(Vector a, Vector b) {
         return Math.acos(VectorMath.cosineSimilarity(a, b)) / Math.PI;
     }
 
@@ -158,7 +168,18 @@ public class EmbeddingContainer {
      * @throws IOException
      */
     public static EmbeddingContainer fromBinFile(File file, Set<String> vocab) throws IOException {
-        return fromBinFile(file, ByteOrder.LITTLE_ENDIAN, vocab);
+        return fromBinFile(file, ByteOrder.LITTLE_ENDIAN, vocab, false);
+    }
+
+    /**
+     * Read file with default byte order and restricted vocabulary.
+     *
+     * @param file
+     * @return
+     * @throws IOException
+     */
+    public static EmbeddingContainer fromBinFile(File file, Set<String> vocab, boolean doublePrec) throws IOException {
+        return fromBinFile(file, ByteOrder.LITTLE_ENDIAN, vocab, doublePrec);
     }
 
     /**
@@ -175,6 +196,19 @@ public class EmbeddingContainer {
     }
 
     /**
+     * Read the binary output format of the word2vec C reference implementation.
+     *
+     * @param file
+     * @param byteOrder
+     * @return
+     * @throws IOException
+     */
+    public static EmbeddingContainer fromBinFile(File file, ByteOrder byteOrder, boolean doublePrec)
+            throws IOException {
+        return fromBinFile(file, byteOrder, null, doublePrec);
+    }
+
+    /**
      * Read the binary output format but restrict to a fixed vocabulary.
      *
      * @param file
@@ -183,6 +217,11 @@ public class EmbeddingContainer {
      * @throws IOException
      */
     public static EmbeddingContainer fromBinFile(File file, ByteOrder byteOrder, Set<String> vocab)
+            throws IOException {
+        return fromBinFile(file, byteOrder, vocab, false);
+    }
+
+    public static EmbeddingContainer fromBinFile(File file, ByteOrder byteOrder, Set<String> vocab, boolean doublePrec)
             throws IOException {
         try (final FileInputStream fis = new FileInputStream(file)) {
             final FileChannel channel = fis.getChannel();
@@ -207,7 +246,7 @@ public class EmbeddingContainer {
             final int layerSize = Integer.parseInt(firstLine.substring(index + 1));
 
             String[] words = new String[vocabSize];
-            float[][] vectors = new float[vocabSize][];
+            Vector[] vectors = new Vector[vocabSize];
             int wordindex = 0;
             for (int lineno = 0; lineno < vocabSize; lineno++) {
                 // read vocab
@@ -225,12 +264,16 @@ public class EmbeddingContainer {
 
                 // read vector
                 final FloatBuffer floatBuffer = buffer.asFloatBuffer();
-                float[] vector = new float[layerSize];
-                floatBuffer.get(vector);
+                float[] floats = new float[layerSize];
+                floatBuffer.get(floats);
                 buffer.position(buffer.position() + 4 * layerSize);
 
                 if (vocab == null || vocab.contains(word)) {
                     words[wordindex] = word;
+                    Vector vector = doublePrec ? new DenseVector(floats.length) : new FloatVector(floats.length);
+                    for (int i = 0; i < floats.length; i++) {
+                        vector.set(i, floats[i]);
+                    }
                     vectors[wordindex] = vector;
                     wordindex++;
                 }
@@ -273,14 +316,15 @@ public class EmbeddingContainer {
             int vocabSize = Integer.parseInt(fields[0]);
             int layerSize = Integer.parseInt(fields[1]);
             String[] vocab = new String[vocabSize];
-            float[][] vectors = new float[vocabSize][layerSize];
+            Vector[] vectors = new Vector[vocabSize];
             for (String line; (line = reader.readLine()) != null; ) {
                 int i = reader.getLineNumber() - 2; // one-indexed
                 String[] values = line.trim().split(" ");
                 vocab[i] = values[0].trim();
 
+                vectors[i] = new FloatVector(layerSize);
                 for (int d = 1; d < values.length; d++) {
-                    vectors[i][d - 1] = Float.parseFloat(values[d]);
+                    vectors[i].set(d - 1, Float.parseFloat(values[d]));
                 }
             }
             return new EmbeddingContainer(vocab, vectors);
@@ -302,8 +346,8 @@ public class EmbeddingContainer {
         EmbeddingContainer container = EmbeddingContainer.fromBinFile(new File(fileName));
         System.out.printf("Embedding dimension: %d%n", container.dimension());
         for (String wordType : container.vocab) {
-            float[] emb = container.getRawVector(wordType);
-            System.out.printf("%s\t%s%n", wordType, Arrays.toString(emb));
+            Vector emb = container.getRawVector(wordType);
+            System.out.printf("%s\t%s%n", wordType, emb.toString());
         }
     }
 

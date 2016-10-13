@@ -1,6 +1,7 @@
 package org.oscii.morph;
 
 import com.google.gson.annotations.Expose;
+import no.uib.cipr.matrix.Vector;
 import org.oscii.neural.EmbeddingContainer;
 
 /**
@@ -11,7 +12,7 @@ public class RulePair {
     final String input;
     @Expose
     final String output;
-    float[] direction;
+    Vector direction;
 
     public RulePair(String input, String output) {
         assert input != null && output != null;
@@ -22,23 +23,15 @@ public class RulePair {
     /**
      * Get and cache the direction of a word pair.
      */
-    public float[] getDirection(EmbeddingContainer embeddings) {
+    public Vector getDirection(EmbeddingContainer embeddings) {
         if (direction == null) {
-            float[] in = embeddings.getRawVector(input);
-            float[] out = embeddings.getRawVector(output);
+            Vector in = embeddings.getRawVector(input);
+            Vector out = embeddings.getRawVector(output);
             if (in != null && out != null) {
-                direction =subtract(out, in);
+                direction = out.copy().add(-1, in);
             }
         }
         return direction;
-    }
-
-    private static float[] subtract(float[] x, float[] y) {
-        float[] z = new float[x.length];
-        for (int i = 0; i < z.length; i++) {
-            z[i] = x[i] - y[i];
-        }
-        return z;
     }
 
     @Override

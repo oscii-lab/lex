@@ -1,5 +1,6 @@
 package org.oscii.neural;
 
+import no.uib.cipr.matrix.Vector;
 import org.junit.Test;
 
 import java.io.File;
@@ -44,17 +45,17 @@ public class EmbeddingContainerTest {
     @Test
     public void testGetRawVector() throws IOException {
         EmbeddingContainer model = EmbeddingContainer.fromBinFile(new File(binFilename));
-        float[] v1 = model.getRawVector(WORD_1);
-        assertTrue(Arrays.equals(v1, WORD_1_VEC));
-        float[] v2 = model.getRawVector(WORD_2);
-        assertTrue(Arrays.equals(v2, WORD_2_VEC));
+        FloatVector v1 = (FloatVector) model.getRawVector(WORD_1);
+        assertTrue(Arrays.equals(v1.getData(), WORD_1_VEC));
+        FloatVector v2 = (FloatVector) model.getRawVector(WORD_2);
+        assertTrue(Arrays.equals(v2.getData(), WORD_2_VEC));
     }
 
     @Test
     public void testGetMean() throws IOException {
         EmbeddingContainer model = EmbeddingContainer.fromBinFile(new File(binFilename));
         String[] query = {WORD_1, WORD_2};
-        float[] mean = model.getMean(query);
+        float[] mean = ((FloatVector) model.getMean(query)).getData();
         assertTrue(Arrays.equals(mean, AVG_VEC));
     }
 
@@ -67,9 +68,16 @@ public class EmbeddingContainerTest {
         float[] five = new float[]{1, 0, 1.1f};
         float[] six = new float[]{1, 1, 0};
         String[] vocab = new String[]{"one", "two", "three", "four", "five", "six"};
-        float[][] embeddings = new float[][]{one, two, three, four, five, six};
+        Vector[] embeddings = new Vector[]{
+                new FloatVector(one),
+                new FloatVector(two),
+                new FloatVector(three),
+                new FloatVector(four),
+                new FloatVector(five),
+                new FloatVector(six)
+        };
         EmbeddingContainer model = new EmbeddingContainer(vocab, embeddings);
-        List<String> nearThree = model.neighbors(three, 5);
+        List<String> nearThree = model.neighbors(new FloatVector(three), 5);
         assertEquals(Arrays.asList(new String[]{"three", "one", "two", "five", "six"}), nearThree);
     }
 }
