@@ -30,6 +30,10 @@ public class Corpus {
     }
 
     public void addLines(String path) throws IOException {
+        addLines(path, 0);
+    }
+
+    public void addLines(String path, long maxLines) throws IOException {
         log.info("Loading corpus from {}", path);
         Stream<String> newLines;
         if (path.endsWith(".gz")) {
@@ -53,6 +57,9 @@ public class Corpus {
             newLines = reader.lines().onClose(() -> closeSafely(reader));
         } else {
             newLines = Files.lines(Paths.get(path)).parallel();
+        }
+        if (maxLines > 0) {
+            newLines = newLines.limit(maxLines);
         }
         addLines(newLines);
     }

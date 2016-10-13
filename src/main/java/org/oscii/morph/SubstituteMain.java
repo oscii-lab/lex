@@ -33,13 +33,14 @@ public class SubstituteMain {
         OptionSet options = parse(args);
 
         String corpusPath = (String) options.valueOf("corpus");
+        int maxLines = (Integer) options.valueOf("corpusMaxLines");
         Corpus corpus = new Corpus(Tokenizer.alphanumericLower);
-        corpus.addLines(corpusPath);
+        corpus.addLines(corpusPath, maxLines);
 
         int minVocabCount = (int) options.valueOf("minVocabCount");
         Set<String> vocab = corpus.vocab().stream().filter(w -> corpus.count(w) >= minVocabCount).collect(toSet());
         log.info("Loading embeddings for {} word types", vocab.size());
-        EmbeddingContainer embeddings = EmbeddingContainer.fromBinFile((File) options.valueOf("embeddings"), vocab);
+        EmbeddingContainer embeddings = EmbeddingContainer.fromBinFile((File) options.valueOf("embeddings"), vocab, true);
         vocab = vocab.parallelStream().filter(embeddings::contains).collect(toSet());
         log.info("Found embeddings for {} word types", vocab.size());
 
@@ -86,6 +87,7 @@ public class SubstituteMain {
 
         // Corpus
         parser.accepts("corpus", "path to corpus file").withRequiredArg();
+        parser.accepts("corpusMaxTokens", "max tokens to read").withRequiredArg().ofType(Integer.class).defaultsTo(0);
         parser.accepts("cacheCounts", "whether to cache corpus counts");
         parser.accepts("minVocabCount", "minimum corpus count to include a word type")
                 .withRequiredArg().ofType(Integer.class).defaultsTo(1);

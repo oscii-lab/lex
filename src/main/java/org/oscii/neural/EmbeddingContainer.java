@@ -103,13 +103,20 @@ public class EmbeddingContainer {
      * @return
      */
     public Vector getMean(String[] tokens) {
-        Vector avgVec = new FloatVector(dimension());
+        Vector avgVec = null;
         int n = 0;
         for (String token : tokens) {
             Vector v = getRawVector(token);
             if (v == null) continue;
-            avgVec.add(v);
+            if (avgVec == null) {
+                avgVec = v.copy();
+            } else {
+                avgVec.add(v);
+            }
             ++n;
+        }
+        if (n == 0) {
+            return new DenseVector(dimension());
         }
         avgVec.scale(1.0f / n);
         return avgVec;
@@ -161,7 +168,18 @@ public class EmbeddingContainer {
      * @throws IOException
      */
     public static EmbeddingContainer fromBinFile(File file, Set<String> vocab) throws IOException {
-        return fromBinFile(file, ByteOrder.LITTLE_ENDIAN, vocab);
+        return fromBinFile(file, ByteOrder.LITTLE_ENDIAN, vocab, false);
+    }
+
+    /**
+     * Read file with default byte order and restricted vocabulary.
+     *
+     * @param file
+     * @return
+     * @throws IOException
+     */
+    public static EmbeddingContainer fromBinFile(File file, Set<String> vocab, boolean doublePrec) throws IOException {
+        return fromBinFile(file, ByteOrder.LITTLE_ENDIAN, vocab, doublePrec);
     }
 
     /**
@@ -178,6 +196,19 @@ public class EmbeddingContainer {
     }
 
     /**
+     * Read the binary output format of the word2vec C reference implementation.
+     *
+     * @param file
+     * @param byteOrder
+     * @return
+     * @throws IOException
+     */
+    public static EmbeddingContainer fromBinFile(File file, ByteOrder byteOrder, boolean doublePrec)
+            throws IOException {
+        return fromBinFile(file, byteOrder, null, doublePrec);
+    }
+
+    /**
      * Read the binary output format but restrict to a fixed vocabulary.
      *
      * @param file
@@ -186,6 +217,11 @@ public class EmbeddingContainer {
      * @throws IOException
      */
     public static EmbeddingContainer fromBinFile(File file, ByteOrder byteOrder, Set<String> vocab)
+            throws IOException {
+        return fromBinFile(file, byteOrder, vocab, false);
+    }
+
+    public static EmbeddingContainer fromBinFile(File file, ByteOrder byteOrder, Set<String> vocab, boolean doublePrec)
             throws IOException {
         try (final FileInputStream fis = new FileInputStream(file)) {
             final FileChannel channel = fis.getChannel();
@@ -228,13 +264,17 @@ public class EmbeddingContainer {
 
                 // read vector
                 final FloatBuffer floatBuffer = buffer.asFloatBuffer();
-                float[] vector = new float[layerSize];
-                floatBuffer.get(vector);
+                float[] floats = new float[layerSize];
+                floatBuffer.get(floats);
                 buffer.position(buffer.position() + 4 * layerSize);
 
                 if (vocab == null || vocab.contains(word)) {
                     words[wordindex] = word;
-                    vectors[wordindex] = new FloatVector(vector);
+                    Vector vector = doublePrec ? new DenseVector(floats.length) : new FloatVector(floats.length);
+                    for (int i = 0; i < floats.length; i++) {
+                        vector.set(i, floats[i]);
+                    }
+                    vectors[wordindex] = vector;
                     wordindex++;
                 }
 
@@ -284,7 +324,7 @@ public class EmbeddingContainer {
 
                 vectors[i] = new FloatVector(layerSize);
                 for (int d = 1; d < values.length; d++) {
-                    vectors[i].set(d-1, Float.parseFloat(values[d]));
+                    vectors[i].set(d - 1, Float.parseFloat(values[d]));
                 }
             }
             return new EmbeddingContainer(vocab, vectors);
