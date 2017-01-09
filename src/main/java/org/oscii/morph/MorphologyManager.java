@@ -54,6 +54,7 @@ public class MorphologyManager {
      */
     public String getKnownStem(String query, String language) {
         Stemmer stemmer = stemmers.get(language);
+        if(stemmer == null) return query;
         List<String> stems = stemmer.getKnownStems(query);
         if (stems.isEmpty()) {
             return query;
