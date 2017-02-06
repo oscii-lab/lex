@@ -107,7 +107,7 @@ public class LexiconProtocol {
     private void addExamples(Request request, Response response) {
         long startTime = System.nanoTime(); // - startTime) / 1e9;
         boolean bHasEmbeddings = (embeddings != null && embeddings.hasModels());
-        List<SentenceExample> results = corpus.examples(request.query, request.source, request.target, request.maxCount, request.memory, !bHasEmbeddings);
+        List<SentenceExample> results = corpus.examples(request.query, request.source, request.target, request.systemId, request.maxCount, request.memory, !bHasEmbeddings);
         long endTime = System.nanoTime();
         logger.debug("TIMING examples: {}", (endTime - startTime) / 1e9);
         if (bHasEmbeddings) {
@@ -277,6 +277,7 @@ public class LexiconProtocol {
         public String query = "";
         public String source = "";
         public String target = "";
+        public String systemId = "";
         public String context = "";
         public boolean translate = false;
         public boolean define = false;

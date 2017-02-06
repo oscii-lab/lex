@@ -74,7 +74,7 @@ public class LexiconProtocolTest extends TestCase {
       }
 
       @Override
-      public List<SentenceExample> examples(String query, String source, String target, int max, int memoryId, boolean bLimit) {
+      public List<SentenceExample> examples(String query, String source, String target, String systemId, int max, int memoryId, boolean bLimit) {
         assertEquals("dog", query);
         assertEquals("en", source);
         assertEquals("es", target);

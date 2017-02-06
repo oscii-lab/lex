@@ -86,7 +86,15 @@ public abstract class AlignedCorpus {
     /*
      * Return examples for a phrase translated into a target language.
      */
-    public abstract List<SentenceExample> examples(String query, String source, String target, int max, int memoryId, boolean bLimit);
+    public List<SentenceExample> examples(String query, String source, String target, int max, int memoryId, boolean bLimit) {
+      return examples(query, source, target, null, max, memoryId, bLimit);
+    }
+
+    
+    /*
+     * Return examples for a phrase translated into a target language.
+     */
+    public abstract List<SentenceExample> examples(String query, String source, String target, String systemId, int max, int memoryId, boolean bLimit);
 
     public void tally() {
     }
