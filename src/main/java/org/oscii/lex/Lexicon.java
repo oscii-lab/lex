@@ -145,7 +145,7 @@ public class Lexicon {
 
     public static String degrade(String query) {
         // TODO(denero) Unicode normalize, remove non-alpha, & normalize diacritics
-        return query.toLowerCase();
+        return query.toLowerCase().trim();
     }
 
     // Prefer to return translations with parts of speech
