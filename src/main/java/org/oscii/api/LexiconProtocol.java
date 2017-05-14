@@ -122,50 +122,20 @@ public class LexiconProtocol {
         results.forEach(ex -> {
             AlignedSentence source = ex.sentence;
             AlignedSentence target = source.aligned;
-            if (request.translate && ex.memoryId >= 0 && exactQueryMatch(ex)) {
-                String sourceTerm = joinSegment(source.tokens, source.delimiters);
-                String targetTerm = joinSegment(target.tokens, target.delimiters);
-                response.translations.add(
-                        new ResponseTranslation(sourceTerm, "", targetTerm, 0.0, ex.memoryId));
-            } else {
-                Span sourceSpan = new Span(ex.sourceStart, ex.sourceLength);
-                Span targetSpan = new Span(ex.targetStart, ex.targetLength);
-                ResponseExample example = new ResponseExample(
-                        source.tokens,
-                        source.delimiters,
-                        target.tokens,
-                        target.delimiters,
-                        source.getAlignment(),
-                        sourceSpan,
-                        targetSpan,
-                        ex.similarity,
-                        ex.memoryId);
-                response.examples.add(example);
-            }
+            Span sourceSpan = new Span(ex.sourceStart, ex.sourceLength);
+            Span targetSpan = new Span(ex.targetStart, ex.targetLength);
+            ResponseExample example = new ResponseExample(
+                source.tokens,
+                source.delimiters,
+                target.tokens,
+                target.delimiters,
+                source.getAlignment(),
+                sourceSpan,
+                targetSpan,
+                ex.similarity,
+                ex.memoryId);
+            response.examples.add(example);
         });
-    }
-
-    // Interleave tokens and delimiters into a rendered string.
-    private String joinSegment(String[] tokens, String[] delimiters) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < tokens.length; i++) {
-            if (i < delimiters.length) {
-                sb.append(delimiters[i]);
-            } else {
-                sb.append(" ");
-            }
-            sb.append(tokens[i]);
-        }
-        if (delimiters.length > tokens.length) {
-            sb.append(delimiters[tokens.length]);
-        }
-        return sb.toString();
-    }
-
-    // The query of the request is the complete example.
-    private boolean exactQueryMatch(SentenceExample ex) {
-        // Check that the number of aligned words in the source covers the entire source.
-        return ex.sourceLength == ex.sentence.tokens.length;
     }
 
     private void addExtensions(Request request, Response response) {
@@ -308,21 +278,59 @@ public class LexiconProtocol {
         }
     }
 
+    /**
+     * Response format for a translation request.
+     * 
+     * @author John DeNero
+     *
+     */
     public static class ResponseTranslation extends Jsonable {
-        String source;
-        String pos;
-        String target;
-        double frequency;
-        int memoryId; // -1: background TM, >=0: foregroundTM
+        public final String source;
+        public final String pos;
+        public String target;
+        public double frequency;
+        public int memoryId; // -1: background TM, >=0: foregroundTM
+        public int segmentId;
 
-        ResponseTranslation(String source, String pos, String target, double frequency, int memoryId) {
-            this.source = source;
-            this.pos = pos;
-            this.target = target;
-            this.frequency = frequency;
-            this.memoryId = memoryId;
+        /**
+         * Constructor.
+         * 
+         * @param source
+         * @param pos
+         * @param target
+         * @param frequency
+         * @param memoryId
+         */
+        public ResponseTranslation(String source, String pos, String target, double frequency, int memoryId) {
+          this(source, pos, target, frequency, memoryId, -1);
+        }
+        
+        /**
+         * Constructor.
+         * 
+         * @param source
+         * @param pos
+         * @param target
+         * @param frequency
+         * @param memoryId
+         * @param segmentId
+         */
+        public ResponseTranslation(String source, String pos, String target, double frequency, int memoryId, int segmentId) {
+          this.source = source;
+          this.pos = pos;
+          this.target = target;
+          this.frequency = frequency;
+          this.memoryId = memoryId;
+          this.segmentId = segmentId;
         }
 
+        /**
+         * Create a ResponseTranslation from a Translation.
+         * 
+         * @param ex
+         * @param first
+         * @return
+         */
         public static ResponseTranslation create(Expression ex, Translation first) {
             String pos = first.pos.stream().findFirst().orElse("");
             return new ResponseTranslation(ex.text, pos, first.translation.text, first.frequency, -1);
@@ -419,14 +427,6 @@ public class LexiconProtocol {
             assert length >= 0;
             this.start = start;
             this.length = length;
-        }
-
-        public String[] Slice(String[] sequence) {
-            String[] slice = new String[length];
-            for (int i = start; i < start + length; i++) {
-                slice[i - start] = sequence[i];
-            }
-            return slice;
         }
     }
 

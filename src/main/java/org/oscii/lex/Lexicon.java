@@ -7,6 +7,7 @@ import gnu.trove.THashMap;
 import org.apache.commons.collections4.trie.PatriciaTrie;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.util.Strings;
 import org.oscii.concordance.AlignedCorpus;
 
 import java.io.File;
@@ -16,12 +17,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -144,8 +147,11 @@ public class Lexicon {
     }
 
     public static String degrade(String query) {
-        // TODO(denero) Unicode normalize, remove non-alpha, & normalize diacritics
-        return query.toLowerCase().trim();
+      Objects.requireNonNull(query);
+      // TODO(denero) Unicode normalize, remove non-alpha, & normalize diacritics
+      String[] tokens = query.trim().split("\\s+");
+      String newQuery = String.join(" ", tokens).toLowerCase();
+      return newQuery;
     }
 
     // Prefer to return translations with parts of speech
